@@ -1,0 +1,7 @@
+# HUM-1: irreversible surfaces get a named human review, unconditionally. A diff touching a migration or a
+# published contract cannot merge without the owner named here. Armed at instantiation: branch protection must
+# require review from code owners (the manifest carries the step), and @OWNER is renamed to the product owner.
+# The Kernel paths are renamed with the product at instantiation; docs-lint verifies all three surfaces stay covered.
+/server/src/Kernel.Persistence/Migrations/ @OWNER
+/server/src/Kernel.Contracts/ @OWNER
+/docs/contracts/ @OWNER

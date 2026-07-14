@@ -1,0 +1,3 @@
+# One line ending everywhere (INV-03): prevents CRLF/LF churn across the Windows/Mac/Docker boundary, which
+# breaks shell scripts and pollutes diffs. Shipped by the edition; armed by nothing, correct by construction.
+* text=auto eol=lf

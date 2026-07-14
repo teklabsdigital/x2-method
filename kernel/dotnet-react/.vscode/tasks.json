@@ -1,0 +1,122 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "db: up",
+      "type": "shell",
+      "command": "scripts/db-up.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "focus": true, "panel": "dedicated", "group": "kernel" },
+      "detail": "Start the dev SQL Server (persistent named volume, pinned image, arm64 colima precheck). On first run it prompts for an SA password and saves it to a gitignored .env; or run 'dev: init secrets' first."
+    },
+    {
+      "label": "db: down",
+      "type": "shell",
+      "command": "scripts/db-down.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "detail": "Stop and remove the dev SQL Server container (data volume kept)."
+    },
+    {
+      "label": "dev: init secrets",
+      "type": "shell",
+      "command": "scripts/dev-setup.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "detail": "Idempotent one-time bootstrap: ensures the .env SA password and the Jwt:Key + ConnectionStrings:Kernel user-secrets so the server boots."
+    },
+    {
+      "label": "db: migrate",
+      "type": "shell",
+      "command": "scripts/db-migrate.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "detail": "Apply EF migrations to the dev database (idempotent)."
+    },
+    {
+      "label": "server",
+      "type": "shell",
+      "command": "dotnet run --project src/Kernel.Api",
+      "options": { "cwd": "${workspaceFolder}/server" },
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "problemMatcher": {
+        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building\\.\\.\\.|Restore",
+          "endsPattern": "Now listening on|Application started"
+        }
+      },
+      "detail": "Run the .NET API host (background; ready on 'Now listening on'; port 5080)."
+    },
+    {
+      "label": "client",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/client-web" },
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "problemMatcher": {
+        "pattern": [{ "regexp": ".", "file": 1, "location": 2, "message": 3 }],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE|vite",
+          "endsPattern": "ready in|Local:"
+        }
+      },
+      "detail": "Run the Vite dev server (background; ready on 'Local:'; port 5173)."
+    },
+    {
+      "label": "Kernel: Start All",
+      "dependsOn": ["db: up", "db: migrate", "server", "client"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true },
+      "detail": "db up -> migrate -> server + client."
+    },
+    {
+      "label": "Kernel: Stop All",
+      "type": "shell",
+      "command": "scripts/db-down.sh; pkill -f 'Kernel.Api' 2>/dev/null || true; pkill -f 'vite' 2>/dev/null || true; echo 'Stopped db, server, client.'",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "detail": "Remove the db container (volume kept) and stop the server + client processes."
+    },
+    {
+      "label": "test: all",
+      "type": "shell",
+      "command": "dotnet test",
+      "options": { "cwd": "${workspaceFolder}/server" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "group": "test",
+      "detail": "Run the .NET test tiers (Docker must be running for the integration tier)."
+    },
+    {
+      "label": "client: verify",
+      "type": "shell",
+      "command": "npm run verify",
+      "options": { "cwd": "${workspaceFolder}/client-web" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "group": "test",
+      "detail": "tsc + vitest + eslint for the client."
+    },
+    {
+      "label": "e2e: harness + smoke",
+      "type": "shell",
+      "command": "scripts/e2e.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "group": "kernel" },
+      "group": "test",
+      "detail": "Out-of-process e2e (TEST-2): db up + migrate, boot the server, drive every client service via npm (completeness self-audit), then boot the ACTUAL composed entrypoint (UI-5 smoke), then tear down."
+    }
+  ]
+}

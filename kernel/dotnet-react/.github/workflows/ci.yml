@@ -1,0 +1,135 @@
+# TEST-3: the enforcement loop runs on every push. This is a TEMPLATE: at instantiation it moves to the repo root
+# and every path here is relative to the edition root (server/, client-web/, tools/). Branch protection must
+# require all five jobs (server, client, docs-lint, secret-scan, e2e-wire) before merge.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          cache: true
+          cache-dependency-path: server/**/packages.lock.json
+      - run: dotnet restore --locked-mode
+      - run: dotnet build -warnaserror --no-restore
+      - run: dotnet test tests/Kernel.Tests.Architecture --no-build --verbosity normal
+      - run: dotnet test tests/Kernel.Tests.Unit --no-build --verbosity normal
+      - run: dotnet test tests/Kernel.Tests.Integration --no-build --verbosity normal
+
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: client-web/package-lock.json
+      - run: npm ci
+      - run: npm run verify
+
+  docs-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tools/docs-lint.mjs
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan committed source and config for secrets (SEC-5)
+        run: |
+          if grep -rInE '(-----BEGIN [A-Z ]*PRIVATE KEY-----|(password|pwd|secret|apikey|api_key)[[:space:]]*[:=][[:space:]]*.?[A-Za-z0-9+/_-]{8,})' \
+            --include='*.json' --include='*.cs' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.jsx' \
+            --include='*.env' --include='.env' --include='.env.*' --include='*.yml' --include='*.yaml' --include='*.props' --include='*.config' --include='.npmrc' \
+            --exclude='*.lock.json' --exclude='package-lock.json' \
+            --exclude-dir=node_modules --exclude-dir=bin --exclude-dir=obj --exclude-dir=dist . ; then
+            echo "Potential committed secret found (SEC-5). Move it to user-secrets or a vault."
+            exit 1
+          fi
+          echo "No committed secrets found."
+
+  e2e-wire:
+    runs-on: ubuntu-latest
+    services:
+      sql:
+        # Pinned tag@digest (DEP-1 / INV-05): the same engine build as the runbook and the Testcontainers fixture.
+        image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04@sha256:c1aa8afe9b06eab64c9774a4802dcd032205d1be785b1fd51e1c0151e7586b74
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'Ci_Harness_Pass123!'
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Ci_Harness_Pass123! -C -Q 'SELECT 1'"
+          --health-interval 10s --health-timeout 5s --health-retries 20
+    env:
+      HARN_JWT_KEY: 'ci-harness-signing-key-0123456789-abcdefghij'
+      HARN_JWT_ISSUER: kernel
+      HARN_JWT_AUDIENCE: kernel
+      CS: 'Server=localhost,1433;Database=Kernel;User Id=sa;Password=Ci_Harness_Pass123!;TrustServerCertificate=True'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          cache: true
+          cache-dependency-path: server/**/packages.lock.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: client-web/package-lock.json
+      - name: Build server
+        working-directory: server
+        run: |
+          dotnet restore --locked-mode
+          dotnet build -warnaserror --no-restore
+      - name: Apply schema
+        working-directory: server
+        run: |
+          dotnet tool restore
+          dotnet ef database update --no-build --connection "$CS" -p src/Kernel.Persistence -s src/Kernel.Api
+      - name: Install client
+        working-directory: client-web
+        run: npm ci
+      - name: Start server, run the harness, run the composed-entrypoint smoke
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+          Jwt__Key: ${{ env.HARN_JWT_KEY }}
+          Jwt__Issuer: kernel
+          Jwt__Audience: kernel
+          ConnectionStrings__Kernel: ${{ env.CS }}
+        run: |
+          dotnet run --no-build --project server/src/Kernel.Api --urls http://localhost:5080 --no-launch-profile &
+          API_PID=$!
+          for i in $(seq 1 30); do curl -sf http://localhost:5080/health && break || sleep 2; done
+          cd client-web
+          TA=$(node tools/harness/mintToken.mjs 11111111-1111-1111-1111-111111111111 notes.read,notes.write)
+          TB=$(node tools/harness/mintToken.mjs 22222222-2222-2222-2222-222222222222 notes.read,notes.write)
+          set +e
+          HARN_BASE_URL=http://localhost:5080 HARN_TOKEN="$TA" HARN_TOKEN_B="$TB" node tools/harness/main.ts
+          HARN=$?
+          # UI-5: the smoke boots the ACTUAL entrypoint against the same live server; green requires both.
+          VITE_API_BASE_URL=http://localhost:5080 VITE_API_TOKEN="$TA" npm run smoke
+          SMOKE=$?
+          kill $API_PID || true
+          exit $((HARN + SMOKE))

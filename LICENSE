@@ -1,0 +1,10 @@
+X2 is dual licensed.
+
+- The method and its documentation (everything in this repository except the
+  kernel/dotnet-react/ directory) are licensed under the Creative Commons
+  Attribution 4.0 International licence (CC BY 4.0). See LICENSE-DOCS.
+
+- The source code (everything under kernel/dotnet-react/) is licensed under
+  the MIT licence. See LICENSE-CODE.
+
+Copyright (c) 2026 Teklabs Digital Pty Ltd, Trevor Attema

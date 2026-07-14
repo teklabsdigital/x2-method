@@ -1,0 +1,10 @@
+bin/
+obj/
+node_modules/
+dist/
+*.user
+# Local dev secrets (SEC-5): the SA password lives here, never committed. .env.local holds the Vite dev token.
+.env
+.env.local
+# Dev DB data is never committable (INV-02): only used if the bind-mount alternative replaces the named volume.
+.localdb/
