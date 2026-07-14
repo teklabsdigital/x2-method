@@ -1,5 +1,5 @@
 ---
-name: x2-derive-tests
+name: derive-tests
 description: Use only after the lock (gate 2b) is on record for the slice portion, to derive the fidelity ledger and acceptance scenarios from the locked prototype. Triggers when a portion is newly locked or re-locked. Never use before the lock, and never use it to hand-author prototype-fidelity test cases from prose.
 ---
 
@@ -29,7 +29,7 @@ The ban is precise, per the record's wording fix:
 
 ## Coverage expectations the exit report will check
 
-Derivation should leave these satisfiable, because x2-slice-exit reports them:
+Derivation should leave these satisfiable, because slice-exit reports them:
 
 - Every public method of every client data service has at least one harness scenario through the
   real transport, and when the product owns identity, the harness exercises the real sign-in path
@@ -59,4 +59,4 @@ cannot fail is not evidence.
 
 ## Next
 
-x2-implement.
+implement.

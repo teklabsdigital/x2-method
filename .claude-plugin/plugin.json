@@ -1,0 +1,14 @@
+{
+  "name": "x2",
+  "displayName": "X2 Method",
+  "version": "1.0.0",
+  "description": "Build production software with AI coding agents. Invariants in the build, decisions with people, progress in human turns per shipped slice.",
+  "author": {
+    "name": "Teklabs Digital",
+    "url": "https://github.com/teklabsdigital"
+  },
+  "homepage": "https://github.com/teklabsdigital/x2-method",
+  "repository": "https://github.com/teklabsdigital/x2-method",
+  "license": "CC-BY-4.0 AND MIT",
+  "keywords": ["workflow", "skills", "agentic", "tdd", "software-method"]
+}

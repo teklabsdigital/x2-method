@@ -1,5 +1,5 @@
 ---
-name: x2-decompose
+name: decompose
 description: Use after the repo is seeded to run the D-000 five-lens decomposition, record persistent schema decisions, define slice one, and start the deltas file. Also use when a stays-ahead decision (decomposition, schema) must be revisited. Do not use for per-slice implementation decisions; those are D-0xx record-gaps raised during implement.
 ---
 
@@ -46,4 +46,4 @@ surfaces differences; it never restates what the edition already says.
 
 ## Next
 
-x2-design, carrying D-000 and the behaviour spec.
+design, carrying D-000 and the behaviour spec.

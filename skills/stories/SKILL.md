@@ -1,5 +1,5 @@
 ---
-name: x2-stories
+name: stories
 description: Use when starting an X2 project, when the problem domain has no approved epic story set, or when new scope needs stories added to an existing set. Runs problem discovery and produces epic-level stories, then requests gate 1 (stories approved). Do not use to author acceptance criteria or a requirements document, and do not use for anything downstream of gate 1.
 ---
 
@@ -15,9 +15,9 @@ three gates: nothing is designed, seeded, or built until the stories are approve
 - Where the product's core is a novel domain behaviour (a method, a protocol, a way of working that
   makes the product not a commodity), capture it as a behaviour spec. It is a domain source of
   truth for the designer, not acceptance criteria and not screen design. It lands in the repo's
-  `design/` directory once x2-seed runs.
+  `design/` directory once seed runs.
 - A turn note for every human turn ideation costs (number, what, why a human was needed). These are
-  carried into the ledger the moment x2-seed creates it.
+  carried into the ledger the moment seed creates it.
 
 ## How to work the discovery
 
@@ -30,17 +30,17 @@ three gates: nothing is designed, seeded, or built until the stories are approve
 ## Human-turn contract
 
 - Requests **gate 1: stories approved** (the first MET-07 gate), taken when the story set is tight
-  and both sides agree. The gate blocks x2-seed and everything after it.
+  and both sides agree. The gate blocks seed and everything after it.
 - Ideation turns are part of the measured flow and are logged.
 
 ## What this skill must NOT produce
 
 - No acceptance criteria and no behaviour lists for the UI. Those derive from the locked prototype
   later; authoring them here was the pilot's turn 8 defect.
-- No requirements document. The story set is recorded in D-000 by x2-decompose; a second
+- No requirements document. The story set is recorded in D-000 by decompose; a second
   requirements doc duplicating it was the pilot's turn 8b defect.
 - No screens, no architecture, no code investigation, no file paths.
 
 ## Next
 
-Gate 1 on record, then x2-seed.
+Gate 1 on record, then seed.

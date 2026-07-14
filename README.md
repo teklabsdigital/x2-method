@@ -71,44 +71,46 @@ You need:
 - [Claude Code](https://claude.com/claude-code): the skills are written for it
 - the .NET 9 SDK, Node 24 and Docker, to use the shipped edition.
 
-Install the skills once:
+Install the plugin once, from inside Claude Code:
 
 ```
-git clone https://github.com/teklabsdigital/x2-method.git
-mkdir -p ~/.claude/skills
-ln -s "$(pwd)/x2-method/skills/"* ~/.claude/skills/
+/plugin marketplace add teklabsdigital/x2-method
+/plugin install x2@x2
 ```
 
-This links the 11 skills into Claude Code's personal skills folder, so they are available in every
-project, including the new repo the method creates for you. To install for a single project
-instead, copy the folders into that project's `.claude/skills/`. New sessions pick them up; type
-`/` in Claude Code to see them listed.
+The first command registers this repo as a plugin marketplace; the second installs the 11 skills,
+namespaced under `x2:`, so they are available in every project, including the new repo the method
+creates for you. Type `/x2:` in Claude Code to see them listed.
 
-Invoke a skill either way:
+Invoke a skill:
 
-- **By name.** Type the slash command, such as `/x2-stories`.
+- **By name.** Type the slash command, such as `/x2:stories`.
 - **By intent.** Say what you want ("I have a product idea", "the app misbehaves at runtime").
   Each skill declares when it applies, and Claude selects the right one.
 
-Ask for `x2-help` at any time to see what to run next. Migrating an existing project? Use
-`x2-adopt` instead of the flow below.
+Ask for `/x2:help` at any time to see what to run next. Migrating an existing project? Use
+`/x2:adopt` instead of the flow below.
+
+To work on the method itself, clone the repo and symlink `skills/*` into Claude Code's personal
+skills folder instead; installed that way the skills appear unscoped (`/stories`, `/seed`, and so
+on) rather than under `x2:`.
 
 ### From a user story to a running app
 
 Start Claude Code and describe your product idea. Then follow the flow. You approve at 3 gates and
 answer the odd question; the agent does the rest.
 
-1. **x2-stories** turns your idea into epic-level stories, one line each. *You approve them
+1. **x2:stories** turns your idea into epic-level stories, one line each. *You approve them
    (gate 1).*
-2. **x2-seed** creates your project repo from the edition and arms the CI gate.
-3. **x2-decompose** records how the system divides up, the schema and the first slice.
-4. **x2-design** produces the whole-product design prototype. *You approve it (gate 2a).*
-5. **x2-lock** copies the prototype into your repo as the contract to build to. *You approve the
+2. **x2:seed** creates your project repo from the edition and arms the CI gate.
+3. **x2:decompose** records how the system divides up, the schema and the first slice.
+4. **x2:design** produces the whole-product design prototype. *You approve it (gate 2a).*
+5. **x2:lock** copies the prototype into your repo as the contract to build to. *You approve the
    lock (gate 2b).*
-6. **x2-derive-tests** derives the acceptance tests from the locked design.
-7. **x2-implement** builds the slice until every check passes. It asks you only when it hits a
+6. **x2:derive-tests** derives the acceptance tests from the locked design.
+7. **x2:implement** builds the slice until every check passes. It asks you only when it hits a
    decision no record answers.
-8. **x2-slice-exit** produces the audited report that declares the slice done. *You accept it
+8. **x2:slice-exit** produces the audited report that declares the slice done. *You accept it
    (gate 3).*
 
 Then run it: the edition's [`README`](kernel/dotnet-react/README.md) has a "Running it" section

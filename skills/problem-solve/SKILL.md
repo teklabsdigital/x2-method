@@ -1,5 +1,5 @@
 ---
-name: x2-problem-solve
+name: problem-solve
 description: Use when the product misbehaves at runtime and the cause is unknown, especially when reproducing needs the human's device, eyes, or account. Do not use for a red test with an evident cause (stay in the implement loop) or for green-but-wrong against the locked prototype (that is an adjudication turn; the fix goes in the decision file).
 ---
 

@@ -1,6 +1,6 @@
 ---
-name: x2-implement
-description: Use when the slice portion is locked and its derived tests exist, to build all of the locked portion to green autonomously. Triggers at implement start and on every re-entry after a human turn. Do not use to declare green (x2-slice-exit does that), and do not use it for an unexplained runtime defect (x2-problem-solve).
+name: implement
+description: Use when the slice portion is locked and its derived tests exist, to build all of the locked portion to green autonomously. Triggers at implement start and on every re-entry after a human turn. Do not use to declare green (slice-exit does that), and do not use it for an unexplained runtime defect (problem-solve).
 ---
 
 # X2 Implement
@@ -69,7 +69,7 @@ defects; intake's classification governs. A count held in your context is not a 
 ## Exit
 
 Green is never declared in prose. When every tier passes and the contract is met, invoke
-x2-slice-exit and produce the report. If the report cannot be completed honestly, the slice is not
+slice-exit and produce the report. If the report cannot be completed honestly, the slice is not
 green.
 
 ## What this skill must NOT produce

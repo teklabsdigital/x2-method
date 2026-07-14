@@ -1,0 +1,15 @@
+{
+  "name": "x2",
+  "description": "The X2 method for building production software with AI coding agents.",
+  "owner": {
+    "name": "Teklabs Digital"
+  },
+  "plugins": [
+    {
+      "name": "x2",
+      "source": "./",
+      "description": "The 11 X2 skills: stories to audited green slice.",
+      "category": "productivity"
+    }
+  ]
+}

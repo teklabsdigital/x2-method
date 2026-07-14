@@ -78,7 +78,7 @@ exactly this property.
 
 The instantiation layer is where the acceptance test found the kernel weakest (a quarter of the pilot's human
 turns were bootstrap the handover failed to ship), so instantiation is a MANIFEST: a concrete file set plus setup
-steps plus a verification set, verified AS A SET, not one by one from memory. x2-seed runs it; the kernel
+steps plus a verification set, verified AS A SET, not one by one from memory. x2:seed runs it; the kernel
 acceptance test verifies that instantiation ships and arms the whole set, extending TEST-3's keystone from
 "instantiation arms branch protection" to "instantiation ships and arms everything below". A gap found while
 seeding is a finding for the invariants pass, logged as a turn.
@@ -95,7 +95,7 @@ BUILD-BRIEF.md stays behind (kernel provenance, not project material).
    pilot missed (INV-06): `Jwt:Issuer` and `Jwt:Audience` in `appsettings.json` are `kernel` and rename with the
    product; docs-lint's HUM-1 check matches path fragments so the CODEOWNERS rename cannot silently drop coverage.
 2. **Git setup.** `git init`; the canonical `.gitignore` and `.gitattributes` (`eol=lf`) are in the file set;
-   first commit only when directed (the never-commit constraint is in the project CLAUDE.md that x2-seed writes).
+   first commit only when directed (the never-commit constraint is in the project CLAUDE.md that x2:seed writes).
 3. **Arm the gates (TEST-3 + HUM-1, the step that gets skipped).** Move `.github/workflows/ci.yml` to the repo
    root; branch protection requires all five jobs AND code-owner review; replace `@OWNER` in CODEOWNERS with the
    product owner. Until this step the loop runs but blocks nothing.

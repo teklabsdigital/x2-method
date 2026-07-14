@@ -1,6 +1,6 @@
 ---
-name: x2-lock
-description: Use when the prototype is approved at Claude Design (gate 2a) and a slice's portion must be copied down into the repo and locked. Also use when a spine revision touches an already-locked portion and it must be re-locked. Requests gate 2b (the lock). Do not use before gate 2a, and do not derive tests here; that is x2-derive-tests, after the lock.
+name: lock
+description: Use when the prototype is approved at Claude Design (gate 2a) and a slice's portion must be copied down into the repo and locked. Also use when a spine revision touches an already-locked portion and it must be re-locked. Requests gate 2b (the lock). Do not use before gate 2a, and do not derive tests here; that is derive-tests, after the lock.
 ---
 
 # X2 Lock
@@ -60,8 +60,8 @@ The client's token source derives from the export on disk, nothing else.
 ## What this skill must NOT produce
 
 - No tests, no fidelity ledgers, no code. Derivation starts only after the lock is on record.
-- No edits to the prototype; a change goes back through x2-design and re-approval.
+- No edits to the prototype; a change goes back through design and re-approval.
 
 ## Next
 
-Gate 2b on record, then x2-derive-tests.
+Gate 2b on record, then derive-tests.

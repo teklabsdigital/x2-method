@@ -1,6 +1,6 @@
 ---
-name: x2-adopt
-description: Use when an existing project that was not built with X2 must be migrated to run under it, with documentation sprawl to dissolve, stories to harvest at epic altitude, an as-built design to baseline, and existing enforcement to map and arm. Runs the migration on a dedicated branch with three human gates. Do not use for a new project (that is x2-seed), and do not use it to redesign the product or refactor code beyond what arming the enforcement requires.
+name: adopt
+description: Use when an existing project that was not built with X2 must be migrated to run under it, with documentation sprawl to dissolve, stories to harvest at epic altitude, an as-built design to baseline, and existing enforcement to map and arm. Runs the migration on a dedicated branch with three human gates. Do not use for a new project (that is seed), and do not use it to redesign the product or refactor code beyond what arming the enforcement requires.
 ---
 
 # X2 adopt: migrate an existing project onto X2
@@ -185,14 +185,14 @@ ruled re-lock. Do not redesign anything in this skill; the current design export
 1. **Arm branch protection** so the phase-0 workflow actually gates the merge. A pipeline that
    runs but blocks nothing enforces nothing, and "set at instantiation" is exactly the step that
    gets skipped. Confirm the required checks are the workflow's jobs by name.
-2. **Resume under x2-seed's re-entry mode**: standing constraints in CLAUDE.md, the turn ledger.
+2. **Resume under seed's re-entry mode**: standing constraints in CLAUDE.md, the turn ledger.
 3. Produce the **adoption exit report**: tiers run this session with counts, the CI run id proving
    the workflow executed the real gate commands green on the branch, branch protection armed, the
    conformance table, the dissolution manifest, gates on record with dates, unsurfaced decisions
    (must be none), and the adoption turn count. The report is the done declaration; green is
    ratified after audit, never declared in prose.
 4. On ratification: merge the migration branch, delete the archived pile under direction, and
-   resume the normal X2 flow (x2-stories for new scope, x2-decompose for revisits, slices).
+   resume the normal X2 flow (stories for new scope, decompose for revisits, slices).
 
 ## Do not
 

@@ -1,5 +1,5 @@
 ---
-name: x2-slice-exit
+name: slice-exit
 description: Use when the builder believes the slice is green, to produce the slice-exit report that is the definition of green. Triggers before any green declaration and at slice close. Green is declared by the report and ratified only after intake audits it. Never declare a slice green in prose, and never skip a section because it is inconvenient.
 ---
 
@@ -48,5 +48,5 @@ record. Carried on the record; the pilot's `docs/work/` is the working default u
 ## What this skill must NOT produce
 
 - No green-by-prose, no partial reports, no stale results presented as fresh.
-- No new build work; if producing the report surfaces a gap, the slice re-enters x2-implement and
+- No new build work; if producing the report surfaces a gap, the slice re-enters implement and
   the report is produced again from the top.

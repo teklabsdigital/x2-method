@@ -1,5 +1,5 @@
 ---
-name: x2-design
+name: design
 description: Use when D-000 exists and the whole-product prototype does not, to run Claude Design in its own context and produce the prototype and design system. Also use when a later slice exposes a design gap that needs a spine revision. Requests gate 2a (prototype approved at Claude Design). Never run in the builder's context, and never used to author tests, acceptance criteria, or application code.
 ---
 
@@ -92,7 +92,7 @@ carried on the record, MET-03).
 
 - The direction confirmation in step 1 is a design decision turn.
 - Requests **gate 2a: prototype approved at Claude Design** (MET-07), at the moment the prototype
-  is complete. Approval here is not the lock; the lock happens after the copy-down, at x2-lock.
+  is complete. Approval here is not the lock; the lock happens after the copy-down, at lock.
 
 ## What this skill must NOT produce
 
@@ -103,4 +103,4 @@ carried on the record, MET-03).
 
 ## Next
 
-Gate 2a on record, then x2-lock in the builder's context.
+Gate 2a on record, then lock in the builder's context.

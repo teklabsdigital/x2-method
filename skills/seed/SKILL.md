@@ -1,5 +1,5 @@
 ---
-name: x2-seed
+name: seed
 description: Use immediately after gate 1 (stories approved) to create the project repo from the kernel edition and make the method durable inside it. Also use when an existing X2 project is missing its CLAUDE.md standing constraints or its turn ledger. Do not use before stories are approved, and never use it to modify the kernel itself.
 ---
 
@@ -49,8 +49,8 @@ violations (MET-08). Seed exists so neither happens again.
    builder appends every human turn the moment it happens: number, what happened, why a human was
    needed, provisional bucket. Every turn is fed to intake as it happens, not only defects; intake
    classifies, and its bucketing governs (MET-05). Backfill the gate-1 ideation turns from
-   x2-stories now, so nothing lives only in a compactible context.
-5. **Land the behaviour spec.** If x2-stories produced one, write it into `design/` beside where
+   stories now, so nothing lives only in a compactible context.
+5. **Land the behaviour spec.** If stories produced one, write it into `design/` beside where
    D-000 will live, so the design step has its behaviour source before it runs (MET-02's gap).
 
 ## Human-turn contract
@@ -68,4 +68,4 @@ violations (MET-08). Seed exists so neither happens again.
 
 ## Next
 
-x2-decompose.
+decompose.

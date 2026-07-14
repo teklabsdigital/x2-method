@@ -1,5 +1,5 @@
 ---
-name: x2-help
+name: help
 description: Use when someone asks what an X2 skill does, which skill to run next, how the gates work, or where an artifact lives. A quick in-flight reference; for the method's rationale, read X2.md at the x2-method repo root.
 ---
 
@@ -17,23 +17,23 @@ turns per shipped slice, kept in a ledger file in the repo.
 
 | Skill | One line | Gate it requests |
 |-------|----------|------------------|
-| x2-stories | Problem discovery to epic-level stories, one line each | Gate 1: stories approved |
-| x2-seed | Create the repo from the edition, arm the CI gate, write CLAUDE.md constraints, start the ledger | none (setup) |
-| x2-decompose | D-000 five-lens decomposition, persistent schema, slice one, deltas file | none (stays-ahead turns) |
-| x2-design | Whole-product prototype and design system, in its own context | Gate 2a: prototype approved |
-| x2-lock | Copy the prototype and full design system into the repo, verify, stamp provenance | Gate 2b: the lock |
-| x2-derive-tests | Fidelity ledger and acceptance scenarios derived from the locked portion | none |
-| x2-implement | Build all of the locked portion to green autonomously | none (the exit report checks the contract) |
-| x2-slice-exit | The exit report: the definition of green, audited by intake | Gate 3: ratified green |
+| stories | Problem discovery to epic-level stories, one line each | Gate 1: stories approved |
+| seed | Create the repo from the edition, arm the CI gate, write CLAUDE.md constraints, start the ledger | none (setup) |
+| decompose | D-000 five-lens decomposition, persistent schema, slice one, deltas file | none (stays-ahead turns) |
+| design | Whole-product prototype and design system, in its own context | Gate 2a: prototype approved |
+| lock | Copy the prototype and full design system into the repo, verify, stamp provenance | Gate 2b: the lock |
+| derive-tests | Fidelity ledger and acceptance scenarios derived from the locked portion | none |
+| implement | Build all of the locked portion to green autonomously | none (the exit report checks the contract) |
+| slice-exit | The exit report: the definition of green, audited by intake | Gate 3: ratified green |
 
-On demand: **x2-problem-solve** (runtime defect, cause unknown, fewest observation turns) and this
+On demand: **problem-solve** (runtime defect, cause unknown, fewest observation turns) and this
 skill.
 
 ## Where the durable artifacts live
 
 | Artifact | Home |
 |----------|------|
-| Standing constraints, turn-report shape | the repo's CLAUDE.md (written by x2-seed) |
+| Standing constraints, turn-report shape | the repo's CLAUDE.md (written by seed) |
 | Turn ledger (append-only, one row per human turn) | `docs/work/` |
 | D-000 decomposition, story set, schema decisions | `docs/decisions/D-000-decomposition.md` |
 | D-0xx decisions from record-gaps | `docs/decisions/` |
