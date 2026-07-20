@@ -21,6 +21,10 @@ meaning; the code answers "why does this rule exist".
 | MET-n | Method findings from the pilot acceptance test |
 | INV-n | Invariant candidates from the pilot acceptance test |
 | CONF-n | Confirmations: mechanisms that held under pressure in the pilot |
+| NS-n | Negative-space register entries, ruled per project (`record/negative-space.md`) |
+| CF-n | Cross-project confirmations from extraction runs (`record/confirmations.md`) |
+| PC-n | Candidates queued for the next invariants pass (`record/candidates.md`) |
+| P1, P2, ... | Extracted projects, in extraction order; P1 is the pilot |
 
 ## X: extraction adjudications
 

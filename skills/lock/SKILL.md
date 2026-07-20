@@ -38,6 +38,12 @@ The client's token source derives from the export on disk, nothing else.
   onto the brief's screen inventory and action edges, both directions. An orphan on either side
   (a brief surface the prototype lacks, a prototype surface the brief never named) is surfaced at
   the lock for a ruling, never silently absorbed.
+- **The exposure review.** A prototype can carry security-shaped choices, and transcription would
+  ship them. Walk the portion for: entry points it exposes (an admin door on a public page),
+  identifiers it addresses things by (sequential versus opaque on any public surface), and
+  embedded exposure values (domains, addresses, ids). Each finding is surfaced for a ruling at
+  the lock, never silently transcribed; the second project shipped and then moved both instances
+  it missed (record: NS-3).
 
 ## Human-turn contract
 

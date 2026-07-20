@@ -26,8 +26,9 @@ turns per shipped slice, kept in a ledger file in the repo.
 | implement | Build all of the locked portion to green autonomously | none (the exit report checks the contract) |
 | slice-exit | The exit report: the definition of green, audited by intake | Gate 3: ratified green |
 
-On demand: **problem-solve** (runtime defect, cause unknown, fewest observation turns) and this
-skill.
+On demand: **problem-solve** (runtime defect, cause unknown, fewest observation turns),
+**extract** (after a project completes: the quality feedback loop that folds the ledger's
+evidence back into the method), and this skill.
 
 ## Where the durable artifacts live
 
@@ -55,3 +56,5 @@ pass), or admin (uncounted). Intake's classification governs.
 - `GLOSSARY.md` at the x2-method repo root: every record code the skills cite (MET-n, INV-n,
   CONF-n, X-n, B-codes), defined in one line each.
 - `kernel/claims/README.md`: what the build enforces, which is what the skills no longer say.
+- `record/` at the x2-method repo root: the sanitized cross-project record (negative-space
+  register and churn table, queued candidates, confirmations, metric history).

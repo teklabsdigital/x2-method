@@ -27,6 +27,25 @@ D-000 also records:
   Build scope and design scope are separate rulings: the build is slice-first, the design is
   whole-product (MET-03); record both.
 
+## The launch and exposure pre-flight
+
+Applies when the product will ship to a public audience; rule each concern IN or OUT now, so none
+of it arrives as ad-hoc directives at the end (record: NS-2, NS-3):
+
+- The estate question: does this greenfield app land inside an existing brand estate (styles,
+  domains, policies, analytics) that is not greenfield?
+- Exposure values: serving domain, sender addresses, public identifiers, entry points. These are
+  ruled before first use, never assumed; an assumed value propagates into green artifacts and
+  surfaces late.
+- Launch concerns: brand chrome and legal pages, discoverability (robots, sitemaps, social and
+  AI-readability), analytics, abuse pricing, and edge hardening.
+
+Also read the cross-project churn table in the method's `record/negative-space.md`: it names the
+decision types history says will churn. Pre-decide the pre-decidable ones here; budget the
+iteration-inherent ones (story refinement, model selection, content voice) instead of fighting
+them. For the marked chronic churn types, record a confidence and a "wrong-if" line on the
+decision so reality can trip it later.
+
 ## The deltas file
 
 Start `deltas.md`: how this project differs from the kernel edition. It grows as the build

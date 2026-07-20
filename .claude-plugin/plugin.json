@@ -1,7 +1,7 @@
 {
   "name": "x2",
   "displayName": "X2 Method",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Build production software with AI coding agents. Invariants in the build, decisions with people, progress in human turns per shipped slice.",
   "author": {
     "name": "Teklabs Digital",

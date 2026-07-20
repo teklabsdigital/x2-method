@@ -27,10 +27,21 @@ three gates: nothing is designed, seeded, or built until the stories are approve
   module, so the build exercises real seams.
 - Propose candidate framings and let the human pick. They drive the choice.
 
+## The story-prototype loop
+
+Stories are dynamic. Owners iterate them heavily, and there is an entire loop from stories to UI
+prototype and back that refines the set until acceptance: seeing the product's shape changes what
+the owner knows they want. Gate 1 is therefore provisional until that loop settles. Re-approving a
+revised set is a normal gate turn, not a breach; expect it, request it explicitly, and revise
+D-000 before design reads it. The evidence: the second project's story set was its highest-churn
+decision (14 post-approval revisits before settling through the prototype), and the churn was the
+work, not a defect (record: NS-1).
+
 ## Human-turn contract
 
 - Requests **gate 1: stories approved** (the first MET-07 gate), taken when the story set is tight
-  and both sides agree. The gate blocks seed and everything after it.
+  and both sides agree. The gate blocks seed and everything after it. Each later revision requests
+  the gate again.
 - Ideation turns are part of the measured flow and are logged.
 
 ## What this skill must NOT produce
