@@ -7,7 +7,7 @@ provenance: X-4, B2-9
 
 # SEC-5: No secret in committed configuration; dev secrets local; runtime secrets rotatable
 
-**Statement.** No credential, key, or token appears in any committed configuration file. Development secrets live in the developer-local secret store, outside the repository tree. Deployed integration credentials live in database configuration entities manageable through the application, or behind a vault port where the stored row holds only an opaque handle: the secret itself is never modelled as a domain property and never logged.
+**Statement.** No credential, key, or token appears in any committed configuration file. Development secrets live in the developer-local secret store, outside the repository tree. Deployed integration credentials live in database configuration entities manageable through the application, or behind a vault port where the stored row holds only an opaque handle: the secret itself is never modelled as a domain property and never logged. A secret moves between machines or projects store to store; it never transits a chat transcript, a work log, or any committed file (PC-21, P2 extraction).
 
 **Harm.** Committed secrets outlive their commit: they persist in history, forks, and backups, and rotate only when someone remembers. A prior system carried committed dev seed logins and zero user-secrets configuration (B2-9), the recorded legacy exception this claim exists to prevent.
 

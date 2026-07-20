@@ -12,6 +12,9 @@ provenance: catalog named-gap promotion (invariants pass R7, 2026-07-11), X2 aut
 built now: every decision carries a `provenance` field naming the story, epic, or claim it serves, so the chain
 reads code to decision to story as a linted chain. Downward, owed: no decision lives only in code; a module's
 behaviour traces to a governing decision, and a regeneration from the decisions must not lose behaviour.
+Quantitative bounds are decisions too: every cap, length, and limit in schema or contracts traces to a ruling,
+and a scaffold default is flagged at derivation, never discovered in production (PC-7, P2 extraction: a silent
+scaffold cap eight times the ruled figure shipped through three slices).
 
 **Harm.** Thirty-plus claims enforce the invariant tier with rigor and, before this claim, zero enforced the
 decision tier. Every nondeterministic-regeneration surprise is an unrecorded-decision-in-code case, and nothing

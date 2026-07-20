@@ -33,3 +33,6 @@ callback is all it takes to ship an inert product that reads as done.
 new primary flow owes its smoke line, and the flow list is reviewed at each slice (the slice-exit report's
 coverage table is where a missing flow shows). The payoff of the thin-layer rule is that the smoke stays tiny:
 the services underneath are already the tested seam (TEST-2), so the smoke only proves delegation, not behavior.
+Where the shell undergoes build-time substitution, the smoke asserts the BUILT form, never the source form; a
+source-form assertion is the vacuous pass TEST-4 exists to kill (PC-3, P2 extraction: a source-asserted analytics
+snippet shipped an unsubstituted placeholder that fired live requests).

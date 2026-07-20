@@ -38,9 +38,11 @@ Each entry carries an **Edition (v1)** tag. A single `built` was doing too much 
 
 v1 tally (retrued by the invariants pass, 2026-07-11): 25 `proven` (two of them, TEST-3 and HUM-1, gate only once branch protection is armed at instantiation), 6 `patterned`, 2 `latent`, 4 `owed`. Total 37: the acceptance test promoted UI-5, CFG-1, HUM-1, and DEC-1 into the cut line.
 
+The P2 extraction pass (2026-07-21, `record/candidates.md`) minted nine further claims, every one proven in the reference project and honestly tagged `owed` in the edition with a named promotion trigger: SEC-7, SEC-8, SEC-9, DATA-6, CON-3, AI-3, OBS-1, TEST-4, SRV-1. The same pass extended five existing claims in place (TEST-2 probe-surface gating, UI-4 exception scoping, DEC-1 ruled bounds, SEC-5 store-to-store transfer, UI-5 built-form assertion). Current tally: 25 `proven`, 6 `patterned`, 2 `latent`, 13 `owed`. Total 46.
+
 One dependency sits under every `proven` and `patterned` tag: a mechanism gates a merge only once **TEST-3's loop is armed by branch protection**, which is an instantiation step, not the workflow file. Until then the pipeline runs but blocks nothing, so every gating tag reads "enforced once armed". The kernel acceptance test must verify instantiation actually arms it; see TEST-3.
 
-## Claims (37)
+## Claims (46)
 
 ### Tenancy
 
@@ -83,7 +85,7 @@ Five claims, layered so no single one is load-bearing: the tenant is read only f
 
 ### Security
 
-Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out of URLs (SEC-3), harden and revoke tokens (SEC-4), keep secrets out of the repo (SEC-5), and keep them out of the logs (SEC-6).
+Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out of URLs (SEC-3), harden and revoke tokens (SEC-4), keep secrets out of the repo (SEC-5), keep them out of the logs (SEC-6), keep public surfaces un-walkable (SEC-7), price the abuse-shaped doors (SEC-8), and ship the deployment edge (SEC-9).
 
 #### [SEC-1](SEC-1-every-endpoint-gated.md) - Every endpoint gated
 - **Statement:** Every endpoint requires an explicit permission policy; bare authenticated-only registrations are rejected; anonymous endpoints exist only on an enumerated, reviewed allowlist; the host registers a deny-by-default fallback authorization policy.
@@ -127,6 +129,27 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 - **Weakening:** No global scan proves an arbitrary future log statement safe; each new logging surface owes its test. A metrics-plane content allowlist is the named v2 extension.
 - **Edition (v1):** patterned (the v1 harness-redaction surface is tested; hub log-safety is owed, trigger: realtime).
 
+#### [SEC-7](SEC-7-opaque-public-identifiers.md) - Opaque public identifiers
+- **Statement:** Any resource reachable without authentication is addressed by an opaque, single-purpose token (unguessable, minted once, unique-indexed); sequential or dense identifiers never address a public surface, and derivation treats this as binding even when a frozen design artifact shows otherwise.
+- **Harm:** A public surface addressed by a dense id is enumerable: walking the id space harvests every resource, and the names on them, without authenticating.
+- **Enforcement (centralized):** A scan over the SEC-1 anonymous allowlist asserting token-typed identifying parameters, plus a persistence check that public tokens are unique-indexed and randomly minted.
+- **Weakening:** Opaqueness is a property of the minting, not the name; the minting idiom is the real defense. Composes with SEC-3's opaque-surrogate pattern.
+- **Edition (v1):** owed (trigger: first anonymous resource surface).
+
+#### [SEC-8](SEC-8-abuse-posture.md) - Abuse posture
+- **Statement:** Every anonymous and spend-shaped endpoint (mints, sends, paid model calls) carries a named rate-limit policy (per source when anonymous, per principal when authenticated, plus a host-wide ceiling on paid calls that survives fresh-principal minting); request bodies are capped to a ruled figure; limit values are operational settings (CFG-1).
+- **Harm:** A sound security spine with unpriced doors is still trivially degradable and financially attackable; the framework's default body cap is a free amplification lever.
+- **Enforcement (centralized):** A spine test asserting policy attachment on every anonymous and spend-shaped endpoint plus the global limiter and body cap; composed-host facts observe the refusals.
+- **Weakening:** In-process limiter state is per-instance (shared store is the named upgrade); "spend-shaped" is a D-000 review act.
+- **Edition (v1):** owed (trigger: first publicly exposed edition host).
+
+#### [SEC-9](SEC-9-deployment-edge-hardening.md) - Deployment-edge hardening
+- **Statement:** The host ships its edge posture: forwarded-header handling with explicitly configured proxy trust (fail-safe, first in the pipeline), the standard security headers on every response including re-executed error paths, transport security over TLS with a ruled max age, and no server banner.
+- **Harm:** Behind a TLS-terminating proxy, unhandled forwarded headers collapse SEC-8's per-source limits into one bucket and make scheme checks lie; missing headers leave clickjacking and sniffing open on exactly the pages nobody reviews.
+- **Enforcement (centralized):** Host tests pin the header set (on an error path, not only the happy path) and the forwarded-trust options.
+- **Weakening:** CSP is deliberately separate (an inline-bootstrap SPA needs its own design pass); transport-security subdomain and preload flags are owner opt-ins.
+- **Edition (v1):** owed (trigger: first deployed edition host).
+
 ### Time
 
 #### [TIME-1](TIME-1-utc-offset-only.md) - UTC, offset-aware, and nothing else
@@ -138,7 +161,7 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 
 ### Data
 
-Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side effects made at-most-once (DATA-3), cross-store sequences that reconcile (DATA-4), and config that fails fast (DATA-5).
+Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side effects made at-most-once (DATA-3), cross-store sequences that reconcile (DATA-4), config that fails fast (DATA-5), and schema change that never rides a serving boot (DATA-6).
 
 #### [DATA-1](DATA-1-stores-records-downward-deps.md) - Stores, records, downward deps
 - **Statement:** Data access lives behind store interfaces; records are pure data holders with zero behavior; an endpoint never touches a store or DbContext (it calls one service method); dependencies flow downward only; cross-boundary collaborators are interfaces registered at the composition root.
@@ -175,6 +198,13 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 - **Weakening:** Dev environments may relax specific checks, but each relaxation is conditional on the environment name and visible in one place, never a silent committed default (SEC-5).
 - **Edition (v1):** proven.
 
+#### [DATA-6](DATA-6-migrate-and-exit.md) - Migrate and exit
+- **Statement:** Every host ships an explicit migrate mode that applies migrations and exits without starting the serving process; a serving boot never migrates as a side effect; migrate mode needs only the connection string, never runtime secrets; scripts and CI delegate to the mode.
+- **Harm:** Boot-time migration couples schema change to process start: crash-looped deploys hold locks, scaled instances race the migration, and a serving boot silently performs the schema mutation HUM-1 says needs a human turn.
+- **Enforcement (centralized):** Host tests assert the mode applies-and-exits without serving and that a serving boot performs no migration; the composed tier boots only against a migrated database.
+- **Weakening:** Throwaway test databases may auto-apply at provisioning; that is the provisioning path, not a serving boot.
+- **Edition (v1):** owed (trigger: next edition build pass; a small host change).
+
 ### Configuration
 
 #### [CFG-1](CFG-1-operational-settings-are-config.md) - Operational settings are configuration, not code
@@ -186,7 +216,7 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 
 ### Contracts and wire
 
-One dialect for the whole API (CON-1), and a shared fixture wherever a contract is mirrored by hand (CON-2).
+One dialect for the whole API (CON-1), a shared fixture wherever a contract is mirrored by hand (CON-2), and reads that carry everything their surface's actions depend on (CON-3).
 
 #### [CON-1](CON-1-wire-conventions.md) - One wire dialect
 - **Statement:** The API speaks one dialect everywhere: errors are RFC 9457 problem details; JSON property names are camelCase; enums cross the wire as closed string sets through a single converter configuration; identifiers are opaque strings. No endpoint invents its own error shape, casing, or enum encoding.
@@ -202,6 +232,13 @@ One dialect for the whole API (CON-1), and a shared fixture wherever a contract 
 - **Weakening:** Scoped to hand-mirrored contracts only, and it compares the field-name set, not types or nullability. If a slice generates client types from the schema, the obligation collapses to the generator running in the build; never double-mandate.
 - **Edition (v1):** proven.
 
+#### [CON-3](CON-3-read-completeness.md) - Read completeness for action-bearing surfaces
+- **Statement:** A read backing a user-facing surface returns every field the availability of that surface's actions depends on; no action's enabled state derives from data only a different flow populates; derived tests cover each action-bearing surface's cold-entry paths (fresh load, session restore).
+- **Harm:** Every tier green while a restored session shows a dead primary action, because the enabling field lived only in flow-local state on a path the user did not take this time.
+- **Enforcement (per-seam):** Derivation discipline: each action-bearing surface owes a cold-entry scenario asserting its actions are live from the read alone; the exit report's coverage table names them.
+- **Weakening:** No static scan knows which fields an action depends on; honestly per-seam.
+- **Edition (v1):** owed (trigger: first edition project with a restorable session).
+
 ### Realtime
 
 #### [RT-1](RT-1-realtime-discipline.md) - Realtime discipline
@@ -210,6 +247,15 @@ One dialect for the whole API (CON-1), and a shared fixture wherever a contract 
 - **Enforcement (centralized + structural):** Server-side, a hub-surface architecture test rejects binary-typed hub method parameters and asserts a bounded maximum receive size; client-side, structural review that exactly one connection factory exists and all modules register through its dispatcher, with the e2e harness (TEST-2) exercising the socket path.
 - **Weakening:** The client-side single-connection rule has no cheap static proof in TypeScript; the skeleton's structure (one factory module, deep-path import bans) plus the harness is the mechanism.
 - **Edition (v1):** owed (trigger: first realtime slice; the edition is REST-only in v1, with the hub arch test, message-size cap, client seam, and socket harness scenario named as the promotion set).
+
+### Serving
+
+#### [SRV-1](SRV-1-one-deployable-unit.md) - One deployable unit
+- **Statement:** A web product serves its client from the server host as one deployable unit: the server serves the built client with a deliberate header posture, no cross-origin surface is registered in any environment, and a fresh clone deploys from the single publish step; dev keeps the client dev server behind a proxy; product API routes live under a dedicated prefix, health at the root.
+- **Harm:** A separately served client ships a cross-origin surface that exists only to serve the split, doubles the deploy story, and lets dev and production network shapes diverge (the production bundle quietly pointing at a dev URL).
+- **Enforcement (centralized):** Composed-host tests pin the static serving and headers; an arch test asserts no cross-origin registration; a publish check asserts the artifact contains the client.
+- **Weakening:** The SPA-fallback hole opens only with a client router, and then through SEC-1's reviewed anonymous allowlist. Applies to web products; an API-only project re-rules it in deltas at adoption.
+- **Edition (v1):** owed (trigger: next edition build pass).
 
 ### Modules and documentation
 
@@ -293,7 +339,7 @@ One token source kept honest against the design system (UI-1), literal visuals b
 
 ### Testing
 
-Three tiers on real engines (TEST-1), an out-of-process e2e harness through the real client (TEST-2), and a CI loop that runs all of it on every push (TEST-3). TEST-3 is the claim that makes every other claim's tag true, and until it is armed, it makes none of them true.
+Three tiers on real engines (TEST-1), an out-of-process e2e harness through the real client (TEST-2), a CI loop that runs all of it on every push (TEST-3), and a proof the product boots and serves in its real runtime shape (TEST-4). TEST-3 is the claim that makes every other claim's tag true, and until it is armed, it makes none of them true.
 
 #### [TEST-1](TEST-1-tier-strategy.md) - Tier strategy
 - **Statement:** Tests run in three tiers, each on a real engine: unit and service (database-free by design; where a data shape is unavoidable, a real embedded engine, never a fake in-memory DB provider), integration (the real target engine in disposable containers, a unique database per run, real migrations, one provisioning path), and end-to-end (a small suite through the real client service layer). All three run in the CI loop.
@@ -316,6 +362,13 @@ Three tiers on real engines (TEST-1), an out-of-process e2e harness through the 
 - **Weakening:** The loop gates only once branch protection *requires* it, and arming that is an instantiation step, not the workflow file. Until it is armed the pipeline runs but blocks nothing, and every `proven`/`patterned` tag in this catalog is conditional on that step: strong mechanism, zero enforcement, which is the headline finding reproduced one instantiation step away. "Set at instantiation" is exactly the step that gets skipped, so the kernel acceptance test must verify instantiation arms the gate, not merely that the workflow exists.
 - **Edition (v1):** proven mechanism, template not yet armed. The workflow is complete and runs; branch protection requiring it is set when the workflow moves to the repo root at instantiation. This is the catalog's keystone and its one honest asterisk.
 
+#### [TEST-4](TEST-4-real-runtime-boot-proof.md) - Real-runtime boot proof
+- **Statement:** The verification set proves the product in its real runtime shape: the dev boot proves environment selection and secret loading; the client-to-server path is proven where network policy applies (an in-process DOM shim enforces neither); and anything substituted at build time is asserted in its built form.
+- **Harm:** Every tier green about the wrong thing: a host booting as the wrong environment with no secrets, a browser with no route to the API, a built shell shipping an unsubstituted placeholder. All three shipped green through in-process tiers in the reference runs.
+- **Enforcement (centralized):** The boot proof scripted in the verify set (the manifest's start task run to readiness), the e2e path exercising the served origin, and smoke assertions targeting the built artifact.
+- **Weakening:** A liveness check, not a behaviour suite; behaviour stays with the tiers.
+- **Edition (v1):** owed (trigger: next edition build pass; UI-5's in-process smoke is the base, the real-boot assertion and built-form pinning complete it).
+
 ### Human approval
 
 #### [HUM-1](HUM-1-irreversible-surfaces-human-turn.md) - Irreversible surfaces get a human turn, unconditionally
@@ -327,7 +380,7 @@ Three tiers on real engines (TEST-1), an out-of-process e2e harness through the 
 
 ### AI trust boundary
 
-The server owns identity on every tool call (AI-1), and untrusted content never widens what a tool may do (AI-2).
+The server owns identity on every tool call (AI-1), untrusted content never widens what a tool may do (AI-2), and every prompt lives in configuration, assembled at one seam (AI-3).
 
 #### [AI-1](AI-1-server-injected-identity.md) - Server-injected identity
 - **Statement:** When an AI actor invokes tools, identity, tenant, and scope parameters are injected unconditionally by the server from the authenticated context; actor-supplied values for those parameters are rejected before any merge (matching case-insensitively), and if the authenticated context is unset the tool call throws.
@@ -343,6 +396,22 @@ The server owns identity on every tool call (AI-1), and untrusted content never 
 - **Weakening:** Phases with the agentic surface. v1 ships the trust-tier claim, the read-only guard pattern, and AI-1's chokepoint; full taint-tracking is not v1, and an SSRF egress guard is the named v2 companion (promoted to v1 if the first project makes outbound agentic requests).
 - **Edition (v1):** patterned (the v1 read-only tool has its guard test; each new tool owes its own; full taint-tracking and the SSRF egress guard are owed, trigger: outbound agentic requests).
 
+#### [AI-3](AI-3-prompt-architecture.md) - Prompt architecture
+- **Statement:** Every model-facing prompt (personas, task instructions, rubrics) is configuration, versioned beside the content it governs, validated at load, assembled at one seam; only the wire-format contract lives in code. Where one rubric governs a generation pass and an evaluation pass, both assemble from the same configuration: generation carries the whole rubric, evaluation only the unit under review.
+- **Harm:** Prompts split across code and config cannot be read or evolved together, and a generation pass fed a thinner rubric than the evaluation pass drifts until the system rejects its own generated output, a coherence failure no deterministic tier can catch.
+- **Enforcement (centralized):** Load-time config validation (DATA-5) plus an arch test banning prompt-shaped literals outside the wire-contract seam (a heuristic registry in the CFG-1 pattern).
+- **Weakening:** Literal detection is heuristic; the single assembly seam is the structural defense. Applies when the product is model-backed.
+- **Edition (v1):** owed (trigger: first model-backed feature in an edition project).
+
+### Observability
+
+#### [OBS-1](OBS-1-external-effect-seam-observability.md) - External-effect seam observability
+- **Statement:** Every port performing an external side effect ships observability at the seam from day one: accept and settle logged with elapsed time, the provider's traceable operation id captured on accept, timeouts logged with the waited duration; acceptance and delivery are recorded as distinct facts; a child DI container receives the host's logger factory so no seam can go dark.
+- **Harm:** A live incident becomes archaeology: the app cannot say whether the fault is its own, the provider's, or downstream, and the diagnosis burns human turns the seam log would have answered.
+- **Enforcement (per-seam):** Each external port owes a named test asserting its accept/settle logging shape and redaction (SEC-6); the logger-factory handover is pinned by the port's test.
+- **Weakening:** Per-seam by nature; deep terminal-status awaiting is gated to diagnostic configurations.
+- **Edition (v1):** owed (trigger: first external side-effect port; this opens the observability family the v1 cut deferred).
+
 ## Named gaps: resolved (invariants pass, 2026-07-11)
 
 The two candidate claims this section used to hold were both promoted into the cut line by the owner's ruling at the
@@ -353,4 +422,4 @@ section predicted, and the cut line moved from 33 to 37 (UI-5 and CFG-1 were min
 
 ## Explicitly out of v1 (recorded, not lost)
 
-Observability wiring (the MeterListener tag-allowlist pattern is noted for v2), orchestration patterns, Claude Design export pipeline (the artifact UI-1 and UI-4 both want to read from), TraceLint integration, crypto-shredding RTBF, SSRF egress guard (promote to v1 if the first kernel project is agentic-outbound), and migration tooling beyond HUM-1.
+Orchestration patterns, Claude Design export pipeline (the artifact UI-1 and UI-4 both want to read from), TraceLint integration, crypto-shredding RTBF, SSRF egress guard (promote to v1 if the first kernel project is agentic-outbound), and migration tooling beyond HUM-1 and DATA-6. Observability left this list on 2026-07-21: OBS-1 opens the family at the external-effect seam; the MeterListener tag-allowlist pattern remains its v2 extension.

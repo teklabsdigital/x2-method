@@ -3,82 +3,64 @@ kind: record
 status: working
 ---
 
-# Candidates for the next invariants pass
+# Candidates for the invariants pass
 
 Accepted at the P2 rulings pass (2026-07-21) under the governing filter: an item enters only if it
 reduces paperwork, improves efficiency, accuracy, or quality, or reduces work for the X2 user.
 Each carries an applies-when condition; nothing is universal unless it says so. Items graduate
-into `kernel/claims/` with an enforcement mechanism and a red-green proof, then leave this file.
-`kernel/claims/` is never edited during extraction.
+into `kernel/claims/` and leave the queue; `kernel/claims/` is never edited during extraction.
 
-## Priority
+## Graduated (minted or applied, invariants pass 2026-07-21)
 
-- **PC-1 Real-runtime boot proof.** Universal. The edition proves the product boots and serves in
-  its real runtime: environment selection, secret loading, and the client-to-server network path.
-  Test doubles that enforce neither network policy nor environment selection cannot stand in.
-  Closes the class where every tier is green about the wrong thing while the real product fails
-  live (P2: two instances, one in dev boot, one in a live send).
-- **PC-2 Read completeness for action-bearing surfaces.** Universal. A read backing a user action
-  returns every field that action's availability depends on, and derived tests cover the
-  session-restore path of every action-bearing surface (P2: a restored session had a dead primary
-  action because one identity field lived only on another record).
+Fourteen of the original twenty-four crossed into the catalog:
 
-## Accepted, queued
+- PC-1 real-runtime boot proof and PC-3 built-form assertion: minted as **TEST-4** (PC-3 also
+  extends UI-5's smoke).
+- PC-2 read completeness plus session-restore coverage: minted as **CON-3**.
+- PC-4 opaque public identifiers: minted as **SEC-7**.
+- PC-5 prompt architecture: minted as **AI-3**.
+- PC-6 seam observability for external effects: minted as **OBS-1** (opens the observability
+  family).
+- PC-12 migrate-and-exit: minted as **DATA-6**.
+- PC-13 abuse posture: minted as **SEC-8**.
+- PC-14 one deployable unit: minted as **SRV-1**.
+- PC-16 deployment-edge hardening: minted as **SEC-9**.
+- PC-7 ruled bounds: extended into **DEC-1**.
+- PC-17 environment-gated probe surfaces: extended into **TEST-2**.
+- PC-21 secrets store to store: extended into **SEC-5**.
+- PC-24 exception scoping: extended into **UI-4**.
 
-- **PC-3 Built-form assertion.** Universal. Anything substituted at build time is asserted in its
-  built form; a source-form assertion cannot catch build-time behaviour.
-- **PC-4 Opaque public identifiers.** Applies when any resource is publicly addressable. Public
-  resources are addressed by opaque single-purpose tokens, never sequential identifiers, and
-  derivation treats this as binding even when the frozen artifact shows otherwise.
-- **PC-5 Prompt architecture.** Applies when a feature is model-backed. Every model-facing prompt
-  is configuration, versioned beside the content it governs, assembled at one seam; generation and
-  evaluation passes feed from the same rubric, generation carrying the whole method, evaluation
-  only the unit under review; only the wire format stays in code.
-- **PC-6 Seam observability for external effects.** Applies when the product performs external
-  side effects. Every such port ships day-one observability: accept/settle latency and the
-  provider's traceable operation id; accepted and delivered are distinct facts. A child dependency
-  container receives the host's logger factory.
-- **PC-7 Ruled bounds.** Universal. Every quantitative bound (caps, lengths, limits) traces to a
-  ruling; scaffold defaults are flagged at derivation, not discovered later.
+All nine mints are tagged `owed` in the edition with named promotion triggers (proven in the
+reference project, not yet realized in the kernel edition); the edition build pass that realizes
+the next-build-pass triggers (DATA-6, TEST-4, SRV-1) is the standing owed work.
+
+## Still queued (methodology and edition items, not claim-shaped)
+
 - **PC-8 Provisioning feedback.** Applies when a CLI provisions accounts or credentials. An
   upserting command reports created versus updated; silent upsert turns a typo into a phantom
-  account.
+  account. Home: the edition's CLI idiom when the first provisioning command ships.
 - **PC-9 Proposal visibility.** Universal (harness ergonomics). A proposal requesting a ruling is
-  visible in the same surface as the question that asks for it.
+  visible in the same surface as the question that asks for it. Home: skill guidance.
 - **PC-10 Ledger enforcement trigger.** Universal (method mechanism). The turn-ledger rule gets a
-  deterministic harness trigger at the moment a turn lands, not only a documentary home.
+  deterministic harness trigger at the moment a turn lands (a prompt-submit hook the edition
+  ships), not only a documentary home.
 - **PC-11 Scenario id registry.** Universal. Test and scenario identifiers allocate from one
-  project-wide registry, never per-slice ledgers minting from the same namespace.
-- **PC-12 Migrate-and-exit.** Universal. Every host ships a migrate-and-exit mode; a web boot
-  never migrates as a side effect, and migrate mode needs only the connection string.
-- **PC-13 Abuse posture in the spine.** Applies when the product is publicly exposed. Anonymous
-  and spend-shaped endpoints are priced (rate limits, including a host-wide ceiling on paid
-  calls), request bodies capped, with the spine test pinning the policy attachments.
-- **PC-14 One deployable unit.** Applies to web products. The edition serves its client from the
-  server host with no cross-origin surface in any environment; dev keeps the client dev server
-  behind a proxy; the composed tier pins the serving.
+  project-wide registry, never per-slice ledgers minting from the same namespace. Home: the
+  derive-tests skill and the ledger template.
 - **PC-15 Configuration-driven UI for template-shaped products.** Applies when the product is an
   instance of a template family. The UI renders configuration; new instances are content, not
-  code.
-- **PC-16 Deployment-edge hardening set.** Applies to web products. Forwarded-header trust from
-  config, standard security headers, transport-security opt-ins, server banner off; pinned by
-  tests through the composed host.
-- **PC-17 Environment-gated probe surfaces.** Universal. Test-only surfaces register only in the
-  harness-sanctioned environments; a production-shaped boot proves the routes absent.
+  code. Claim-shaped only for that product class; held here so the vertical does not leak into
+  the universal catalog.
 - **PC-18 Green-fields data posture.** Universal. Decompose names the data posture (abandonable
-  dev data or preserved); abandonable makes migration regeneration cheap, and the posture should
-  be a recorded default, not an assumption.
+  dev data or preserved); recorded as a decompose step, not a claim.
 - **PC-19 The commodity-decision tier.** Universal (turn reducer). The builder takes and records
-  mechanism-level calls without stopping, in the decision record or handover; only novel or
-  irreversible calls stop for the human.
-- **PC-20 Ruled pre-authorization.** Universal (turn reducer). A standing unconditional turn (for
-  example, applying migrations to a dev database) can be pre-authorized by an explicit ruling; the
-  pre-authorization is itself the recorded turn.
-- **PC-21 Secrets cross store to store.** Universal. A secret moves between projects or machines
-  store to store; it never enters a transcript.
-- **PC-22 Edition manifest must not assume a design export at seed.** Universal. A green-field
-  project has no prototype until gate 2a; the manifest defers the design-dependent steps.
-- **PC-23 Docs-lint root allowlist carries the method's own root files.** Universal (edition
-  defect class): the lint must allow every root file the method itself homes at the root.
-- **PC-24 Exception scoping in fidelity ledgers.** Universal. A ledger exception is scoped to
-  named elements, never a family; an exception wider than its rationale hides gaps.
+  mechanism-level calls without stopping; only novel or irreversible calls stop for the human.
+  Home: the implement skill.
+- **PC-20 Ruled pre-authorization.** Universal (turn reducer). A standing unconditional turn can
+  be pre-authorized by an explicit ruling; the pre-authorization is itself the recorded turn.
+  Home: the implement skill and HUM-1's weakening notes.
+- **PC-22 Seed manifest must not assume a design export.** Universal. A green-field project has
+  no prototype until gate 2a; the manifest defers the design-dependent steps. Home: edition
+  manifest fix.
+- **PC-23 Docs-lint root allowlist carries the method's own root files.** Universal. Home:
+  edition lint fix.
