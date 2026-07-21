@@ -41,9 +41,6 @@ the next-build-pass triggers (DATA-6, TEST-4, SRV-1) is the standing owed work.
   account. Home: the edition's CLI idiom when the first provisioning command ships.
 - **PC-9 Proposal visibility.** Universal (harness ergonomics). A proposal requesting a ruling is
   visible in the same surface as the question that asks for it. Home: skill guidance.
-- **PC-10 Ledger enforcement trigger.** Universal (method mechanism). The turn-ledger rule gets a
-  deterministic harness trigger at the moment a turn lands (a prompt-submit hook the edition
-  ships), not only a documentary home.
 - **PC-11 Scenario id registry.** Universal. Test and scenario identifiers allocate from one
   project-wide registry, never per-slice ledgers minting from the same namespace. Home: the
   derive-tests skill and the ledger template.

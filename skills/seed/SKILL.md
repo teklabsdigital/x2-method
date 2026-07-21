@@ -50,6 +50,11 @@ violations (MET-08). Seed exists so neither happens again.
    needed, provisional bucket. Every turn is fed to intake as it happens, not only defects; intake
    classifies, and its bucketing governs (MET-05). Backfill the gate-1 ideation turns from
    stories now, so nothing lives only in a compactible context.
+   The rule is enforced, not remembered: the edition ships a prompt-submit hook in
+   `.claude/settings.json` that injects the ledger reminder on every human prompt, so it re-enters
+   with every turn and cannot decay with a long chat (PC-10; the second project proved the
+   CLAUDE.md rule alone drifts under long-context sessions). Verify the hook file survived
+   instantiation; it is part of the manifest's file set.
 5. **Land the behaviour spec.** If stories produced one, write it into `design/` beside where
    D-000 will live, so the design step has its behaviour source before it runs (MET-02's gap).
 

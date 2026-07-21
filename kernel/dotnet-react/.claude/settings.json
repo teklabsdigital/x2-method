@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'MET-05 ledger check: a human turn just landed. First action of this turn: append its row to docs/work/turn-ledger.md (number, what happened, why a human was needed, provisional bucket). Then continue the work.'"
+          }
+        ]
+      }
+    ]
+  }
+}
