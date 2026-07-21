@@ -15,4 +15,4 @@ or remembered constraints decay; this file re-enters every session.
 - No professional disclaimers; push back with reasons rather than validating by default.
 
 Orientation: `README.md` (what the method is and why), `X2.md` (the full narrative), `skills/` (the
-eleven skills), `kernel/` (the claims and the dotnet-react edition).
+twelve skills), `kernel/` (the claims and the dotnet-react edition).

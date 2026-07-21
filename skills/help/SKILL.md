@@ -54,7 +54,7 @@ pass), or admin (uncounted). Intake's classification governs.
 
 - `X2.md` at the x2-method repo root: the methodology and its rationale.
 - `GLOSSARY.md` at the x2-method repo root: every record code the skills cite (MET-n, INV-n,
-  CONF-n, X-n, B-codes), defined in one line each.
+  CONF-n, X-n, B-codes, and the record-layer codes NS-n, CF-n, PC-n), defined in one line each.
 - `kernel/claims/README.md`: what the build enforces, which is what the skills no longer say.
 - `record/` at the x2-method repo root: the sanitized cross-project record (negative-space
   register and churn table, queued candidates, confirmations, metric history).

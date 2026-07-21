@@ -2,7 +2,8 @@
 
 The skills and claim files cite short codes: X-8, B2-1, MET-07, INV-10. They point into the
 method's development record: the extraction of the kernel from 2 production systems, and the pilot
-acceptance test. That record is not published, so this file defines every cited code.
+acceptance test. That raw record stays private, so this file defines every cited code. The codes
+that point into the published record layer (NS-n, CF-n, PC-n) resolve in `record/`.
 
 A code is a provenance pointer, not required reading. The sentence around it always carries the
 meaning; the code answers "why does this rule exist".
