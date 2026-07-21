@@ -8,9 +8,11 @@ that takes that inversion seriously. The rules that must always hold are compile
 kernel the build enforces on every change. The decisions live in a few short files that
 people own. The code is regenerated from them, and nobody mourns it.
 
-In one line: X2 is an agentic software delivery method. AI agents do the building, the build
+X2 is an agentic software engineering method. AI agents do the building, the build
 enforces the rules that must always hold, a person decides only at the gates, and the method
 measures its own cost in human turns and feeds every project's evidence back into itself.
+
+![The X2 engineering loop: engineers decide, agents build, the log improves both](assets/x2-method-engineering-loop.png)
 
 **See what it built:** [learn.reqwiseconsulting.com](https://learn.reqwiseconsulting.com) is a free
 seven-lesson prompt course with an AI trainer that marks your work. X2 built it in 2 days, six
