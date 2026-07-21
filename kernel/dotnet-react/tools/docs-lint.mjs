@@ -9,7 +9,7 @@ const editionRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 const fail = (message) => errors.push(message);
 
-const ROOT_MARKDOWN = new Set(['README.md', 'CLAUDE.md', 'BUILD-BRIEF.md', 'VERSIONS.md']);
+const ROOT_MARKDOWN = new Set(['README.md', 'CLAUDE.md', 'BUILD-BRIEF.md', 'VERIFICATION.md', 'VERSIONS.md']);
 const FOLDER_KIND = { claims: 'claim', decisions: 'decision', contracts: 'contract', runbooks: 'runbook', work: 'work' };
 const STATUSES = new Set(['authoritative', 'working', 'archived']);
 const SKIP_DIRS = new Set(['node_modules', 'bin', 'obj', 'dist', '.git']);
