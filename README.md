@@ -12,6 +12,11 @@ In one line: X2 is an agentic software delivery method. AI agents do the buildin
 enforces the rules that must always hold, a person decides only at the gates, and the method
 measures its own cost in human turns and feeds every project's evidence back into itself.
 
+**See what it built:** [learn.reqwiseconsulting.com](https://learn.reqwiseconsulting.com) is a free
+seven-lesson prompt course with an AI trainer that marks your work. X2 built it in 2 days, six
+slices, idea to production. What it cost in human attention was logged turn by turn and published
+in [`record/metrics.md`](record/metrics.md), which is the part most methods cannot show you.
+
 Most teams hand the agent its rules as prose: architecture guides, review checklists, coding
 standards. The agent reads them again on every task. They cost tokens, drift out of date and get
 quietly ignored. A rule the build does not check is only a suggestion.
@@ -228,7 +233,8 @@ If you build one, please contribute it back as a pull request.
 ## Status and evidence
 
 The invariants come from 2 production systems. The method itself has now run end to end on 2
-projects, every human turn logged, classified and audited.
+projects, every human turn logged, classified and audited. The second is public and running at
+[learn.reqwiseconsulting.com](https://learn.reqwiseconsulting.com).
 
 Its first headline figure (25 human turns for the pilot's first slice) is retired, by the
 method's own extraction ruling: it mixed counting rules and scopes. The metric history lives in
@@ -245,6 +251,9 @@ Treat those numbers the way the method itself demands:
 
 - A sample of two, with no baseline. Nobody has yet built the same product without the method
   and counted.
+- The 2 days is wall clock on one project, self run, and it is not the method's metric. It says
+  nothing about a team that did not write the method. The per-slice turn counts are what the
+  record actually supports.
 - Whole-project totals do not compare across projects; per-slice cost and defect share do,
   which is why they are the published numbers.
 - The central regeneration claim has not yet run: no module has been regenerated from its
