@@ -1,6 +1,6 @@
 # X2
 
-## The code doesn't matter anymore
+## The code is no longer the treasure
 
 Something strange happened to software in the last few years, and almost nobody outside the
 industry noticed.
@@ -116,7 +116,9 @@ the next one cheaper, and the record shows whether it did.
 
 In the industry's terms, X2 is an agentic software engineering method: AI agents do the building,
 the build enforces the rules that must always hold, a person decides only at the gates, and the
-method measures its own cost in human turns.
+method measures its own cost in human turns. Beneath the vocabulary it is a control system more
+than a coding technique: the point is not to write code better, it is to keep people in charge of
+software produced faster than they can read it.
 
 **To Agile.** X2 keeps Agile's engine: thin working slices, requirements that stay open, change
 kept cheap. But every Agile guarantee is carried by human discipline: memory, habit, self-report.
@@ -175,6 +177,24 @@ One test cuts through the whole comparison: swap the AI for a better one and see
 Everything X2 adds, the enforced rules, the derived tests, the outside audit, the logged cost,
 survives that swap unchanged. A method should outlive its generator; a code generator is what
 just got replaced.
+
+## Where it fits best
+
+X2 is overkill for a throwaway prototype, and says so. It earns its keep where the rules are
+non-negotiable and an unwatched builder is most dangerous:
+
+- products that hold data which must never leak between customers
+- health, financial and government software, where the day comes when someone asks for evidence
+  rather than assurances
+- systems other people's software depends on, where a quiet change breaks a stranger's product
+- small teams handing real autonomy to powerful agents, precisely because nobody is left over to
+  re-read everything the agent writes
+
+The claims catalog leans the same way: its deepest families are tenancy, security and the AI
+trust boundary, the places where "the model probably got it right" is not an answer anyone will
+accept. And the claims have already been checked against the control regimes auditors actually
+use (the ASD Essential Eight, SOC 2), so when the evidence question comes, the answer is a
+mapping, not a scramble.
 
 ## Where the evidence stands
 
