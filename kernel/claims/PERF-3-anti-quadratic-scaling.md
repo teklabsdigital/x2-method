@@ -2,7 +2,7 @@
 id: PERF-3
 family: performance
 locus: per-seam
-provenance: patterns pass 2026-07-24 (performance stream: counted-cost scaling ratios; the accidentally-quadratic failure literature)
+provenance: patterns pass 2026-07-24 (performance stream: counted-cost scaling ratios; the Accidentally Quadratic chronicle of production complexity-class failures)
 ---
 
 # PERF-3: A designated algorithmic seam proves its scaling with a counted ratio

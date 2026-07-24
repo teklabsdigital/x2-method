@@ -2,7 +2,7 @@
 id: PERF-6
 family: performance
 locus: centralized
-provenance: patterns pass 2026-07-24 (performance stream: shared-runner variance studies; change-point detection over benchmark series, Otava and Conbench class; coordinated-omission literature)
+provenance: patterns pass 2026-07-24 (performance stream: cloud-microbenchmark variability studies, Laaber and Leitner class; change-point detection over benchmark series, Otava and Conbench class; Tene's coordinated-omission analysis)
 ---
 
 # PERF-6: Wall time is never asserted raw
