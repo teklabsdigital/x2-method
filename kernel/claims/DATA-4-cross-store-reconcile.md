@@ -2,7 +2,7 @@
 id: DATA-4
 family: data
 locus: per-seam
-provenance: X-9
+provenance: X-9; compensation note, patterns pass 2026-07-24
 ---
 
 # DATA-4: Cross-store sequences are durable-first, idempotently kicked, and reconciled
@@ -15,4 +15,4 @@ provenance: X-9
 - Mechanism class: per-seam obligation composing with DATA-3: each cross-store seam names its reconciler and carries a crash-window test (kill between step one and step two, assert the sweep converges).
 - Edition: owed, trigger: first cross-store sequence; a proven reconciler practice is the exemplar lifted then. The pattern rule stands: status is a projection of durable rows, not a separately mutated field.
 
-**Weakening notes.** Same honesty as DATA-3: enforcement is named-test-per-seam. The reconciler must itself be idempotent and tenant-scoped via TEN-5 if it sweeps across tenants (global pollers are ledger entries).
+**Weakening notes.** Same honesty as DATA-3: enforcement is named-test-per-seam. The reconciler must itself be idempotent and tenant-scoped via TEN-5 if it sweeps across tenants (global pollers are ledger entries). And the reconciler detects and converges divergence; it does not undo. Where a multi-store flow needs semantic undo (compensation for a completed step that cannot simply be re-driven), that is a per-seam obligation on the flow's design, named here so its absence is a recorded limit, not an oversight.

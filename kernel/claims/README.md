@@ -44,6 +44,8 @@ The compliance-mapping pass (2026-07-24) checked the catalog against two externa
 
 The versioning pass (2026-07-24) closed the version-skew gap between the kernel and the projects seeded from it: a seeded project is a copy, and nothing recorded which kernel it was a copy of. The pass named the catalog's versioning scheme and claim-identity rule (the section below) and extended DEP-1 in place: the kernel a project is seeded from is itself a pinned, ledgered dependency, recorded in the project's VERSIONS.md at instantiation and enforced by the edition's docs-lint kernel-provenance check. The edition gained the upgrade procedure for seeded projects. No claims were minted; the tally is unchanged.
 
+The patterns pass (2026-07-24) mapped the catalog against three published bodies of practice: architectural pattern catalogs, resilience and operability practice, and performance measurement science. Like the compliance five, its mints come from a mapping, not an extraction; each claim's provenance names its source literature, and all enter `owed` with named triggers. The pass found the catalog complete in its founding territories (tenancy, security, AI trust, UI, docs) and thin in what happens over time and under failure, so it opened two families. Resilience (RES-1 to RES-6) rules what happens when a dependency hangs, a queue poisons, or an instance dies. Performance (PERF-1 to PERF-6) is chartered on counted work: merges gate on deterministic per-operation counts (statements, roundtrips, allocations, scaling ratios), never on raw wall time. The pass also minted DATA-8 to DATA-11 (producer atomicity, lost updates, bounded growth, expand/contract migrations), SEC-11 (split database credentials), and CON-4 (the breaking-change gate that mechanizes HUM-1's detection), and extended four claims in place: TIME-1 (monotonic durations), OBS-1 (trace-context propagation), DATA-6 (migration lock timeout), and DATA-4 (compensation named as a per-seam limit). Current tally: 25 `proven`, 6 `patterned`, 2 `latent`, 36 `owed`. Total 69.
+
 One dependency sits under every `proven` and `patterned` tag: a mechanism gates a merge only once **TEST-3's loop is armed by branch protection**, which is an instantiation step, not the workflow file. Until then the pipeline runs but blocks nothing, so every gating tag reads "enforced once armed". The kernel acceptance test must verify instantiation actually arms it; see TEST-3.
 
 ## Catalog versioning and claim identity
@@ -64,7 +66,7 @@ Stated honestly, in this catalog's own register: this section is governance for 
 review at each pass, and this repository carries no lint to back it. A minimal check (every pass date cited in a
 claim's `provenance` appears in a pass paragraph here) is the named upgrade if editing hands multiply.
 
-## Claims (51)
+## Claims (69)
 
 ### Tenancy
 
@@ -114,7 +116,7 @@ Six claims, layered so no single one is load-bearing: the tenant is read only fr
 
 ### Security
 
-Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out of URLs (SEC-3), harden and revoke tokens (SEC-4), keep secrets out of the repo (SEC-5), keep them out of the logs (SEC-6), keep public surfaces un-walkable (SEC-7), price the abuse-shaped doors (SEC-8), ship the deployment edge (SEC-9), and prove the second factor before privilege (SEC-10).
+Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out of URLs (SEC-3), harden and revoke tokens (SEC-4), keep secrets out of the repo (SEC-5), keep them out of the logs (SEC-6), keep public surfaces un-walkable (SEC-7), price the abuse-shaped doors (SEC-8), ship the deployment edge (SEC-9), prove the second factor before privilege (SEC-10), and deny the runtime credential the schema (SEC-11).
 
 #### [SEC-1](SEC-1-every-endpoint-gated.md) - Every endpoint gated
 - **Statement:** Every endpoint requires an explicit permission policy; bare authenticated-only registrations are rejected; anonymous endpoints exist only on an enumerated, reviewed allowlist; the host registers a deny-by-default fallback authorization policy.
@@ -186,18 +188,25 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 - **Weakening:** The application verifies what the credential asserts, not the ceremony; trust in the issuer is SEC-4's premise, and the factor's phishing resistance is a per-project ruling.
 - **Edition (v1):** owed (trigger: first identity slice).
 
+#### [SEC-11](SEC-11-split-database-credentials.md) - The runtime credential cannot touch the schema
+- **Statement:** The serving credential is DML-only; DDL capability exists only in DATA-6's migrate-mode credential, which the serving process never holds; the split is proven by a test in which the runtime role attempts DDL and the engine refuses.
+- **Harm:** With one almighty credential, any SQL injection or ORM bug that reaches the database can alter or drop schema: the blast radius of an application fault is the whole database, not its data surface.
+- **Enforcement (centralized):** A named integration test connects as the runtime role, attempts CREATE/ALTER/DROP, asserts refusal; role grants live in provisioning code under review, beside DATA-6's wiring.
+- **Weakening:** DML-only still reads and writes every row; row-level damage is bounded by TEN-3, TEN-4, and DATA-9. The mechanism is the engine-portable refusal test, not grant-syntax assertions.
+- **Edition (v1):** owed (trigger: next edition build pass; rides DATA-6's provisioning story).
+
 ### Time
 
 #### [TIME-1](TIME-1-utc-offset-only.md) - UTC, offset-aware, and nothing else
-- **Statement:** All time values in domain types, contracts, and persistence are UTC-anchored, offset-aware types; naive local wall-clock types never appear in those layers. Conversion to a user's local time happens at the display edge, using the timezone stored on the authenticated principal (refusing when absent, per DATA-5).
+- **Statement:** All time values in domain types, contracts, and persistence are UTC-anchored, offset-aware types; naive local wall-clock types never appear in those layers. Conversion to a user's local time happens at the display edge, using the timezone stored on the authenticated principal (refusing when absent, per DATA-5). Durations come from the monotonic source through one clock seam, never from wall-clock subtraction (extended 2026-07-24: the wall clock steps under NTP correction).
 - **Harm:** Naive datetimes are ambiguous at every DST transition and cross-region deployment: double bookings, off-by-hours scheduling, unorderable audit trails.
 - **Enforcement (centralized):** An architecture test reflects over domain, contracts, application, and persistence assemblies and rejects properties or parameters of forbidden time types (`DateTimeOffset` only; naive `DateTime` banned), recursing nullable, array, and generic shapes.
 - **Weakening:** Date-only and time-only concepts (a birth date, a clinic opening hour) are legitimately zoneless; `DateOnly` and `TimeOnly` are permitted so the ban stays crisp. And the permitted shape is insufficient for a category the claim does not yet name: `DateTimeOffset` records an offset, not a zone, so a scheduled *future* local event breaks when the zone's DST rules change; a future event stores wall time plus the IANA zone id, resolved at read. The v1 exemplar has no future scheduling, so that rule is recorded for the first scheduling slice, not yet scanned.
-- **Edition (v1):** proven (for the instant ban; the future-event zone-id rule is owed with its trigger).
+- **Edition (v1):** proven (for the instant ban; the future-event zone-id rule is owed with its trigger; the wall-clock-delta lint is owed, trigger: next edition build pass).
 
 ### Data
 
-Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side effects made at-most-once (DATA-3), cross-store sequences that reconcile (DATA-4), config that fails fast (DATA-5), schema change that never rides a serving boot (DATA-6), and data whose retention ends on a ruled clock (DATA-7).
+Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side effects made at-most-once (DATA-3), cross-store sequences that reconcile (DATA-4), config that fails fast (DATA-5), schema change that never rides a serving boot (DATA-6), data whose retention ends on a ruled clock (DATA-7), events that commit with their state change (DATA-8), stale writes refused (DATA-9), growth that ends on a registered sweep (DATA-10), and migrations the previous release survives (DATA-11).
 
 #### [DATA-1](DATA-1-stores-records-downward-deps.md) - Stores, records, downward deps
 - **Statement:** Data access lives behind store interfaces; records are pure data holders with zero behavior; an endpoint never touches a store or DbContext (it calls one service method); dependencies flow downward only; cross-boundary collaborators are interfaces registered at the composition root.
@@ -224,7 +233,7 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 - **Statement:** Any sequence spanning two stores (or a store plus an external system) writes the durable row first, kicks the follow-on step idempotently, and runs a reconcile sweep that converges after a crash between steps. A cross-store sequence with no reconciler is a defect.
 - **Harm:** Permanent partial completion (a payment row exists but the provider was never called, or the provider succeeded and the crash ate the row), discovered by customers.
 - **Enforcement (per-seam):** Composes with DATA-3: each cross-store seam names its reconciler and carries a crash-window test (kill between steps, assert the sweep converges).
-- **Weakening:** Enforcement is a named test per seam; the reconciler must itself be idempotent and, if it sweeps across tenants, ledgered under TEN-5.
+- **Weakening:** Enforcement is a named test per seam; the reconciler must itself be idempotent and, if it sweeps across tenants, ledgered under TEN-5. The reconciler converges divergence, it does not undo; where a flow needs semantic compensation, that is a per-seam design obligation (noted 2026-07-24).
 - **Edition (v1):** owed (trigger: first cross-store sequence).
 
 #### [DATA-5](DATA-5-fail-fast-mandatory-config.md) - Fail-fast mandatory config
@@ -235,7 +244,7 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 - **Edition (v1):** proven.
 
 #### [DATA-6](DATA-6-migrate-and-exit.md) - Migrate and exit
-- **Statement:** Every host ships an explicit migrate mode that applies migrations and exits without starting the serving process; a serving boot never migrates as a side effect; migrate mode needs only the connection string, never runtime secrets; scripts and CI delegate to the mode.
+- **Statement:** Every host ships an explicit migrate mode that applies migrations and exits without starting the serving process; a serving boot never migrates as a side effect; migrate mode needs only the connection string, never runtime secrets; scripts and CI delegate to the mode. Migrate mode sets an aggressive lock timeout before every DDL batch (extended 2026-07-24); what migrations may contain is DATA-11's rule.
 - **Harm:** Boot-time migration couples schema change to process start: crash-looped deploys hold locks, scaled instances race the migration, and a serving boot silently performs the schema mutation HUM-1 says needs a human turn.
 - **Enforcement (centralized):** Host tests assert the mode applies-and-exits without serving and that a serving boot performs no migration; the composed tier boots only against a migrated database.
 - **Weakening:** Throwaway test databases may auto-apply at provisioning; that is the provisioning path, not a serving boot.
@@ -248,6 +257,34 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 - **Weakening:** The PII-shape list is heuristic and extends per project; the scan proves declaration, not that the ruled bound is right (a legal question, a D-000 ruling). Crypto-shredding is the named mechanism where backups can reach the data; built when the first class needs it.
 - **Edition (v1):** owed (trigger: first PII-bearing entity in an edition project, or the first contractual deletion clause, whichever lands first).
 
+#### [DATA-8](DATA-8-transactional-outbox.md) - A state change and its event commit together or not at all
+- **Statement:** An announced state change writes its event as an outbox row in the same transaction; one relay module owns broker publication with at-least-once delivery; no service-layer type references the producer client.
+- **Harm:** The dual write: commit-then-crash means downstream never learns; publish-then-fail-commit means a phantom event. Both silent, both found by customers. The producer-side complement of DATA-3, and the prevention for the crash window DATA-4 reconciles.
+- **Enforcement (centralized restriction, per-seam crash proof):** An arch test restricts producer types to the relay namespace; the seam owes a crash-window test in DATA-4's style (kill between commit and relay, assert delivery on restart).
+- **Weakening:** At-least-once is the honest guarantee; exactly-once is this claim composed with DATA-3 on the consumer side. The outbox is DATA-10's first customer.
+- **Edition (v1):** owed (trigger: first event publish).
+
+#### [DATA-9](DATA-9-optimistic-concurrency.md) - A stale write is refused, never silently applied
+- **Statement:** Every concurrently mutable entity maps a concurrency token; the save pipeline refuses a stale write; the wire surface speaks the dialect's precondition vocabulary and refuses unconditional overwrites of guarded resources.
+- **Harm:** The lost update: two editors, and the second save silently destroys the first with no error to anyone. Tenancy isolates tenants from each other, not a tenant's users from each other; nothing else covers this.
+- **Enforcement (centralized):** A reflection sweep asserts the token on mutable entities (the TEN-3 marker idiom decides mutable); save-pipeline unit tests in TEN-4's home assert the stale write throws; contract tests assert the precondition semantics.
+- **Weakening:** The token proves the row did not change, not which change was right; merging flows (collaborative text) are a different design. SEC-2 keeps the token off the writable surface.
+- **Edition (v1):** owed (trigger: next edition build pass; rides TEN-4's interceptor work).
+
+#### [DATA-10](DATA-10-steady-state-bounded-growth.md) - Everything that grows has a registered sweep
+- **Statement:** Every append-only artifact (log sink, outbox, audit table, quarantine, temp dir) is registered with the purge or rotation mechanism that bounds it; each sweep is a tested seam; an append-only artifact without one is a defect at the introducing merge.
+- **Harm:** Retention by accident: disk-full kills the node, growing tables degrade queries and backups, and the remedy becomes an emergency hand-run purge, the exact unledgered access TEN-5 exists to kill. DATA-7 rules how long PII lives; nothing before this ruled that operational growth ends at all.
+- **Enforcement (centralized inventory, per-class sweep):** An inventory arch test over marked append-only entities and declared sinks; sweeps are idempotent, tested, ledgered under TEN-5 where cross-tenant; clocks are CFG-1 settings.
+- **Weakening:** Distinct from DATA-7 by subject and clock (an operational ruling, not a legal one); one table can owe both. Registration is proven; sweep sufficiency against growth rate is a review question.
+- **Edition (v1):** owed (trigger: first append-only operational table; DATA-8's outbox is the likely first).
+
+#### [DATA-11](DATA-11-expand-contract-migrations.md) - A migration never breaks the release running beside it
+- **Statement:** Schema change is expand/contract: destructive operations (drop, rename, type narrowing, non-defaulted NOT NULL) are forbidden outside a tagged contract phase naming its earlier expand release; CI proves the previous release's persistence tests pass against the migrated schema.
+- **Harm:** A rename shipped with the code that uses it crashes every still-running N-1 replica mid-rollout, an outage placed in the deploy window, and forecloses rollback. Needs two releases to manifest, so no single-version tier can see it.
+- **Enforcement (centralized):** A squawk-class migration lint plus an N-1 compatibility job in the CI loop, alongside HUM-1's unconditional human turn on the same files.
+- **Weakening:** DATA-6 rules how migrations run; this rules what they contain. The N-1 job proves persistence compatibility, not full mixed-fleet behavior; contract compatibility across releases is CON-4's half. Single-instance deployments with downtime may re-rule the job at adoption.
+- **Edition (v1):** owed (trigger: first production deployment with rolling replacement; the lint half can land at the next edition build pass).
+
 ### Configuration
 
 #### [CFG-1](CFG-1-operational-settings-are-config.md) - Operational settings are configuration, not code
@@ -259,7 +296,7 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 
 ### Contracts and wire
 
-One dialect for the whole API (CON-1), a shared fixture wherever a contract is mirrored by hand (CON-2), and reads that carry everything their surface's actions depend on (CON-3).
+One dialect for the whole API (CON-1), a shared fixture wherever a contract is mirrored by hand (CON-2), reads that carry everything their surface's actions depend on (CON-3), and no breaking change reaching a published contract unclassified (CON-4).
 
 #### [CON-1](CON-1-wire-conventions.md) - One wire dialect
 - **Statement:** The API speaks one dialect everywhere: errors are RFC 9457 problem details; JSON property names are camelCase; enums cross the wire as closed string sets through a single converter configuration; identifiers are opaque strings. No endpoint invents its own error shape, casing, or enum encoding.
@@ -282,6 +319,13 @@ One dialect for the whole API (CON-1), a shared fixture wherever a contract is m
 - **Weakening:** No static scan knows which fields an action depends on; honestly per-seam.
 - **Edition (v1):** owed (trigger: first edition project with a restorable session).
 
+#### [CON-4](CON-4-breaking-change-gate.md) - A breaking change is detected by machine, approved by human
+- **Statement:** Every published external contract (OpenAPI, proto, event schema) is diffed in CI against its released baseline; a breaking-category change fails the gate and proceeds only through HUM-1's named human turn, recorded as an approval, never a suppression. The async twin: event schemas live in a registry running a compatibility mode.
+- **Harm:** HUM-1 requires the human turn, but detecting "breaking" was manual: deployed clients (mobile in the field, partners) break on a change nobody classified, surfacing weeks later in someone else's error budget. CON-1 rules the dialect and CON-2 pins mirrors; neither compares a contract against its own released past.
+- **Enforcement (centralized):** An oasdiff/buf-breaking class diff job in the CI loop against the released baseline artifact; registry compatibility mode for events; the override is a reviewed HUM-1 approval.
+- **Weakening:** Diff taxonomies are conservative both ways: harmless flagged changes are absorbed as approvals, and semantic breaks under a stable shape are invisible to any diff, staying a review obligation. The baseline must be the released artifact, or the gate diffs a change against itself.
+- **Edition (v1):** owed (trigger: first published external contract; the in-repo composed client is CON-2's territory, not a published contract).
+
 ### Realtime
 
 #### [RT-1](RT-1-realtime-discipline.md) - Realtime discipline
@@ -299,6 +343,98 @@ One dialect for the whole API (CON-1), a shared fixture wherever a contract is m
 - **Enforcement (centralized):** Composed-host tests pin the static serving and headers; an arch test asserts no cross-origin registration; a publish check asserts the artifact contains the client.
 - **Weakening:** The SPA-fallback hole opens only with a client router, and then through SEC-1's reviewed anonymous allowlist. Applies to web products; an API-only project re-rules it in deltas at adoption.
 - **Edition (v1):** owed (trigger: next edition build pass).
+
+### Resilience
+
+The catalog to here proves the system correct and secure; this family rules what happens when a dependency hangs, a queue poisons, or an instance dies. Outbound calls bounded and breakered (RES-1), work-in-progress bounded (RES-2), a host that dies cleanly (RES-3), probes that mean what they say (RES-4), poison quarantined at a counted limit (RES-5), and database sessions that carry finite bounds (RES-6). The family's per-seam proof mechanism is fault injection: network-level toxics in the integration tier, so "fails fast at the deadline" is an asserted fact, not a hope.
+
+#### [RES-1](RES-1-outbound-call-discipline.md) - Every outbound call is bounded, and retries are earned
+- **Statement:** Every outbound call is constructed through one resilience chokepoint and carries a finite deadline; retries are capped, jittered, and attach only to idempotent or idempotency-keyed operations (DATA-3's discipline decides which); cross-service seams carry a breaker; cancellation propagates to the callee.
+- **Harm:** One hung dependency pins a thread or connection per request until the pool drains and the site is down, the classic stability failure; unjittered retries turn a partner brownout into a self-inflicted outage; a retry on a non-idempotent call is a double charge wearing a resilience costume.
+- **Enforcement (centralized chokepoint, per-seam fault proof):** An arch test bans raw client construction outside the chokepoint; a registry-enumeration test asserts every pipeline has finite timeout, capped jittered retry, and a breaker where declared; each cross-service seam owes a fault-injection test (latency toxic past the deadline) asserting fail-fast, retry count, and breaker opening.
+- **Weakening:** The chokepoint proves construction, not that the ruled deadline is right (CFG-1 settings, D-000 rulings). Hedged requests are a permitted technique inside the chokepoint, never a mandate.
+- **Edition (v1):** owed (trigger: first external service dependency; database session bounds are RES-6's).
+
+#### [RES-2](RES-2-bounded-work-in-progress.md) - No unbounded queue, pool, or backlog in the process
+- **Statement:** Every in-process queue, channel, and executor backlog declares a capacity and a full-queue policy that is never block-forever; connection and worker pools are bounded with finite acquisition timeouts; construction flows through one factory surface where the bound is required.
+- **Harm:** Little's law with the safety off: the producer outruns the consumer until OOM, and every request served from deep backlog was already abandoned by its client, so the process does full work for zero goodput all the way down.
+- **Enforcement (centralized):** Banned-API lint on unbounded constructors; an arch test restricting construction to the factory; a config assertion enumerating declared queues and pools and asserting bounds and policies.
+- **Weakening:** The claim rules the shape, not the number: bound values are D-000 rulings held as CFG-1 settings, trued by load testing. Distributed queues are RES-5's; this ends at the process boundary.
+- **Edition (v1):** owed (trigger: first background worker or in-process queue).
+
+#### [RES-3](RES-3-graceful-drain.md) - The host dies cleanly, and there is a test that kills it
+- **Statement:** On the termination signal the host flips readiness to failing, stops accepting, completes in-flight work within a drain budget shorter than the platform grace period, and exits zero; workers register drain handlers on the single shutdown seam; needing the SIGKILL is a defect.
+- **Harm:** Without a drain, every deploy kills requests mid-flight: users see errors on every release, and a write killed between steps creates exactly the partial completion DATA-4 exists to reconcile. Prevention on the routine path beats reconciliation after it.
+- **Enforcement (centralized):** A harness scenario sends the real signal under in-flight load and asserts ordering (readiness first, accept stops, in-flight completes), budget, and exit code. TEST-4's mirror: that proves it boots in its real shape, this proves it dies in it.
+- **Weakening:** The scenario proves the seam, not that every future worker registered on it; each new worker owes a line, the UI-5 idiom. Work longer than any sane budget moves to a resumable worker; that pressure is the point.
+- **Edition (v1):** owed (trigger: first deployed edition host; rides SEC-9).
+
+#### [RES-4](RES-4-probe-semantics.md) - Liveness answers alone; readiness answers for its dependencies
+- **Statement:** Liveness reaches no dependency (its question: restart this process?); readiness reaches the declared critical dependencies (its question: route traffic here?); the orchestrator's probe wiring is part of the deployed artifact.
+- **Harm:** A liveness probe that checks the database converts one DB blip into a fleet-wide restart storm, killing every healthy instance for a fault none has; a shallow readiness probe routes traffic to an instance that cannot serve.
+- **Enforcement (centralized):** An arch test asserts the liveness handler's dependency graph reaches no store or external client type and readiness reaches the declared set; an integration test stops the database and asserts liveness 200, readiness non-200.
+- **Weakening:** "Critical" is a D-000 ruling: a cache the code degrades without does not belong in readiness. The arch test proves reachability; probe periods and thresholds are platform configuration.
+- **Edition (v1):** owed (trigger: first deployed edition host; splits the health root SEC-1 already allowlists).
+
+#### [RES-5](RES-5-poison-message-quarantine.md) - Poison is quarantined at a counted limit, never retried forever, never dropped
+- **Statement:** Every consumed queue or subscription declares a max delivery count and a dead-letter route; a failing message lands in quarantine after exactly N attempts while the queue keeps draining; quarantine emits an OBS-2 event.
+- **Harm:** One malformed message retried forever blocks the queue head and stalls the subsystem; the opposite default, discard on failure, loses work silently. Both invisible to happy-path suites, which never send a message that cannot succeed.
+- **Enforcement (centralized declaration, per-queue test):** A config assertion over declared queues; each queue owes a named test feeding a poison message and asserting quarantine at N, the queue live, and the event emitted.
+- **Weakening:** Quarantine is containment, not resolution: what drains it is operational design, and an unwatched quarantine falls under DATA-10's sweep registry. Per-seam honestly; no scan proves a future consumer declared its limits.
+- **Edition (v1):** owed (trigger: first broker; DATA-8's relay is the likely first consumer).
+
+#### [RES-6](RES-6-database-session-discipline.md) - Every database session carries four finite bounds, proven against the real engine
+- **Statement:** Every application database session carries a connect timeout, a pool acquisition timeout, a statement timeout, and a lock timeout, asserted live against the real engine; leak detection is armed in the integration tier; no connection is held across an await of an external call.
+- **Harm:** One runaway query or un-timeboxed lock queues all traffic behind it and drains a default pool in well under two minutes, an outage presenting as total with one statement as root cause; leaked connections produce the same exhaustion in slow motion. The transient failures that turn permanent precisely because no bound was set.
+- **Enforcement (centralized):** An integration test opens a session as the app role and asserts the four bounds fire on the engine (a sleeping statement is killed, a held lock refused); the leak-detection threshold fails CI; lint flags a connection scope spanning an external await.
+- **Weakening:** Values are ruled per project (CFG-1); the claim rules existence and live proof. The across-await lint is heuristic (a smuggled handle escapes it). Migration sessions are DATA-6's and exempt by design.
+- **Edition (v1):** owed (trigger: next edition build pass; everything runs on the existing integration tier, so proven is reachable immediately).
+
+### Performance
+
+Efficiency gates on counted work per operation, which is deterministic: the same code and workload produce the same count on any machine, which is what makes a merge gate possible. Statements and roundtrips budgeted per hot seam (PERF-1), bytes allocated budgeted on designated paths (PERF-2), scaling proven by counted ratio (PERF-3), sync IO and whole-payload buffering banned from the serving path (PERF-4), caches bounded with expiring entries (PERF-5), and wall time never asserted raw (PERF-6): an absolute-milliseconds threshold on a shared CI runner meets 30 to 50 percent run-to-run variance and false-alarms nearly every other run at a 2 percent threshold, an aspiration wearing a gate's clothes. DATA-2 remains the bounded-rows claim; this family bounds roundtrips, allocations, scaling, and bytes.
+
+#### [PERF-1](PERF-1-counted-io-budget.md) - A hot operation's IO is counted, budgeted, and gated
+- **Statement:** Every designated hot operation carries a named test asserting a maximum count of SQL statements and outbound roundtrips for a defined workload; the budget constant lives in the test and changes only by reviewed diff; a count that grows with collection size is a defect regardless of budget (the N+1 shape).
+- **Harm:** The N+1 endpoint works in dev and melts in production because its cost scales with data the tests never had; by then the fix is a rewrite under incident pressure. Wall time cannot gate this; the statement count can, deterministically.
+- **Enforcement (per-seam):** Test-time counters at the driver or transport seam (command interceptor, query-event hook, recording transport) around the designated operation.
+- **Weakening:** "Hot" is a D-000 designation a scan cannot discover; undesignated operations are ungated, a review item per slice. The count gates chattiness, not query cost; DATA-2 is the companion. Payload-size budgets are the same mechanism on a different counter.
+- **Edition (v1):** owed (trigger: next edition build pass; the v1 list endpoint is the first seam).
+
+#### [PERF-2](PERF-2-allocation-budget.md) - A designated hot path's allocations are budgeted per operation
+- **Statement:** Each designated hot path carries a test asserting bytes allocated per operation within a ruled budget (zero where ruled); designation is a D-000 act naming path and budget.
+- **Harm:** Per-operation garbage converts throughput into collector pause time; the regression is functionally invisible, compounds monotonically, and by the time it shows in production latency the cause is spread across fifty commits.
+- **Enforcement (per-seam):** The platform's allocation accounting asserted per operation (GC-statistics bytes-per-op, normalized allocation rate, tracing or counting allocators).
+- **Weakening:** Accounting quality is runtime-dependent, stated honestly: a Node edition has no reliable per-op assertion and realizes this as leak-class scenario diffing, saying so in its conformance row. Bytes are a proxy for collector pressure, not a latency promise (PERF-6 governs that).
+- **Edition (v1):** owed (trigger: first designated hot path; most projects hold zero designations for a long time, honestly).
+
+#### [PERF-3](PERF-3-anti-quadratic-scaling.md) - A designated algorithmic seam proves its scaling with a counted ratio
+- **Statement:** Each designated algorithmic seam carries a scaling test: run at N and kN, count a deterministic cost (iterations, comparisons, queries, bytes), assert the ratio stays under a generous ruled bound. Linear at k=10 shows near 10, quadratic near 100; the bound sits far from both.
+- **Harm:** Accidentally quadratic code passes every functional test at toy N and dies at production N: the 40-millisecond request that takes 40 seconds the week the customer's data crosses the threshold.
+- **Enforcement (per-seam):** A two-size ratio property test on a counted quantity instrumented at the seam; never wall time, so deterministic on any runner.
+- **Weakening:** Catches complexity-class regressions (linear versus quadratic, the class that kills); honestly cannot distinguish n from n log n; fitted big-O over timings is excluded as curve fitting on noise. The test's N is part of the designation, sized so the asymptotic term dominates.
+- **Edition (v1):** owed (trigger: first hand-written algorithm over unbounded input; library calls and query shapes are not designations).
+
+#### [PERF-4](PERF-4-request-path-io-discipline.md) - No sync IO and no whole-payload buffering on the serving path
+- **Statement:** Synchronous IO and sync-over-async bridges are banned in server modules by lint, with a named allowlist for startup-time reads; read-to-end idioms are banned on paths whose payload size the caller controls (those stream); platform runtime-throw defaults for sync IO are preserved and asserted, never relaxed.
+- **Harm:** One blocking read starves the event loop or pins a pool thread per request, making the concurrency ceiling the blocking latency times the pool size; one read-to-end makes memory proportional to input size. Both pass every functional test and appear only under load.
+- **Enforcement (centralized):** Banned-API lint scoped to server modules with the startup allowlist named in the lint config; a config test asserts the platform's runtime throw is intact.
+- **Weakening:** The banned list is a registry, heuristic like SEC-2's, extended per project; a blocking call inside a dependency escapes it (DEP-1's review at adoption). The streaming ban is scoped to caller-controlled sizes.
+- **Edition (v1):** owed (trigger: next edition build pass).
+
+#### [PERF-5](PERF-5-bounded-caches.md) - Every cache is bounded and every entry expires
+- **Statement:** Every in-process cache declares a size bound and every entry a finite TTL; one sanctioned cache-set surface requires both by signature; unbounded cache and memoization constructors are lint errors. RES-2's rule applied to the other unbounded-growth idiom.
+- **Harm:** An unbounded cache is a memory leak with a respectable name, growing with key cardinality into a gradual production OOM unreproducible in dev; a TTL-less entry is staleness forever, the revocation that "didn't take".
+- **Enforcement (centralized):** Lint on unbounded constructors; the wrapper as the one set surface; a config assertion enumerating declared caches (the RES-2 idiom).
+- **Weakening:** Bounds and TTLs are ruled per cache (CFG-1); where a cached value gates security decisions the TTL ruling is a security ruling (SEC-4's revocation window). Stampede coalescing is the named companion proof riding the first real cache. The claim prices caching; it never mandates it.
+- **Edition (v1):** owed (trigger: first cache).
+
+#### [PERF-6](PERF-6-time-under-statistical-control.md) - Wall time is never asserted raw
+- **Statement:** No test in any tier asserts an absolute wall-time threshold. Wall time is compared only through a benchmark harness (warmup, repetition, robust statistics, controlled hardware) pre-merge, or change-point detection over a published results series post-merge with a written fix-or-revert norm; latency under load uses open-model generation (coordinated omission).
+- **Harm:** Absolute-milliseconds asserts on shared runners flake until deleted or are loosened until meaningless; both destroy the discipline, and the second is worse because it looks like coverage.
+- **Enforcement (centralized lint plus policy):** Banned-API lint over test directories rejects raw timing assertions; the harness, the published series, and the revert norm are policy backed by review, stated plainly as such.
+- **Weakening:** The lint is the strong half; the statistical-control half is the family's weakest mechanism, named as such. The claim bans a practice more than it builds one; the banned practice is the one that was going to be written first. Timeout assertions (RES-1's deadline firing) assert behavior at a bound, not speed, and are exempt.
+- **Edition (v1):** owed (trigger: first wall-time benchmark; the lint half can land at the next edition build pass to keep the first timing assert out).
 
 ### Modules and documentation
 
@@ -460,7 +596,7 @@ The server owns identity on every tool call (AI-1), untrusted content never wide
 The seam says when it is broken (OBS-1); the refusals say when it is under attack (OBS-2).
 
 #### [OBS-1](OBS-1-external-effect-seam-observability.md) - External-effect seam observability
-- **Statement:** Every port performing an external side effect ships observability at the seam from day one: accept and settle logged with elapsed time, the provider's traceable operation id captured on accept, timeouts logged with the waited duration; acceptance and delivery are recorded as distinct facts; a child DI container receives the host's logger factory so no seam can go dark.
+- **Statement:** Every port performing an external side effect ships observability at the seam from day one: accept and settle logged with elapsed time, the provider's traceable operation id captured on accept, timeouts logged with the waited duration; acceptance and delivery are recorded as distinct facts; a child DI container receives the host's logger factory so no seam can go dark. The standard trace context is stamped at ingress, propagated through every outbound seam including message metadata, and present in the seam's log lines, so the per-seam facts join into one causal chain (extended 2026-07-24; the RES-1 chokepoint installs the propagator).
 - **Harm:** A live incident becomes archaeology: the app cannot say whether the fault is its own, the provider's, or downstream, and the diagnosis burns human turns the seam log would have answered.
 - **Enforcement (per-seam):** Each external port owes a named test asserting its accept/settle logging shape and redaction (SEC-6); the logger-factory handover is pinned by the port's test.
 - **Weakening:** Per-seam by nature; deep terminal-status awaiting is gated to diagnostic configurations.
@@ -483,4 +619,6 @@ section predicted, and the cut line moved from 33 to 37 (UI-5 and CFG-1 were min
 
 ## Explicitly out of v1 (recorded, not lost)
 
-Orchestration patterns, Claude Design export pipeline (the artifact UI-1 and UI-4 both want to read from), TraceLint integration, SSRF egress guard (promote to v1 if the first kernel project is agentic-outbound), and migration tooling beyond HUM-1 and DATA-6. Observability left this list on 2026-07-21: OBS-1 opens the family at the external-effect seam; the MeterListener tag-allowlist pattern remains its v2 extension. Crypto-shredding RTBF left it on 2026-07-24: DATA-7 names it as a disposal mechanism, built when the first retention class needs it. Also permanently out, recorded so a future compliance mapping does not re-litigate them: endpoint and infrastructure controls from external regimes (device application control, OS and endpoint patching, backups and recovery, physical access, organizational governance); their application-layer analogues, where they exist, are DEP-2, SEC-10, OBS-2, and DATA-7.
+Orchestration patterns, Claude Design export pipeline (the artifact UI-1 and UI-4 both want to read from), TraceLint integration, SSRF egress guard (promote to v1 if the first kernel project is agentic-outbound), and migration tooling beyond HUM-1, DATA-6, and DATA-11. Observability left this list on 2026-07-21: OBS-1 opens the family at the external-effect seam; the MeterListener tag-allowlist pattern remains its v2 extension. Crypto-shredding RTBF left it on 2026-07-24: DATA-7 names it as a disposal mechanism, built when the first retention class needs it. Also permanently out, recorded so a future compliance mapping does not re-litigate them: endpoint and infrastructure controls from external regimes (device application control, OS and endpoint patching, backups and recovery, physical access, organizational governance); their application-layer analogues, where they exist, are DEP-2, SEC-10, OBS-2, and DATA-7.
+
+The patterns pass (2026-07-24) adds its own entries, in both directions. Parked with named triggers, no file minted: a feature-flag lifecycle registry with an expiry gate (trigger: the first feature flag; the harm precedent is Knight Capital); an accessibility gate, axe-core class in the e2e harness plus static lint (a legal-regime mapping for the next compliance pass, the EAA being enforceable since 2025-06-28); an anti-corruption layer confining external SDK types to an adapter namespace (trigger: the first external SDK integration; likely a DATA-1 extension, an arch-test one-liner); aggregate references by identifier only (conditional on a project adopting a DDD building-block model at D-000, not portable to the kernel's current shape); deprecation and sunset headers on retiring endpoints (trigger: the first public API version retirement); query-plan baselines for named critical queries (trigger: a prod-like statistics snapshot exists; a scheduled job, never a PR gate, because CI databases lie about cardinality); and a leak gate, k-iteration heap-return-to-baseline (trigger: the first long-running client process complaint surface; scheduled). Cache-stampede coalescing and the event-schema registry realization are not parked separately; they are absorbed into PERF-5 and CON-4. Permanently out, with reasons: SLO and error-budget release gates (deployment policy over production telemetry, not a merge gate over repo content); golden-signals, USE, and RED taxonomies as claims (taxonomies, not invariants; their enforceable residue is already OBS-1, OBS-2, and the PERF counters); hedged requests as a mandate (misuse is worse than absence; a permitted technique inside RES-1's chokepoint); coupling-metric thresholds such as distance from the main sequence (arbitrary and gameable; MOD-1's cycle and access rules are the enforceable core); wall-time thresholds on shared CI runners (the named anti-pattern PERF-6 exists to kill); fitted big-O assertions (curve fitting on noisy timings; PERF-3's ratio gate is the honest form); and bulkhead partition sizing as a claim (contextual load-test territory; the bounded shapes are RES-1 and RES-2). Infrastructure-as-code drift, cloud cost gates, and backup restore proofs stay behind the standing infrastructure-controls exclusion above.

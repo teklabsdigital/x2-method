@@ -5,12 +5,17 @@ enforced mechanisms: architecture tests that fail the build when an invariant is
 composite, a deny-by-default HTTP host, a bounded-read data layer, a token-locked client, an out-of-process e2e
 harness, and a CI loop that runs all of it on every push. The product placeholder name is `Kernel`.
 
-The claims catalog holds 51 claims. This edition realizes 37 of them as the mechanisms in the conformance table
+The claims catalog holds 69 claims. This edition realizes 37 of them as the mechanisms in the conformance table
 below. The nine minted from the second project's extraction (2026-07-21: SEC-7, SEC-8, SEC-9, DATA-6, CON-3,
 AI-3, OBS-1, TEST-4, SRV-1) are owed here: each claim file records the mechanism shape and the trigger that
 promotes it at the next edition build pass. The five minted from the compliance-mapping pass (2026-07-24: DEP-2,
 SEC-10, TEN-6, DATA-7, OBS-2) are owed the same way, as is TEN-4's write-provenance extension (trigger: next
-edition build pass).
+edition build pass). The eighteen minted from the patterns pass (2026-07-24: RES-1 to RES-6, DATA-8 to DATA-11,
+SEC-11, CON-4, PERF-1 to PERF-6) are owed the same way again, as are that pass's four in-place extensions
+(TIME-1 monotonic durations, OBS-1 trace context, DATA-6 lock timeout, DATA-4 compensation note); the next
+edition build pass picks up the subset whose trigger is that pass (RES-6, DATA-9, SEC-11, PERF-1, PERF-4, the
+DATA-11 lint half, the PERF-6 lint half, and the TIME-1 and DATA-6 extensions), and the rest wait on their named
+triggers (first external dependency, first broker, first deployed host, first cache, first published contract).
 
 Every guard in this edition carries a red-green proof: the violation it exists to catch was deliberately
 planted, the guard confirmed red, the violation reverted. Five verification rounds have run (the first build, an
@@ -199,9 +204,9 @@ Two resolved potholes:
 Status uses the catalog's four states (defined in `kernel/claims/README.md`): `proven` (one scan covers the whole
 surface), `patterned` (mechanism plus the v1 seams tested; each new seam owes its test), `latent` (built, never
 yet exercised by a real instance), `owed` (recorded, with the named trigger that promotes it). Every gating status
-is conditional on TEST-3's loop being armed at instantiation. The nine claims minted 2026-07-21 and the five
-minted 2026-07-24 are not yet rows here; each is owed with its trigger recorded in its claim file (see the
-opening). Scan-coverage specifics behind
+is conditional on TEST-3's loop being armed at instantiation. The nine claims minted 2026-07-21 and the
+twenty-three minted 2026-07-24 (five compliance, eighteen patterns) are not yet rows here; each is owed with its
+trigger recorded in its claim file (see the opening). Scan-coverage specifics behind
 these summaries are in `VERIFICATION.md` under "Coverage notes by claim".
 
 | Claim | Edition mechanism | Status |
