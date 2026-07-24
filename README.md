@@ -284,7 +284,7 @@ If you build one, please contribute it back as a pull request.
 - [`X2.md`](X2.md): the full method, and the reasoning behind each part of it.
 - [`GLOSSARY.md`](GLOSSARY.md): the record codes (X-8, MET-07, INV-10) the skills and claims cite,
   each defined in one line.
-- [`kernel/claims/`](kernel/claims/): the 46 technology-neutral invariants. One file per claim:
+- [`kernel/claims/`](kernel/claims/): the 51 technology-neutral invariants. One file per claim:
   the harm it prevents, the mechanism that enforces it, and that mechanism's honest limits.
 - [`kernel/dotnet-react/`](kernel/dotnet-react/): a working .NET 9 and React edition that
   enforces the claims, with the steps to start a new project on it.

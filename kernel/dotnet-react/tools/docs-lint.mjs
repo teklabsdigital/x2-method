@@ -3,8 +3,9 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // DOC-1 documentation lifecycle gate, plus the TEN-5 ledger coupling, the DEP-1 ledger-completeness check,
-// the DEP-1 container-image pin check (INV-05), the DEC-1 decision-provenance check, and the standing-constraint
-// dash check (MET-08). Plain node, no dependencies. Runs from anywhere; paths resolve relative to the edition root.
+// the DEP-1 container-image pin check (INV-05), the DEP-1 kernel-provenance pin check, the DEC-1
+// decision-provenance check, and the standing-constraint dash check (MET-08). Plain node, no dependencies.
+// Runs from anywhere; paths resolve relative to the edition root.
 const editionRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 const fail = (message) => errors.push(message);
@@ -235,6 +236,26 @@ if (!existsSync(codeownersPath)) {
   for (const surface of ['Migrations/', 'Contracts/', 'docs/contracts']) {
     if (!codeowners.some((line) => line.includes(surface) && /\s@\S+/.test(line))) {
       fail(`.github/CODEOWNERS: no owned entry covering '${surface}' (HUM-1).`);
+    }
+  }
+}
+
+// DEP-1: the kernel a project is seeded from is itself a pinned, ledgered dependency. VERSIONS.md carries a
+// Kernel provenance section: structural placeholders in the kernel repo, filled mechanically at instantiation.
+// The kernel context is detected by BUILD-BRIEF.md and VERIFICATION.md, which the instantiation manifest keeps
+// behind: their presence means this tree is the kernel itself, and the placeholders are legal.
+const kernelContext = existsSync(join(editionRoot, 'BUILD-BRIEF.md')) && existsSync(join(editionRoot, 'VERIFICATION.md'));
+const provStart = versions.indexOf('## Kernel provenance');
+if (provStart < 0) {
+  fail('VERSIONS.md: no Kernel provenance section; the kernel is a dependency and its pin lives here (DEP-1).');
+} else if (!kernelContext) {
+  const nextHeading = versions.indexOf('\n## ', provStart);
+  const section = nextHeading < 0 ? versions.slice(provStart) : versions.slice(provStart, nextHeading);
+  for (const field of ['Remote', 'Commit', 'Catalog pass date', 'Edition']) {
+    const row = section.split('\n').find((line) => line.replace(/\s+/g, ' ').startsWith(`| ${field} |`));
+    const value = row ? (row.split('|')[2] ?? '').trim() : '';
+    if (value.length === 0 || value.includes('<')) {
+      fail(`VERSIONS.md: Kernel provenance field '${field}' is missing or unfilled; instantiation writes the pin mechanically (DEP-1).`);
     }
   }
 }

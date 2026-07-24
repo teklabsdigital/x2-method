@@ -5,24 +5,26 @@ enforced mechanisms: architecture tests that fail the build when an invariant is
 composite, a deny-by-default HTTP host, a bounded-read data layer, a token-locked client, an out-of-process e2e
 harness, and a CI loop that runs all of it on every push. The product placeholder name is `Kernel`.
 
-The claims catalog holds 46 claims. This edition realizes 37 of them as the mechanisms in the conformance table
+The claims catalog holds 51 claims. This edition realizes 37 of them as the mechanisms in the conformance table
 below. The nine minted from the second project's extraction (2026-07-21: SEC-7, SEC-8, SEC-9, DATA-6, CON-3,
 AI-3, OBS-1, TEST-4, SRV-1) are owed here: each claim file records the mechanism shape and the trigger that
-promotes it at the next edition build pass.
+promotes it at the next edition build pass. The five minted from the compliance-mapping pass (2026-07-24: DEP-2,
+SEC-10, TEN-6, DATA-7, OBS-2) are owed the same way, as is TEN-4's write-provenance extension (trigger: next
+edition build pass).
 
 Every guard in this edition carries a red-green proof: the violation it exists to catch was deliberately
-planted, the guard confirmed red, the violation reverted. Four verification rounds have run (the first build, an
+planted, the guard confirmed red, the violation reverted. Five verification rounds have run (the first build, an
 adversarial review that closed real evasion paths, a full code review that closed runtime and guard-binding
-defects the guard mutations could not reach, and the invariants pass), and each round's mechanisms were proven
-as they landed, not in a batch at the end. The dated history and all four proof tables are in
-[`VERIFICATION.md`](VERIFICATION.md).
+defects the guard mutations could not reach, the invariants pass, and the versioning pass that landed the
+kernel-provenance check), and each round's mechanisms were proven as they landed, not in a batch at the end. The
+dated history and the proof tables are in [`VERIFICATION.md`](VERIFICATION.md).
 
 ## What is here
 
 ```
 BUILD-BRIEF.md   the handover this edition was built from (kept for provenance)
 VERIFICATION.md  the dated verification history and the four red-green proof tables
-VERSIONS.md      the DEP-1 ledger: packages + container images, publish dates; the 90-day window header
+VERSIONS.md      the DEP-1 ledger: kernel pin, packages + container images, publish dates; the 90-day window header
 .github/workflows/ci.yml   the TEST-3 loop (template; moves to repo root at instantiation)
 .github/CODEOWNERS         the HUM-1 gate on migrations and published contracts (armed at instantiation)
 .gitattributes   eol=lf everywhere (INV-03: no CRLF churn across the Windows/Mac/Docker boundary)
@@ -85,16 +87,22 @@ BUILD-BRIEF.md and VERIFICATION.md stay behind (kernel provenance, not project m
    product; docs-lint's HUM-1 check matches path fragments so the CODEOWNERS rename cannot silently drop coverage.
 2. **Git setup.** `git init`; the canonical `.gitignore` and `.gitattributes` (`eol=lf`) are in the file set;
    first commit only when directed (the never-commit constraint is in the project CLAUDE.md that x2:seed writes).
-3. **Arm the gates (TEST-3 + HUM-1, the step that gets skipped).** Move `.github/workflows/ci.yml` to the repo
+3. **Write the kernel pin (DEP-1).** Fill `VERSIONS.md`'s Kernel provenance section mechanically from the kernel
+   checkout the file set was copied from: remote (`git remote get-url origin`), commit (`git rev-parse HEAD`),
+   and the catalog pass date (the date of the latest pass paragraph in the claims catalog README); the edition
+   field is prefilled. Mechanical means the seed runs the commands; a human is never asked to transcribe a hash.
+   If the kernel arrived without git metadata (an archive), record the archive's stated source and the catalog
+   pass date, note the missing commit in D-000, and treat the pass date as the load-bearing value.
+4. **Arm the gates (TEST-3 + HUM-1, the step that gets skipped).** Move `.github/workflows/ci.yml` to the repo
    root; branch protection requires all five jobs AND code-owner review; replace `@OWNER` in CODEOWNERS with the
    product owner. Until this step the loop runs but blocks nothing.
-4. **Dev environment.** `scripts/dev-setup.sh` (SA password to gitignored `.env`; `Jwt:Key` and connection string
+5. **Dev environment.** `scripts/dev-setup.sh` (SA password to gitignored `.env`; `Jwt:Key` and connection string
    to user-secrets), then `scripts/db-up.sh` (pinned image, named volume, arm64 precheck) and
    `scripts/db-migrate.sh`. Ports 5080/5173/1433; Node 24+ for the harness and smoke. If the product vendors a
    submodule: `git submodule update --init` joins this step (docs-lint auto-skips `.gitmodules` paths). If the
    product needs a provider key (the pilot's Anthropic key): it goes to user-secrets here, and the bootstrap line
    is added to `dev-setup.sh`, never a manual copy no script covers.
-5. **Design home (INV-01).** Import the COMPLETE Claude Design export via the design MCP into
+6. **Design home (INV-01).** Import the COMPLETE Claude Design export via the design MCP into
    `design/prototype/` (the `.dc.html` plus the full `_ds/`, both themes, more than fifty variables; never values
    scraped from the `.dc.html`); fill in `design/prototype/README.md` (the lock record); re-point
    `tokenCoverage.test.ts` at the real export path under `_ds/` and re-transcribe `src/theme/tokens.ts` until it
@@ -105,14 +113,60 @@ BUILD-BRIEF.md and VERIFICATION.md stay behind (kernel provenance, not project m
 - `dotnet build -warnaserror` and `dotnet test` (all tiers; Docker running)
 - `npm ci && npm run verify` in `client-web/`
 - `scripts/e2e.sh` (harness with completeness self-audit, then the composed-entrypoint smoke)
-- `node tools/docs-lint.mjs` (DOC-1 placement, DEC-1 provenance, DEP-1 image pins, HUM-1 CODEOWNERS coverage,
-  MET-08 dashes)
+- `node tools/docs-lint.mjs` (DOC-1 placement, DEC-1 provenance, DEP-1 image pins and the filled kernel-provenance
+  pin, HUM-1 CODEOWNERS coverage, MET-08 dashes)
 - The dash check standalone, with the literal-byte pattern (BSD grep false-negatives on a BRE class):
   `grep -rn "$(printf '\342\200\224')" <authored paths>` and `grep -rn "$(printf '\342\200\223')" <authored paths>`
 - Branch protection verified armed: a test PR touching `Migrations/` must show the required code-owner review.
 
 Every project you add lands one D-000 (the first project decision record) plus deltas from this edition. That is
 the methodology metric: human turns per shipped slice.
+
+### A named adoption delta: the database engine
+
+SQL Server is this edition's ruled default, not a claim: no file in the claims catalog names an engine, and the
+catalog's re-rule mechanism (record the decision at adoption, swap the enforcement) applies. Swapping to
+PostgreSQL or MySQL is a supported delta with a fixed checklist: the EF provider package and Testcontainers
+module (new DEP-1 ledger rows), the image tag@digest in `VERSIONS.md` and the db scripts, and re-verifying the
+two engine-sensitive seams the tiers already pin: `DateTimeOffset` ordering under the keyset cursor
+(`KeysetPagingTests`) and composite-key behavior (`TenantPersistenceTests`). The integration tier going green on
+the new engine is the proof the swap holds. SQLite as the production engine is a larger re-rule, not a delta:
+TEST-1's tier shape presumes a client-server engine in containers, and the SQLite `DateTimeOffset` converter
+exists for the fast tier's semantics, not production's; record that as a D-000 that re-rules TEST-1, or pick a
+client-server engine.
+
+### Upgrading a seeded project
+
+A seeded project is a pinned copy, not a live dependency: it keeps exactly the invariants of the kernel named in
+its Kernel provenance row, enforced by its own loop, indefinitely; the kernel moving does not weaken it. An
+upgrade is a deliberate act with the catalog pass as its unit, never a raw file diff:
+
+1. Read the pass paragraphs in the claims catalog between the pinned catalog date and head, then land on head
+   directly (claim files are current state, not diffs; the pass paragraphs are the cumulative changelog).
+2. Claims minted since the pin arrive as owed rows with their named triggers; they cost nothing until a trigger
+   fires.
+3. Claims extended in place arrive as mechanism changes and may demand immediate work (new red tests, sometimes
+   a migration). A project may instead adopt an extension as a ledgered deferral: a VERSIONS.md waiver row with
+   a named trigger, never a locally edited test. Deferral is an honest state; a silently un-upgraded mechanism
+   is not.
+4. Re-copy the kernel-owned paths at the new pin: the architecture test project, the platform layer, `tools/`,
+   the client lint config, and `scripts/`. Known gap, until registry externalization lands (owed below): several
+   scans carry per-project registries inside those files (SEC-2 forbidden fields, SEC-3 PII names, CFG-1 literal
+   shapes), so re-copy is a guided merge for the registry-bearing files, re-applying the project's registry
+   additions after the copy.
+5. Re-apply the project's recorded deltas. Re-rules are decisions: they replay as deliberate edits verified by
+   the loop, not as mechanical patches.
+6. Run the loop to green. A schema-affecting extension (TEN-4's write-provenance stamps) lands with its
+   migration and takes the HUM-1 human turn like any other migration.
+7. Update the Kernel provenance row to the new pin in the same change.
+
+Rollback is re-copying at the old pin and reverting the row; a migration that rode the upgrade does not reverse
+by re-copy (HUM-1 territory, a human decision).
+
+A project seeded before the pin existed reconstructs it once: date the project's initial commit against the
+catalog's pass dates, corroborate by diffing its kernel-owned paths against kernel history, record the
+reconstructed pin and its stated uncertainty in a decision, adopt the current docs-lint, and fill the row. From
+then on the mechanism holds.
 
 ## Decisions and deviations from the brief
 
@@ -145,8 +199,9 @@ Two resolved potholes:
 Status uses the catalog's four states (defined in `kernel/claims/README.md`): `proven` (one scan covers the whole
 surface), `patterned` (mechanism plus the v1 seams tested; each new seam owes its test), `latent` (built, never
 yet exercised by a real instance), `owed` (recorded, with the named trigger that promotes it). Every gating status
-is conditional on TEST-3's loop being armed at instantiation. The nine claims minted 2026-07-21 are not yet rows
-here; each is owed with its trigger recorded in its claim file (see the opening). Scan-coverage specifics behind
+is conditional on TEST-3's loop being armed at instantiation. The nine claims minted 2026-07-21 and the five
+minted 2026-07-24 are not yet rows here; each is owed with its trigger recorded in its claim file (see the
+opening). Scan-coverage specifics behind
 these summaries are in `VERIFICATION.md` under "Coverage notes by claim".
 
 | Claim | Edition mechanism | Status |
@@ -154,7 +209,7 @@ these summaries are in `VERIFICATION.md` under "Coverage notes by claim".
 | TEN-1 tenant from claim only | `TenantScopeMiddleware` reads `tenant_id` from the JWT only; `EndpointSpineTests` bans tenant route/query params; `ContractShapeTests` bans `TenantId` on requests | proven |
 | TEN-2 ambient scope fail-closed | `AmbientTenantScope` (AsyncLocal, throws on unset); `AmbientTenantScopeTests` | patterned; the non-HTTP job base class is owed (trigger: first background job) |
 | TEN-3 tenant-leading keys | `NoteConfiguration.HasKey(TenantId, Id)`; `TenantKeyTests` (both directions) | proven |
-| TEN-4 save-time cross-tenant guard | `KernelDbContext.GuardTenancy` on both SaveChanges variants; `TenantGuardTests`; integration cross-tenant modify; `BulkWriteBanTests` bans the write paths that bypass the save pipeline (EF set-based, raw SQL, raw ADO) | proven |
+| TEN-4 save-time guard + write provenance | `KernelDbContext.GuardTenancy` on both SaveChanges variants; `TenantGuardTests`; integration cross-tenant modify; `BulkWriteBanTests` bans the write paths that bypass the save pipeline (EF set-based, raw SQL, raw ADO) | proven (the tenancy guard); write-provenance stamps owed (trigger: next edition build pass) |
 | TEN-5 sanctioned-bypass ledger | `docs/claims/tenant-bypass-ledger.md` (empty) + docs-lint rule that a row without a sole-reader test fails | latent (ledger empty; the first sanctioned bypass is its first run) |
 | SEC-1 every endpoint gated | deny-by-default fallback policy + cached `PermissionPolicyProvider`; `EndpointSpineTests` asserts the fallback denies, allowlists `/health`, and requires a permission policy per endpoint; the `sv`/tenant gates run after routing and exempt allowlisted-anonymous endpoints | proven |
 | SEC-2 anti-mass-assignment | `ContractShapeTests` forbidden-field registry; `EndpointSpineTests` scans every body-bound DTO for server fields, nested and immutable constructor-bound DTOs included; App/Api declare no request/response types | proven |
@@ -181,7 +236,7 @@ these summaries are in `VERIFICATION.md` under "Coverage notes by claim".
 | UI-3 primitives-only screens | `Text`/`Button` are the only token importers (eslint no-restricted-imports + naming scan) | proven |
 | UI-4 fidelity ledger | `NotesScreen.fidelity.test.tsx` exhaustiveness + de-fabrication; ledgers live in `design/ledger/` (INV-01) | patterned (each screen owes its suite; per-atom resolved-style assertions not included; the prototype-to-ledger exporter owed) |
 | UI-5 thin UI over tested services | eslint bans `api/**` and `data/**` imports outside the composition root (`src/main.tsx`); `npm run smoke` boots the ACTUAL `src/main.tsx` in jsdom against the live server, asserting a real GET and a real POST; runs in the CI e2e job and `scripts/e2e.sh` | patterned (the import ban is proven-centralized; each new primary flow owes its smoke line) |
-| DEP-1 dependency quarantine | CPM exact pins + lockfiles + locked-mode restore (`--locked-mode` / `npm ci`) + `VERSIONS.md` (90-day window header, container-images section) + docs-lint ledger and image checks; the SQL Server image is one tag@digest value across runbook, CI, and the Testcontainers fixture | proven; publish-date CI check owed (dates recorded by hand) |
+| DEP-1 dependency quarantine | CPM exact pins + lockfiles + locked-mode restore (`--locked-mode` / `npm ci`) + `VERSIONS.md` (90-day window header, container-images section, kernel-provenance section) + docs-lint ledger, image, and kernel-provenance checks; the SQL Server image is one tag@digest value across runbook, CI, and the Testcontainers fixture | proven; publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin |
 | TEST-1 three tiers on real engines | SQLite unit/arch, Testcontainers integration; EF InMemory banned by `NamingPlacementTests` | proven |
 | TEST-2 e2e harness | `tools/harness/main.ts` drives the real client services (NDJSON + redaction, fails loudly not vacuously); the completeness self-audit fails on any undriven repo method; the gated harness profile refuses outside Development/Testing (`HarnessProfileTests`) | proven (the harness-profile gate is latent: no product-owned provider port to re-bind yet; the first one is its first re-binding) |
 | TEST-3 CI loop | `ci.yml`: server, client, docs-lint, secret-scan, e2e-wire | proven mechanism, not yet armed (branch protection is set at instantiation; until then the loop blocks nothing) |
@@ -190,8 +245,11 @@ these summaries are in `VERIFICATION.md` under "Coverage notes by claim".
 | HUM-1 irreversible surfaces get a human turn | `.github/CODEOWNERS` covers migrations, contracts, and `docs/contracts/` (`@OWNER` renamed at instantiation); docs-lint fails if any of the three loses its owned entry; branch protection requires code-owner review | proven mechanism, not yet armed (arms with TEST-3; the manifest carries the step) |
 
 Also owed at v1 (out of the cut line, recorded not lost): an identity/auth module (tests and the harness mint their
-own JWTs with the dev key), and the Expo/React Native client variant (a proven mobile-client pattern, lifted
-when the first mobile kernel project appears).
+own JWTs with the dev key), the Expo/React Native client variant (a proven mobile-client pattern, lifted
+when the first mobile kernel project appears), and registry externalization: the per-project name registries the
+scans read (SEC-2 forbidden fields, SEC-3 PII names, CFG-1 literal shapes) move to project-owned data files so
+kernel-owned test code can be re-copied at upgrade without clobbering project extensions (trigger: the first
+seeded-project upgrade or the next edition build pass, whichever lands first).
 
 ## Known limitations
 

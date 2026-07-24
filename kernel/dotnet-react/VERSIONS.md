@@ -12,6 +12,22 @@ reference floats or is missing its row below.
 Adding or bumping a dependency: confirm the publish date clears the window, add the row here in the same change,
 and keep the pin exact.
 
+## Kernel provenance (DEP-1: the kernel is a dependency)
+
+The kernel this project was seeded from, pinned like any other dependency: the remote names the identity, the
+commit pins it, the catalog pass date names the claims version this project's conformance statements refer to,
+and the edition names the mechanism set. Written mechanically at instantiation (a manifest step); changed only
+by a deliberate upgrade (the edition README's "Upgrading a seeded project"). In the kernel repo itself this
+section legally holds structural placeholders; docs-lint enforces the filled form in seeded projects, detecting
+the kernel context by BUILD-BRIEF.md and VERIFICATION.md, which stay behind at seeding.
+
+| Field | Value |
+|-------|-------|
+| Remote | `<kernel-remote>` |
+| Commit | `<kernel-commit>` |
+| Catalog pass date | `<catalog-pass-date>` |
+| Edition | dotnet-react |
+
 ## Container images (runbook, CI, Testcontainers fixture: one pin, three tiers)
 
 The pinned form is tag@digest: the tag documents, the digest pins (a re-pushed tag cannot drift in silently).

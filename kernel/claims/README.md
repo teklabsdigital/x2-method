@@ -18,7 +18,7 @@ The edition realizations (concrete arch tests, lint rules, skeleton) live in `ke
 
 ## File schema
 
-One file per claim: `{ID}-{slug}.md`. Front matter: `id`, `family`, `locus` (centralized or per-seam), `provenance` (register/decision refs). Body sections: **Statement** (portable), **Harm** (named, concrete), **Enforcement** (mechanism class + edition realization), **Weakening notes** (where enforcement is honest about its limits).
+One file per claim: `{ID}-{slug}.md`. Front matter: `id`, `family`, `locus` (centralized or per-seam), `provenance` (register/decision refs; an in-place extension is recorded there with its pass date). Body sections: **Statement** (portable), **Harm** (named, concrete), **Enforcement** (mechanism class + edition realization), **Weakening notes** (where enforcement is honest about its limits).
 
 ### Centralized versus per-seam enforcement
 
@@ -38,21 +38,43 @@ Each entry carries an **Edition (v1)** tag. A single `built` was doing too much 
 
 v1 tally (retrued by the invariants pass, 2026-07-11): 25 `proven` (two of them, TEST-3 and HUM-1, gate only once branch protection is armed at instantiation), 6 `patterned`, 2 `latent`, 4 `owed`. Total 37: the acceptance test promoted UI-5, CFG-1, HUM-1, and DEC-1 into the cut line.
 
-The P2 extraction pass (2026-07-21, `record/candidates.md`) minted nine further claims, every one proven in the reference project and honestly tagged `owed` in the edition with a named promotion trigger: SEC-7, SEC-8, SEC-9, DATA-6, CON-3, AI-3, OBS-1, TEST-4, SRV-1. The same pass extended five existing claims in place (TEST-2 probe-surface gating, UI-4 exception scoping, DEC-1 ruled bounds, SEC-5 store-to-store transfer, UI-5 built-form assertion). Current tally: 25 `proven`, 6 `patterned`, 2 `latent`, 13 `owed`. Total 46.
+The P2 extraction pass (2026-07-21, `record/candidates.md`) minted nine further claims, every one proven in the reference project and honestly tagged `owed` in the edition with a named promotion trigger: SEC-7, SEC-8, SEC-9, DATA-6, CON-3, AI-3, OBS-1, TEST-4, SRV-1. The same pass extended five existing claims in place (TEST-2 probe-surface gating, UI-4 exception scoping, DEC-1 ruled bounds, SEC-5 store-to-store transfer, UI-5 built-form assertion). Tally after that pass: 25 `proven`, 6 `patterned`, 2 `latent`, 13 `owed`. Total 46.
+
+The compliance-mapping pass (2026-07-24) checked the catalog against two external regimes, the ASD Essential Eight and the SOC 2 Trust Services Criteria, and minted five claims where an application-layer invariant with a nameable mechanism was missing: DEP-2, SEC-10, TEN-6, DATA-7, OBS-2. Unlike the P2 nine, these are minted from the mapping, not extracted from a reference system; each records the control requirement it answers in its provenance, and all five enter `owed` with named triggers. The same pass extended TEN-4 in place with write-provenance stamps (owed, trigger: next edition build pass). Current tally: 25 `proven`, 6 `patterned`, 2 `latent`, 18 `owed`. Total 51.
+
+The versioning pass (2026-07-24) closed the version-skew gap between the kernel and the projects seeded from it: a seeded project is a copy, and nothing recorded which kernel it was a copy of. The pass named the catalog's versioning scheme and claim-identity rule (the section below) and extended DEP-1 in place: the kernel a project is seeded from is itself a pinned, ledgered dependency, recorded in the project's VERSIONS.md at instantiation and enforced by the edition's docs-lint kernel-provenance check. The edition gained the upgrade procedure for seeded projects. No claims were minted; the tally is unchanged.
 
 One dependency sits under every `proven` and `patterned` tag: a mechanism gates a merge only once **TEST-3's loop is armed by branch protection**, which is an instantiation step, not the workflow file. Until then the pipeline runs but blocks nothing, so every gating tag reads "enforced once armed". The kernel acceptance test must verify instantiation actually arms it; see TEST-3.
 
-## Claims (46)
+## Catalog versioning and claim identity
+
+The catalog's version is the date of its latest pass; the dated pass paragraphs above are the changelog. A claim
+file carries its own history in `provenance` (its minting refs, and each in-place extension with its pass date),
+so a reader of one claim sees when it last moved without the changelog. A project pins the catalog version it
+builds against (DEP-1's kernel-provenance row, written at instantiation), so a project's conformance statement is
+always "conformant to the catalog as of the pin", never an unversioned "conformant to X2"; moving the pin is the
+deliberate act described in the edition's upgrade section.
+
+Claim identity is append-only. An ID's statement may strengthen additively (TEN-4's write-provenance extension is
+the model), but its meaning never changes: a change of meaning mints a new ID, and the old ID is deprecated in
+place with a pointer to its successor, never reused or silently repurposed. This is what keeps provenance chains
+in seeded projects valid across upgrades: a decision citing a claim cites a meaning that cannot shift under it.
+
+Stated honestly, in this catalog's own register: this section is governance for catalog editors, enforced by
+review at each pass, and this repository carries no lint to back it. A minimal check (every pass date cited in a
+claim's `provenance` appears in a pass paragraph here) is the named upgrade if editing hands multiply.
+
+## Claims (51)
 
 ### Tenancy
 
-Five claims, layered so no single one is load-bearing: the tenant is read only from the credential (TEN-1), a scope is always open and fails closed (TEN-2), the key shape makes tenancy part of identity (TEN-3), the save pipeline is the write backstop (TEN-4), and any deliberate exception is ledgered and tested (TEN-5).
+Six claims, layered so no single one is load-bearing: the tenant is read only from the credential (TEN-1), a scope is always open and fails closed (TEN-2), the key shape makes tenancy part of identity (TEN-3), the save pipeline is the write backstop and the provenance stamp (TEN-4), any deliberate exception is ledgered and tested (TEN-5), and the credential's tenant is minted from membership, never asserted (TEN-6).
 
 #### [TEN-1](TEN-1-tenant-from-claim-only.md) - Tenant comes from the credential only
 - **Statement:** The tenant a request operates in is resolved solely from the validated auth credential (the tenant claim in the token). Tenant identity never travels as a route, query, header, or body parameter, and no request contract carries a tenant-identifier field.
 - **Harm:** Horizontal privilege escalation by parameter tampering: one forged tenant id yields full cross-tenant read and write.
 - **Enforcement (centralized):** An architecture test scans the real route table for tenant-shaped route and query parameters, plus a reflection scan over all request-contract types rejecting tenant-id fields.
-- **Weakening:** The contract scan covers only the Contracts assembly; a request type declared elsewhere escapes it. MOD-2 (types live where they belong) closes that gap.
+- **Weakening:** The contract scan covers only the Contracts assembly; a request type declared elsewhere escapes it. MOD-2 (types live where they belong) closes that gap. The identity mint surface (TEN-6) is the scans' one sanctioned carve-out: it accepts a tenant selection to mint the credential, never to scope a product request.
 - **Edition (v1):** proven.
 
 #### [TEN-2](TEN-2-ambient-scope-fail-closed.md) - Ambient scope, fail-closed
@@ -69,12 +91,12 @@ Five claims, layered so no single one is load-bearing: the tenant is read only f
 - **Weakening:** "Tenant-owned" needs a machine-readable definition; the edition uses a marker interface and additionally flags any unmarked entity that carries a tenant column. A sanctioned key-shape exemption carries a named justification and its own guard at the key assertion; it is *not* a cross-tenant access path, so it does not go in the TEN-5 access-ledger (whose schema and sole-reader test do not fit it).
 - **Edition (v1):** proven.
 
-#### [TEN-4](TEN-4-save-time-cross-tenant-guard.md) - Save-time cross-tenant guard
-- **Statement:** The single save pipeline stamps the current tenant onto new rows and refuses any modify or delete touching another tenant's row. If scope is unset when a tenant-owned row is saved, the save throws.
-- **Harm:** Write-side cross-tenant corruption: a service bug or background path writing, transferring, or deleting another tenant's rows.
-- **Enforcement (centralized):** Unit tests on the save pipeline cover stamp-on-create, throw-on-foreign-row, and throw-on-unset-scope; end-to-end cross-tenant probes are the outer net. The edition additionally bans the set-based, raw-SQL, and raw-ADO operators that bypass the save pipeline entirely.
-- **Weakening:** This is the write backstop, not the primary mechanism; read-side query filters are defense-in-depth only, never load-bearing.
-- **Edition (v1):** proven.
+#### [TEN-4](TEN-4-save-time-cross-tenant-guard.md) - Save-time guard and write provenance
+- **Statement:** The single save pipeline stamps the current tenant onto new rows, stamps write provenance (actor and instant on create and modify, overwriting caller-set values), and refuses any modify or delete touching another tenant's row. Unset scope or unset actor at save time throws; non-interactive and anonymous write paths establish a named system actor at entry.
+- **Harm:** Write-side cross-tenant corruption; and hand-set audit stamps that are absent or lying exactly when an incident or an auditor's sample needs them.
+- **Enforcement (centralized):** Unit tests on the save pipeline cover stamp-on-create, throw-on-foreign-row, throw-on-unset-scope, both provenance stamps, overwrite of caller-supplied values, and throw-on-unset-actor; e2e cross-tenant probes are the outer net. The edition additionally bans the set-based, raw-SQL, and raw-ADO operators that bypass the save pipeline entirely.
+- **Weakening:** The write backstop, not the primary mechanism; read-side query filters are defense-in-depth only. Stamps are last-writer state, not an audit trail: no before/after values, no deletion record (that is OBS-2's territory).
+- **Edition (v1):** proven (the tenancy guard); the provenance stamps are owed, trigger: next edition build pass (an interceptor extension, rides with DATA-6 and SRV-1).
 
 #### [TEN-5](TEN-5-sanctioned-bypass-ledger.md) - Sanctioned-bypass ledger
 - **Statement:** Every legitimate cross-tenant path (global schedulers, platform admin, billing sweeps) is enumerated in one ledger, each entry naming its justification and a sole-reader test that fails if any other code path performs that access.
@@ -83,9 +105,16 @@ Five claims, layered so no single one is load-bearing: the tenant is read only f
 - **Weakening:** The schema is scoped to cross-tenant *access* paths, not to TEN-3 key-shape exemptions (a different kind of exception, recorded elsewhere).
 - **Edition (v1):** latent (the ledger ships empty; the mechanism has never run against a real entry, so the first sanctioned bypass is its first execution and its sole-reader test is written then).
 
+#### [TEN-6](TEN-6-tenant-minted-from-membership.md) - Tenant is minted from membership, never asserted
+- **Statement:** A principal's tenant memberships are server-side data; the credential carries exactly one active tenant. Entering or switching tenants mints a new credential through the real sign-in surface (single login, a selector when memberships exceed one), validated against current membership at mint time; a switch never travels as a header, product-endpoint parameter, or mutable session state. Revoking a membership bumps the session version (SEC-4), killing credentials scoped to that tenant immediately.
+- **Harm:** TEN-1 closes every request-time door for a caller-supplied tenant; an unguarded mint or switch path reopens them all, issuing a validly signed cross-tenant credential every downstream guard then honors.
+- **Enforcement (centralized):** Unit tests on the mint path (foreign selection refused, membership read at mint, revocation kills the scoped credential), an arch assertion that no endpoint outside the mint surface accepts a tenant-selection parameter (the mint surface is TEN-1's one named carve-out), and a harness scenario through the real sign-in path.
+- **Weakening:** Rules the flow shape, not the membership model; roles per membership and invitation lifecycles are the identity slice's D-000 design. SEC-4's cache TTL is the revocation-delay bound here too.
+- **Edition (v1):** owed (trigger: first identity slice, shared with SEC-4's version store and SEC-10).
+
 ### Security
 
-Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out of URLs (SEC-3), harden and revoke tokens (SEC-4), keep secrets out of the repo (SEC-5), keep them out of the logs (SEC-6), keep public surfaces un-walkable (SEC-7), price the abuse-shaped doors (SEC-8), and ship the deployment edge (SEC-9).
+Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out of URLs (SEC-3), harden and revoke tokens (SEC-4), keep secrets out of the repo (SEC-5), keep them out of the logs (SEC-6), keep public surfaces un-walkable (SEC-7), price the abuse-shaped doors (SEC-8), ship the deployment edge (SEC-9), and prove the second factor before privilege (SEC-10).
 
 #### [SEC-1](SEC-1-every-endpoint-gated.md) - Every endpoint gated
 - **Statement:** Every endpoint requires an explicit permission policy; bare authenticated-only registrations are rejected; anonymous endpoints exist only on an enumerated, reviewed allowlist; the host registers a deny-by-default fallback authorization policy.
@@ -150,6 +179,13 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 - **Weakening:** CSP is deliberately separate (an inline-bootstrap SPA needs its own design pass); transport-security subdomain and preload flags are owner opt-ins.
 - **Edition (v1):** owed (trigger: first deployed edition host).
 
+#### [SEC-10](SEC-10-authentication-strength.md) - Authentication strength asserted at mint, verified at the gate
+- **Statement:** Privileged-scope tokens are refused unless the credential asserts a second factor recorded at mint; when the product owns identity the mint path will not issue a privileged single-factor session, and when identity is delegated the required method assertion is mandatory configuration (DATA-5), verified rather than assumed. Extending the requirement to all principals of an internet-facing product is a ruled per-project figure.
+- **Harm:** SEC-4 hardens the token after sign-in and says nothing about sign-in itself: a phished password mints a fully valid, algorithm-pinned, version-current session that the token discipline then faithfully transports.
+- **Enforcement (centralized):** Host tests in the SEC-4 family (a privileged token without the method assertion is refused; the mint path refuses privileged single-factor issuance) plus a harness scenario through the real sign-in path.
+- **Weakening:** The application verifies what the credential asserts, not the ceremony; trust in the issuer is SEC-4's premise, and the factor's phishing resistance is a per-project ruling.
+- **Edition (v1):** owed (trigger: first identity slice).
+
 ### Time
 
 #### [TIME-1](TIME-1-utc-offset-only.md) - UTC, offset-aware, and nothing else
@@ -161,7 +197,7 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 
 ### Data
 
-Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side effects made at-most-once (DATA-3), cross-store sequences that reconcile (DATA-4), config that fails fast (DATA-5), and schema change that never rides a serving boot (DATA-6).
+Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side effects made at-most-once (DATA-3), cross-store sequences that reconcile (DATA-4), config that fails fast (DATA-5), schema change that never rides a serving boot (DATA-6), and data whose retention ends on a ruled clock (DATA-7).
 
 #### [DATA-1](DATA-1-stores-records-downward-deps.md) - Stores, records, downward deps
 - **Statement:** Data access lives behind store interfaces; records are pure data holders with zero behavior; an endpoint never touches a store or DbContext (it calls one service method); dependencies flow downward only; cross-boundary collaborators are interfaces registered at the composition root.
@@ -204,6 +240,13 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 - **Enforcement (centralized):** Host tests assert the mode applies-and-exits without serving and that a serving boot performs no migration; the composed tier boots only against a migrated database.
 - **Weakening:** Throwaway test databases may auto-apply at provisioning; that is the provisioning path, not a serving boot.
 - **Edition (v1):** owed (trigger: next edition build pass; a small host change).
+
+#### [DATA-7](DATA-7-retention-and-disposal.md) - Ruled retention and disposal
+- **Statement:** Every entity holding PII or confidential content declares a retention class from a closed registry (the TEN-3 marker idiom); each class names its ruled retention bound and its disposal mechanism (hard delete, anonymization, or crypto-shredding), each mechanism is a tested seam, and a cross-tenant disposal sweep is ledgered under TEN-5. An external deletion obligation maps to a class, never to ad hoc SQL.
+- **Harm:** Nothing else in the catalog says data ever leaves, and retention by default is retention forever: data held past need converts a breach into a reportable incident, and every deletion request becomes hand-run production SQL, the exact unledgered access TEN-5 exists to kill.
+- **Enforcement (centralized declaration, per-class mechanism):** An arch test rejects a PII-shaped entity without a retention-class declaration (name-list heuristic, the SEC-3 idiom); each class's disposal mechanism owes a named test.
+- **Weakening:** The PII-shape list is heuristic and extends per project; the scan proves declaration, not that the ruled bound is right (a legal question, a D-000 ruling). Crypto-shredding is the named mechanism where backups can reach the data; built when the first class needs it.
+- **Edition (v1):** owed (trigger: first PII-bearing entity in an edition project, or the first contractual deletion clause, whichever lands first).
 
 ### Configuration
 
@@ -330,12 +373,21 @@ One token source kept honest against the design system (UI-1), literal visuals b
 
 ### Dependencies
 
+Quarantine at the door (DEP-1), and a standing sweep over what already got in (DEP-2).
+
 #### [DEP-1](DEP-1-dependency-quarantine.md) - Dependency quarantine
-- **Statement:** Never install a freshly published package: default cooling-off is 90 days from publish (the number lives in one place, the VERSIONS.md ledger header), hard floor 7 days for a new package or a new major or minor version. Container images are dependencies too: pinned tag-plus-digest, one value across every surface, ledgered like packages. The one carve-out below the floor is a patch release of an already-ledgered dependency, from the same maintainer, that addresses a published advisory: it may bypass the window with an explicit owner decision and a ledger row, because staying on a known-exploited version is the larger risk. All versions are pinned exactly, lockfiles committed, CI restores in locked mode, internal packages resolve only from the internal feed, and every project carries a ledger of versions, publish dates, and waivers.
-- **Harm:** Supply-chain compromise is loudest in a package's first days; range pins and unlocked restores mean the build you tested is not the build you shipped; dependency confusion substitutes a public package for an internal name. A floor with no CVE carve-out would, at worst, mandate remaining exploited for a week.
-- **Enforcement (centralized):** Exact pins plus committed lockfiles plus locked-mode restore in the CI loop plus source mapping plus the ledger file; the docs-lint ledger check compares ledger rows against the lockfile's direct dependencies.
-- **Weakening:** A CI publish-date check against the cooling-off window is the named upgrade path (dates are recorded by hand today).
-- **Edition (v1):** proven (the automated publish-date check is owed).
+- **Statement:** Never install a freshly published package: default cooling-off is 90 days from publish (the number lives in one place, the VERSIONS.md ledger header), hard floor 7 days for a new package or a new major or minor version. Container images are dependencies too: pinned tag-plus-digest, one value across every surface, ledgered like packages. The one carve-out below the floor is a patch release of an already-ledgered dependency, from the same maintainer, that addresses a published advisory: it may bypass the window with an explicit owner decision and a ledger row, because staying on a known-exploited version is the larger risk. All versions are pinned exactly, lockfiles committed, CI restores in locked mode, internal packages resolve only from the internal feed, and every project carries a ledger of versions, publish dates, and waivers. The kernel a project is seeded from is itself a dependency: its identity (remote, commit, catalog pass date, edition) is ledgered at instantiation and changed only by deliberate upgrade.
+- **Harm:** Supply-chain compromise is loudest in a package's first days; range pins and unlocked restores mean the build you tested is not the build you shipped; dependency confusion substitutes a public package for an internal name. A floor with no CVE carve-out would, at worst, mandate remaining exploited for a week. An unpinned kernel seed makes conformance unverifiable, and the loss is unrecoverable.
+- **Enforcement (centralized):** Exact pins plus committed lockfiles plus locked-mode restore in the CI loop plus source mapping plus the ledger file; the docs-lint ledger check compares ledger rows against the lockfile's direct dependencies, and its kernel-provenance check enforces the filled pin in seeded projects.
+- **Weakening:** A CI publish-date check against the cooling-off window is the named upgrade path (dates are recorded by hand today). The pin proves identity, not conformance; the loop holds the mechanisms true.
+- **Edition (v1):** proven (the automated publish-date check is owed; the kernel-provenance check is built and red-green proven, latent until the next instantiation fills a real pin).
+
+#### [DEP-2](DEP-2-standing-advisory-sweep.md) - Standing advisory sweep with a remediation clock
+- **Statement:** A CI job runs the ecosystem advisory audit over the exact set DEP-1 ledgers (lockfiles and pinned image digests), on every push and on a schedule so a quiet repo still hears a new advisory; an advisory against a ledgered dependency opens DEP-1's patch carve-out with a ruled remediation clock, and the job stays red until a patch or an explicit waiver lands as a ledger row.
+- **Harm:** DEP-1 vets what enters and never looks again: yesterday's vetted dependency is today's advisory, learned from an incident instead of a feed; remediation without a clock decays into a backlog column.
+- **Enforcement (centralized):** The CI audit job in locked mode over lockfiles and image digests; ledger rows record remediation or waiver (advisory id, date, reason); clock values live beside DEP-1's window in the ledger header, one home for ruled numbers.
+- **Weakening:** Advisory databases lag and miss, so the sweep is a floor, not a proof of absence; a non-applicable transitive advisory is waived as a ledger row with a reason, never a suppressed feed.
+- **Edition (v1):** owed (trigger: the first armed CI loop; DEP-1's publish-date check rides the same job).
 
 ### Testing
 
@@ -405,12 +457,21 @@ The server owns identity on every tool call (AI-1), untrusted content never wide
 
 ### Observability
 
+The seam says when it is broken (OBS-1); the refusals say when it is under attack (OBS-2).
+
 #### [OBS-1](OBS-1-external-effect-seam-observability.md) - External-effect seam observability
 - **Statement:** Every port performing an external side effect ships observability at the seam from day one: accept and settle logged with elapsed time, the provider's traceable operation id captured on accept, timeouts logged with the waited duration; acceptance and delivery are recorded as distinct facts; a child DI container receives the host's logger factory so no seam can go dark.
 - **Harm:** A live incident becomes archaeology: the app cannot say whether the fault is its own, the provider's, or downstream, and the diagnosis burns human turns the seam log would have answered.
 - **Enforcement (per-seam):** Each external port owes a named test asserting its accept/settle logging shape and redaction (SEC-6); the logger-factory handover is pinned by the port's test.
 - **Weakening:** Per-seam by nature; deep terminal-status awaiting is gated to diagnostic configurations.
 - **Edition (v1):** owed (trigger: first external side-effect port; this opens the observability family the v1 cut deferred).
+
+#### [OBS-2](OBS-2-security-event-log.md) - Refusals and privileged actions are security events
+- **Statement:** Every refusal the catalog mandates (SEC-1 denials, SEC-4 and SEC-10 rejections, TEN-2/TEN-4/TEN-6 refusals, SEC-8 limit hits) and every privileged execution (a TEN-5 bypass running, an administrative mutation) emits a structured security event through one emitter seam: kind, principal and tenant identifiers, outcome; content governed by SEC-6, marked so a collector can route it apart from diagnostic logging.
+- **Harm:** OBS-1 answers "how will we know this is broken"; nothing answers "how will we know this is under attack": credential stuffing, tenant probing, or an abused bypass reads as normal 4xx noise until a customer or an auditor's sample finds it.
+- **Enforcement (per-seam):** Each refusal path owes a named test asserting its event reaches the emitter with identifiers and no payload; the emitter is one centralized seam with its own SEC-6 redaction test.
+- **Weakening:** No scan proves an arbitrary future refusal emits. Emission is not detection: alerting, aggregation, retention, and log protection live outside the application layer.
+- **Edition (v1):** owed (trigger: first deployed edition host, alongside SEC-9; the refusal seams it instruments are already built and tested).
 
 ## Named gaps: resolved (invariants pass, 2026-07-11)
 
@@ -422,4 +483,4 @@ section predicted, and the cut line moved from 33 to 37 (UI-5 and CFG-1 were min
 
 ## Explicitly out of v1 (recorded, not lost)
 
-Orchestration patterns, Claude Design export pipeline (the artifact UI-1 and UI-4 both want to read from), TraceLint integration, crypto-shredding RTBF, SSRF egress guard (promote to v1 if the first kernel project is agentic-outbound), and migration tooling beyond HUM-1 and DATA-6. Observability left this list on 2026-07-21: OBS-1 opens the family at the external-effect seam; the MeterListener tag-allowlist pattern remains its v2 extension.
+Orchestration patterns, Claude Design export pipeline (the artifact UI-1 and UI-4 both want to read from), TraceLint integration, SSRF egress guard (promote to v1 if the first kernel project is agentic-outbound), and migration tooling beyond HUM-1 and DATA-6. Observability left this list on 2026-07-21: OBS-1 opens the family at the external-effect seam; the MeterListener tag-allowlist pattern remains its v2 extension. Crypto-shredding RTBF left it on 2026-07-24: DATA-7 names it as a disposal mechanism, built when the first retention class needs it. Also permanently out, recorded so a future compliance mapping does not re-litigate them: endpoint and infrastructure controls from external regimes (device application control, OS and endpoint patching, backups and recovery, physical access, organizational governance); their application-layer analogues, where they exist, are DEP-2, SEC-10, OBS-2, and DATA-7.

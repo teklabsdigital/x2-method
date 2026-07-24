@@ -129,6 +129,24 @@ is the green half.
 | harness `service-method-coverage` (TEST-2/INV-10) | a public `probeUndriven()` method on NotesRepo with no scenario | red against the live server |
 | composed-entrypoint smoke (UI-5/INV-07) | `main.tsx` reverted to the placeholder wiring (no client constructed; the edition's own pre-pass state) | red against the live server; green re-wired |
 
+## Round 5: versioning pass (2026-07-24)
+
+The versioning pass extended DEP-1 with the kernel pin: `VERSIONS.md` gains the Kernel provenance section
+(structural placeholders in the kernel, filled mechanically at instantiation, manifest step 3) and docs-lint
+gains the check. The kernel context is detected by BUILD-BRIEF.md and VERIFICATION.md, which the manifest's
+file set keeps behind at seeding. Proven red-green on a scratch copy of the edition, with the project context
+simulated by removing those two files:
+
+| Guard (mechanism) | State | Result |
+|-------------------|-------|--------|
+| docs-lint kernel-provenance (DEP-1) | kernel context, placeholders in place | green (placeholders legal in the kernel) |
+| docs-lint kernel-provenance (DEP-1) | project context, placeholders unfilled | red, one line per unfilled field (Remote, Commit, Catalog pass date; the prefilled Edition field stays silent) |
+| docs-lint kernel-provenance (DEP-1) | project context, section deleted outright | red |
+| docs-lint kernel-provenance (DEP-1) | project context, filled with the real remote, commit, and pass date | green |
+
+The check's first real run against a genuinely seeded project is the next instantiation; until then its
+conformance-table status is latent, the TEN-5 idiom.
+
 ## Coverage notes by claim
 
 Scan-coverage detail behind the conformance table's summaries. Nothing here changes a status; these
