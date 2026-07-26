@@ -1,12 +1,12 @@
 {
   "edition": "node-react",
-  "catalogPassDate": "2026-07-24",
+  "catalogPassDate": "2026-07-26",
   "claims": {
     "TEN-1": {
       "title": "Tenant comes from the credential only",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "mechanism": "the prohibition half IS built and proven on all four surfaces: `scanEndpointSpine` rejects tenant-shaped route, query and body-contract names by tokenized run, and a runtime `onRequest` strip in `createApp` removes tenant-shaped request headers before any handler, which is the only reachable mechanism for a surface that cannot be closed. The strip's registry carries the concatenated spellings (`tenantid`, `orgid`, `organisationid`) explicitly, because Node lowercases header names before any hook runs, so `X-TenantId` arrives as `x-tenantid` and the tokenizer's camel-case half is unavailable on this surface by construction",
+      "note": "trigger: the credential mint (SEC-4, TEN-6). Read the status conservatively rather than as nothing built. TEN-1's statement is a prohibition plus a resolution rule; the prohibition is realized and red-green proven, and the resolution rule ('tenant is resolved solely from the validated credential') has no mechanism because no credential can be minted here. No status in the four-value vocabulary says that, which is S-8. Round 4 audit: the prohibition half was itself overstated, because `X-TenantId` and `X-OrgId` walked past the strip over real HTTP until the concatenated entries landed, which is evidence for the conservative status rather than against it. Findings: A-2, E-9, E-10, S-8."
     },
     "TEN-2": {
       "title": "Ambient scope, fail-closed",
@@ -40,21 +40,21 @@
     },
     "SEC-1": {
       "title": "Every endpoint gated",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "status": "proven",
+      "mechanism": "`POLICIES` registry (a policy naming no permission, or named `anonymous`, is refused at construction, so the bare authenticated-only gate is unrepresentable rather than rejected, and both refusals are exercised by test rather than asserted over the shipped registry's contents); every route declares `config.policy`, checked by `scanEndpointSpine` over the composed table; `ANONYMOUS_ROUTES` carries a justification per entry, is keyed by method and url, covers a synthesized HEAD only under reference identity on `config`, and a stale entry fails; deny-by-default `onRequest` hook installed in the expression that creates the instance, denying an ungated route to anonymous AND authenticated callers alike; `composeApp` runs the scan after `ready()` and refuses to compose a violating surface, which is itself red-green proven through the `surfaces` parameter",
+      "note": "the credential mint is owed (SEC-4, TEN-6), so every gated route in this exemplar answers 401; the gate, the allowlist, the fallback and the permission evaluation are each red-green proven, the last through an injected `authenticate` seam rather than a real mint. The fallback also closes the route-table residual hole (A-4). Round 4 audit: the boot wiring and the policy constructor were both unexecuted and are now proven; seven hook bypass attempts and a credential-leak probe all failed to evade. Findings: A-3, A-4, E-7, E-8, E-10."
     },
     "SEC-2": {
       "title": "Anti mass-assignment",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "status": "proven",
+      "mechanism": "`scanEndpointSpine` walks every route's `schema.body` recursively through `properties`, `items` and `allOf`/`anyOf`/`oneOf`, matching `SERVER_CONTROLLED_FIELDS` by tokenized run (`id` whole-name only, so a foreign key does not trip it); `createApp` refuses at registration any schema keyword the walk does not descend (`$ref`, `patternProperties`, tuple-form `items`, `not`, `if`/`then`/`else`, `dependentSchemas`, `prefixItems`, `contains`, `propertyNames`, `unevaluatedProperties`, `definitions`) and requires EVERY object schema inside a scanned surface to set `additionalProperties: false`, so the closed declaration is a runtime filter at every level and not only at the top",
+      "note": "the contract is a value on the route, so there is no assembly heuristic, no name-suffix filter and no route-without-contract (B-2). Round 4 audit: the closure obligation was depth-0 only, so an open nested object delivered `author.tenantId` and `author.createdBy` to the handler with the scan silent; four such evasions were live and four more were scan-blind, and all eight are now refused at boot with permanent tests. Findings: B-2, B-4, E-6, E-9, E-10."
     },
     "SEC-3": {
       "title": "No PII in URLs",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "status": "proven",
+      "mechanism": "`scanEndpointSpine` over the composed route table: path parameters reconciled between the URL text and `schema.params` (a disagreement in either direction fails), query parameters from the mandatory closed `schema.querystring`, matched against `PII_PARAMETERS` by tokenized contiguous run so `emailAddress` and `user_email` match `email`, plus explicit entries for the three morphological classes a run over a tokenized entry cannot reach: concatenations (`firstname`, `dateofbirth`), decompositions (`mail`, so `e_mail` and `EMailAddress` match) and plurals (`emails`), with the tokenizer splitting letters from digits so `email1` matches; carve-outs are keyed by claim, route, SURFACE and field, carry a justification, cover a synthesized HEAD under their GET, and a stale carve-out fails",
+      "note": "`additionalProperties: false` plus Fastify's `removeAdditional` means an undeclared query parameter is stripped before the handler runs, which closes the ad-hoc-query-read residual the sibling names as unclosable. It does not close SEC-3's actual harm, since a URL carrying PII still reaches logs and proxies in either edition. Round 4 audit: the carve-out mechanism shipped with both its branches unexecuted and two defects in the key; the tokenizer's loss to equality on concatenated names is E-9's correction. Findings: E-9, E-10."
     },
     "SEC-4": {
       "title": "JWT hardening and revocation",
@@ -65,8 +65,8 @@
     "SEC-5": {
       "title": "No secrets in config",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "mechanism": "the committed-config half IS built and proven: a secret-shaped key (token-matched against `SECRET_SHAPED`) may hold only the empty placeholder in a committed file, refused at resolution AND by `scanConfigurationSurface`; the dev store is at a path asserted to be outside `EDITION_ROOT`, which is a property of the path rather than of a gitignore; a lint confines filesystem reads to the settings seam; secret-shaped literals in source are reported, with an exemption list carrying a reason per entry and a staleness check",
+      "note": "`owed` on the S-8 reasoning, deliberately and conservatively: two of the claim's obligations have no mechanism here. The vault port for runtime credentials is owed in both editions (trigger: first runtime credential), and the CI secret-scan gate the claim names as its second mechanism is not built, so a credential assigned to a non-secret-shaped name is invisible (the name predicate's stated reach, E-9's shape in a fourth registry). The sibling's realization of the same claim is measurably weaker on the built half: see E-11 and E-12."
     },
     "SEC-6": {
       "title": "Log safety",
@@ -107,8 +107,8 @@
     "TIME-1": {
       "title": "UTC, offset-aware, and nothing else",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "mechanism": "the contract half IS built and proven: `scanEndpointSpine` walks every route's body, params, querystring, headers and response schemas and rejects a time-named property (token-matched against `TIME_SHAPED`) declared as a bare string, since `format: 'date-time'` is RFC3339 and RFC3339 requires an offset; `platform/clock.ts` is the one clock seam, with `new Date`, `Date.now`, `Date.parse`, `Date.UTC` and `performance.now` banned everywhere else by lint, which is the monotonic-durations extension's confinement",
+      "note": "trigger: the first store, for the persistence surface, and the first scheduling slice, for the zone-carrying shape the weakening note describes. `owed` on the S-8 reasoning, and the claim itself does not port as written (A-5, B-5). A JS `Date` is an instant: it lacks the ambiguity the harm paragraph is about AND lacks the offset the statement requires, so it satisfies neither side of the ban, because \"UTC-anchored offset-aware\" fuses two properties `DateTimeOffset` supplies together. `Temporal` is absent from Node 24.13.1, asserted as a test. No persistence surface exists, so that third of the claim has nothing to scan; the response half of the contract scan is a report rather than a proof, because response schemas carry no closure obligation. The two editions check disjoint surfaces for this claim (E-15)."
     },
     "DATA-1": {
       "title": "Stores, records, downward deps",
@@ -137,8 +137,8 @@
     "DATA-5": {
       "title": "Fail-fast mandatory config",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "mechanism": "the startup half IS built and proven: `resolveSettings` runs as `composeApp`'s default parameter, before `createApp`, which cannot be constructed without the frozen result, so the ordering is a compile error rather than a convention; every mandatory key absent, mistyped, empty or undeclared is refused by name and ALL problems are reported at once; the runtime-refusal idiom is `requireZone`, tested",
+      "note": "trigger: the first seam that needs runtime context, which is the credential mint (SEC-4, TEN-6), since a principal is what carries a timezone. `owed` on the S-8 reasoning: the runtime-refusal half has no seam in this edition to refuse at, because there is no principal and therefore no stored timezone, so `requireZone` ships with a test and no caller. The sibling has a live one. The claim says \"an error naming the missing key\", singular; this reports all of them, because a validator that stops at the first turns a three-key misconfiguration into three failed deploys, and the sibling takes the singular reading (E-14). The undeclared-key refusal is the closure obligation with the opposite remedy to the request surface's, which is S-10."
     },
     "DATA-6": {
       "title": "Migrate and exit",
@@ -178,9 +178,9 @@
     },
     "CFG-1": {
       "title": "Operational settings are configuration, not code",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "status": "proven",
+      "mechanism": "`SETTINGS_SPEC` in `platform/settings.ts` is the declared configuration surface and the only reader of a config file, the secret store or `process.env`; `scanConfigurationSurface` parses `server/src`, `tools/`, `.github/workflows/` and `client-web/tools/` and reports operational-setting literals (provider endpoints, model ids), any `process.env` read outside the seam, and any script literal that duplicates a committed configuration value; a lint confines `process.env` to the seam",
+      "note": "The ambient process environment is a fourth home the claim does not name (A-6): not a literal in code, so the literal registry cannot see it, and not committed configuration, so it escapes config review. Closed by making it a declared channel: an env var may only override a key the spec declares, under a name derived from that key. The duplication check skips values shorter than eight characters, so short configuration values are uncovered in both editions (E-13). The source checks run over the parsed AST rather than over text, because a text scan reported the comments explaining its own bans (E-5 second instance)."
     },
     "CON-1": {
       "title": "One wire dialect",

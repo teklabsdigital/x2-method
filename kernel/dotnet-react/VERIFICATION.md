@@ -147,20 +147,100 @@ simulated by removing those two files:
 The check's first real run against a genuinely seeded project is the next instantiation; until then its
 conformance-table status is latent, the TEN-5 idiom.
 
+## Round 6: flow-back E-class repair pass (2026-07-26)
+
+The second-edition build produced 36 findings in the method repo's edition register. Thirty are catalog
+questions queued for the owner; the class E findings are not, because a class E finding says this tree does not
+do what its own conformance row says it does. This round repairs six of them and states why the rest are not
+repaired. No claim file was touched and no pending ruling was pre-empted.
+
+**Baseline, established before anything was mutated:** the architecture suite at **49 of 49**. Docker is not
+required for it; `KernelApiFactory` strips the SQL Server registration and substitutes a temp-file SQLite
+database, so only `Kernel.Tests.Integration` needs the engine. Suite after this round: **67 of 67**.
+
+Every row below was proven by planting the violation, observing red, and reverting. Where the finding claimed
+the OLD mechanism was blind, the old mechanism was restored with the violation still planted and observed green,
+so the hole is reproduced rather than taken on the register's word.
+
+| Guard (mechanism) | Mutation | Result |
+|-------------------|----------|--------|
+| `SecretConfigShapeTests` (SEC-5), as shipped | `Jwt:Key: "Sup3rSecretValue123"` planted in `appsettings.json` | **green, 49/49** (the defect: `leafKey.Contains("signingkey")` cannot fire on the leaf `Key`) |
+| `SecretConfigShapeTests` (SEC-5), token matching | same plant | red, exactly one test, naming the key path |
+| `SecretConfigShapeTests` (SEC-5), token matching | plant reverted | green |
+| `tools/secret-scan.mjs` (SEC-5) | same plant | red |
+| `tools/secret-scan.mjs` (SEC-5) | `--self-test`: 11 catch controls, 13 ignore controls | green; each of the three inputs that evaded the old grep is a named control |
+| `secret-scan.allow.json` (SEC-5) | exception whose `why` is `"because"` | red |
+| `secret-scan.allow.json` (SEC-5) | exception matching no file in the tree | red (staleness) |
+| `EndpointSpineTests` body walk (SEC-2), flat | `CreateNoteRequest(..., AuthorDto Author)` with `AuthorDto.CreatedBy` | **green** (the hole E-6 recorded, reproduced) |
+| `EndpointSpineTests` body walk (SEC-2), recursive | same nested violation | red, naming the field |
+| `EndpointSpineTests` body walk (SEC-2), recursive | violation reverted | green |
+| `EndpointSpineTests` header scan (TEN-1) | `[FromHeader(Name = "X-Tenant-Id")] string? scope` on `/notes` | red (the alias, not the parameter name, is what is judged) |
+| `EndpointSpineTests` header scan (TEN-1) | `[FromHeader] string? tenantId` on `/notes` | red |
+| `HostSecurityTests` forged header (TEN-1) | `TenantScopeMiddleware` changed to prefer `X-Tenant-Id` over the claim | red, exactly one test; the header SCAN stayed green, which is the two halves being independent rather than redundant |
+| `EndpointSpineTests` allowlist (SEC-1) | anonymous `MapPost("/health", ...)` added | red (the old path-keyed list pre-authorized it) |
+| `EndpointSpineTests` allowlist (SEC-1) | carve-out justification replaced with `"because"` | red |
+| `EndpointSpineTests` allowlist (SEC-1) | carve-out added for `GET /metrics`, which nothing registers | red (staleness) |
+| all of the above | every mutation reverted | green, 67/67 |
+
+**Is a secret committed anywhere in this tree? No.** `appsettings.json` carries `Jwt:Issuer` and `Jwt:Audience`,
+both the string `kernel`, and no `Jwt:Key`. `.env` is untracked and `git log --all -- '*.env'` is empty. The
+finding was demonstrated by injection. The repaired scan's first run did surface one committed
+credential-shaped literal that no previous pass had named: the symmetric signing key in `KernelApiFactory.cs`,
+which is a test-harness constant and is allowlisted with that reasoning written down.
+
+**What changed structurally, and why it is worth the churn.** SEC-5's CI half was a regular expression inside a
+YAML `run:` block. It was blind three ways at once and nobody noticed for four rounds, which is a property of
+where it lived: nothing could execute it except a CI run, and its green result was indistinguishable from the
+green result of a pattern that matched nothing. It is now `tools/secret-scan.mjs` in the shared tier, composed
+into both editions, with a `--self-test` mode CI runs first, so the scan's extent is asserted in the same
+artifact as the scan.
+
+**The dependency half.** The shared client tier's queued advisory work was re-planned against the 30-day window
+rather than executed as first written, and it is a gentler step than the original: vitest 3.2.6 rather than 4.x,
+vite 6.4.3 with no escape to vite 7, plus eslint 10.4.1, typescript-eslint 8.60.1 and
+eslint-plugin-react-hooks 7.1.1. Fourteen advisories (1 critical, 13 high) to one root advisory, zero critical.
+Both editions install from the committed lockfile and pass `npm run verify`.
+
+One survivor, recorded rather than resolved: `postcss` GHSA-r28c-9q8g-f849 has no release satisfying both the
+window and the advisory (8.5.15 clears the window and is vulnerable; 8.5.18 clears the advisory and is inside
+the window). Left to itself npm resolved 8.5.16, which is inside the window AND vulnerable, satisfying neither
+rule. It is pinned to 8.5.15 through an overrides entry and named in `VERSIONS.md`. DEP-1 states no resolution
+order for this case, which is the finding, not the pin.
+
+**Not repaired in this round, so that a green suite is not read as more coverage than it has.** `ContractShapeTests`
+is still flat and still enumerates only `*Request` types; repairing it belongs to a claim that has not had its
+delta pass. `BindsFromUrl` still under-includes the URL-bound set, and the fix has opposite signs for SEC-2 and
+for SEC-3/TEN-1, so it is a design decision rather than an edit. `.env` still sits inside the repository tree.
+The CI toolchain is still unpinned. `TimeTypeTests` still omits `Kernel.Api`. Each is recorded against its
+finding id with the reason.
+
 ## Coverage notes by claim
 
 Scan-coverage detail behind the conformance table's summaries. Nothing here changes a status; these
 are the specifics of what each mechanism inspects.
 
-- **SEC-1**: the policy provider caches (`AllowsCachingPolicies` asserted); the fallback assertion
-  checks for `DenyAnonymousAuthorizationRequirement`, not merely non-null; the `sv`/tenant gates run
-  after routing and exempt allowlisted-anonymous endpoints, so a stale token no longer 401s
-  `/health`.
+- **SEC-1**: the policy provider caches (`AllowsCachingPolicies` asserted); the fallback is a deny,
+  not `RequireAuthenticatedUser`, and the assertion RESOLVES it from `IAuthorizationPolicyProvider`
+  (which is what the middleware consults, not the options object) and EVALUATES it against both an
+  anonymous principal and a fully-permissioned authenticated one; the anonymous allowlist is a
+  `(Method, Pattern, Why)` record array with staleness and justification checks, so an anonymous GET
+  no longer pre-authorizes a POST on the same URL; the `sv`/tenant gates run after routing and exempt
+  allowlisted-anonymous endpoints, so a stale token no longer 401s `/health`.
 - **SEC-2**: services are excluded from the body-DTO scan via `IServiceProviderIsService`; immutable
   constructor-bound DTOs are covered by scanning constructor parameters, not just writable
-  properties; the forbidden-field registry covers internal and nested Request types and is shared
-  with the body scan.
-- **SEC-5**: the CI secret-scan is widened to `.env`, `*.json`, yaml, props, npmrc.
+  properties; the host body walk RECURSES through property types, constructor parameter types, arrays
+  and generic arguments, with cycle protection and no depth cap, and its depth is asserted directly
+  because the composed host binds only flat records and could not otherwise reach a nested violation.
+  `ContractShapeTests` does NOT recurse and enumerates only types whose name ends in `Request`, so
+  the second net reaches one level; the registry is shared by both.
+- **SEC-5**: two mechanisms kept deliberately different in KIND, because a pair is only belt-and-braces
+  when the blind spots are independent. `SecretConfigShapeTests` parses committed JSON and knows the
+  config schema, matching secret-shaped keys by token split rather than containment.
+  `tools/secret-scan.mjs` reads every tracked text surface and knows none of it, over json, cs, ts,
+  tsx, js, mjs, jsx, yml, yaml, props, config, npmrc, env, sh, ps1, tf, ini and toml; the file set is
+  `git ls-files --cached --others --exclude-standard`, which is what a commit from this tree would
+  contain, so a correctly ignored local `.env` is not reported and a new unstaged file is. Exceptions
+  live in `secret-scan.allow.json` as (file, key) pairs with a mandatory reason.
 - **DATA-2**: the page-size bound is shared by service and store through
   `Clamp(1, INoteStore.MaxPageSize)`.
 - **CFG-1**: the model-id and provider-endpoint literal registry extends per project at D-000.

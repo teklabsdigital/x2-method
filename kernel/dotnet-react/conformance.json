@@ -1,12 +1,12 @@
 {
   "edition": "dotnet-react",
-  "catalogPassDate": "2026-07-24",
+  "catalogPassDate": "2026-07-26",
   "claims": {
     "TEN-1": {
       "title": "Tenant comes from the credential only",
       "status": "proven",
-      "mechanism": "`TenantScopeMiddleware` reads `tenant_id` from the JWT only; `EndpointSpineTests` bans tenant route/query params; `ContractShapeTests` bans `TenantId` on requests",
-      "note": ""
+      "mechanism": "`TenantScopeMiddleware` reads `tenant_id` from the JWT only; `EndpointSpineTests` bans tenant route and query parameter names by whole-string case-insensitive equality, and bans DECLARED tenant/PII headers via the framework's own `IFromHeaderMetadata` with vendor-prefix and separator normalization; `HostSecurityTests` proves at run time that a forged tenant header in five spellings does not move a request into another tenant; `ContractShapeTests` bans `TenantId` on requests",
+      "note": "TEN-1 names four surfaces and this edition now reaches all four, unevenly. ROUTE is total, because the pattern loop reads parameter names without consulting a type. HEADER is covered from both sides as of 2026-07-26 (A-2): a declared binding is a scan violation, and a header arriving undeclared is proven not to influence tenant resolution, which is the half no scan can reach. QUERY remains type-dependent: parameter enumeration filters on `BindsFromUrl`, a hand-written enumeration of types, so an `IParsable` value object or a `TimeSpan` binds from the query string and yields nothing to the scan (E-2, not repaired: one predicate cannot serve SEC-2 and SEC-3/TEN-1 at once). Matching is equality against a registry, so a novel spelling walks past (E-9). Findings: A-2 (repaired), E-2 (open), E-9."
     },
     "TEN-2": {
       "title": "Ambient scope, fail-closed",
@@ -41,14 +41,14 @@
     "SEC-1": {
       "title": "Every endpoint gated",
       "status": "proven",
-      "mechanism": "deny-by-default fallback policy + cached `PermissionPolicyProvider`; `EndpointSpineTests` asserts the fallback denies, allowlists `/health`, and requires a permission policy per endpoint; the `sv`/tenant gates run after routing and exempt allowlisted-anonymous endpoints",
-      "note": ""
+      "mechanism": "deny-by-default fallback policy (a deny, not `RequireAuthenticatedUser`, so a metadata-free endpoint is unreachable rather than open to every authenticated caller) + cached `PermissionPolicyProvider`; `EndpointSpineTests` resolves the fallback from `IAuthorizationPolicyProvider`, which is what the middleware consults, and EVALUATES it against an anonymous principal and a fully-permissioned authenticated one; it also allowlists `/health` and requires a permission policy per endpoint; the `sv`/tenant gates run after routing and exempt allowlisted-anonymous endpoints",
+      "note": "The anonymous allowlist is a `(Method, Pattern, Why)` record array as of 2026-07-26 (E-8): keyed on method AND pattern so an anonymous GET no longer pre-authorizes a POST on the same URL, carrying a mandatory justification, matched case-insensitively, and failing on an entry that matches no endpoint. All four proven red separately. The fallback applies to unmatched URLs too, so an unknown route answers 403 rather than 404. The HUM-1 half of E-8 stays open: there is nowhere to declare this surface such that the shared tool VERIFIES an owner exists, which is an adjudication ruling. Findings: E-7 (repaired), E-8 (SEC-1 half repaired, HUM-1 half open)."
     },
     "SEC-2": {
       "title": "Anti mass-assignment",
       "status": "proven",
-      "mechanism": "`ContractShapeTests` forbidden-field registry; `EndpointSpineTests` scans every body-bound DTO for server fields, nested and immutable constructor-bound DTOs included; App/Api declare no request/response types",
-      "note": ""
+      "mechanism": "`ContractShapeTests` forbidden-field registry over the Contracts assembly, filtered to types whose name ends in `Request` (FLAT); `EndpointSpineTests` walks every body-bound DTO RECURSIVELY, through public properties, constructor parameters, arrays and generic arguments, with cycle protection and no depth cap, against the same registry; App/Api declare no request/response types",
+      "note": "The two guards are no longer equivalent and the difference is the point. The HOST scan recurses as of 2026-07-26 (E-6), so a server-controlled field at any depth of any body-bound type on a real route is caught, proven both ways against a nested `AuthorDto` carrying `CreatedBy`. `ContractShapeTests` is STILL FLAT and still enumerates only `*Request` types, so as a second net it reaches one level; repairing it belongs to MOD-2, which has not had its delta pass. A reader taking `proven` to mean both guards reach every depth would be wrong. `IsBodyDto` also excludes types with a null namespace, so a public DTO declared in `Program.cs` is skipped by the host scan entirely (E-6), and `BindsFromUrl` over-excludes the body set (E-2). Findings: E-2 (open), E-6 (host half repaired, contracts half blocked on MOD-2)."
     },
     "SEC-3": {
       "title": "No PII in URLs",
@@ -65,8 +65,8 @@
     "SEC-5": {
       "title": "No secrets in config",
       "status": "proven",
-      "mechanism": "`UserSecretsId` + `SecretConfigShapeTests` over every committed JSON config under `src/` + the CI secret-scan job",
-      "note": "vault-port interface owed (trigger: first runtime credential)"
+      "mechanism": "`UserSecretsId` + `SecretConfigShapeTests` over every committed JSON config under `src/`, matching secret-shaped keys by TOKEN (camel/Pascal/snake/kebab split) rather than by containment, with a `[Theory]` asserting the predicate's extent + `tools/secret-scan.mjs`, a composed shared-tier scan over every tracked text surface with a `--self-test` mode CI runs before the scan",
+      "note": "Both mechanisms were blind to the edition's own `Jwt:Key` until 2026-07-26 and both are repaired (E-11). The arch test matched `leafKey.Contains(term)`, which could never fire on a leaf shorter than the term describing it; the CI half was a grep in YAML that was additionally blind to every QUOTED key, meaning every key in every JSON file in the edition (E-16). Four justified exceptions are declared in `secret-scan.allow.json`, each a (file, key) pair with a written reason and a staleness check; one of them is a committed test signing key the repaired scan found on its first run (E-17). Token matching costs a false positive on `TokenCount`, asserted as a passing case rather than hidden (E-9). Still open: `.env` lives inside the repository tree while the claim's statement says development secrets live outside it (E-12), which the scan's tracked-file reading does NOT address. Vault-port interface owed (trigger: first runtime credential)."
     },
     "SEC-6": {
       "title": "Log safety",
@@ -347,8 +347,8 @@
     "DEP-1": {
       "title": "Dependency quarantine",
       "status": "proven",
-      "mechanism": "CPM exact pins + lockfiles + locked-mode restore (`--locked-mode` / `npm ci`) + `VERSIONS.md` (90-day window header, container-images section, kernel-provenance section) + docs-lint ledger, image, and kernel-provenance checks; the SQL Server image is one tag@digest value across runbook, CI, and the Testcontainers fixture",
-      "note": "publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin"
+      "mechanism": "CPM exact pins + lockfiles + locked-mode restore (`--locked-mode` / `npm ci`) + `VERSIONS.md` (30-day window header, container-images section, kernel-provenance section) + docs-lint ledger, image, and kernel-provenance checks; the SQL Server image is one tag@digest value across runbook, CI, and the Testcontainers fixture",
+      "note": "publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin; the CI toolchain itself is unpinned and carries no ledger rows (E-1, not repaired). The shared client tier was re-planned against the 30-day window on 2026-07-26 (E-3): 14 advisories to 1 root, 0 critical, verified by `npm ci` and `npm run verify` in both editions. The one survivor is `postcss` GHSA-r28c-9q8g-f849, which has NO release satisfying both the window and the advisory; it is pinned to the newest in-window release through an overrides entry and named in VERSIONS.md rather than resolved silently (E-18). DEP-1 still states no resolution order for that case."
     },
     "DEP-2": {
       "title": "Standing advisory sweep with a remediation clock",

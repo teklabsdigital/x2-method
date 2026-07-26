@@ -69,5 +69,22 @@ and a lint refuses an import of the framework anywhere but that module. A second
 lint exists to prevent, and without it the recorder proves a property of an app nobody serves.
 
 The residual hole is named and is not closable at the route table: a hook that answers a request itself serves a
-URL with no route behind it. `src/platform/__tests__/routeSurface.test.ts` asserts that hole as a passing test,
+URL with no route behind it. `src/platform/__tests__/routeSurface.test.ts` asserted that hole as a passing test,
 so that a future mechanism closing it breaks the test rather than passing unnoticed.
+
+**It closed, in the SEC-1 pass, and the sentence above is kept because being wrong in a recorded way is the
+point of writing it down.** SEC-1's deny-by-default fallback consults the request rather than the route table,
+and `createApp` installs it in the expression that creates the instance, so a hook that would answer such a
+request is by construction a later hook and never runs. The hole was never a property of the stack; it was a
+property of route-table scans, and the catalog already contained its closure one claim over. What survives is
+the narrow form: the table still cannot see the URL, so a claim whose only mechanism is a table scan still
+carries the residual. The test is rewritten in place and carries its own history. See A-4 in the register.
+
+**And the round 4 audit reopened it, so this paragraph is kept too, on the same principle.** The closure
+argument is a statement about hooks, and the evasion is not a hook: `app.server` is the raw `http.Server`, handed
+out by the framework on the instance every module already holds, and a `request` listener on it runs below the
+dispatcher and therefore below every hook. `/ghost?email=a@b.com` served 200 with the query string leaked, lint
+and typecheck clean. The demonstrated route is now banned, by lint, which is the weakest closure in this edition,
+and `request.raw.socket.server` reaches the same object from inside any handler. The standing statement is that
+the hole is narrowed to below the framework's request pipeline, not that it is closed. Two of the three passes
+that have written about this hole overreached; the register records that as the finding rather than as a slip.
