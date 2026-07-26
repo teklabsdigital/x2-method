@@ -150,13 +150,54 @@ function lowerFirst(title) {
   return /^([A-Z]{2,}|`)/.test(title) ? title : title.charAt(0).toLowerCase() + title.slice(1);
 }
 
-export function spliceTable(readme, table) {
-  const start = readme.indexOf(BEGIN);
-  const end = readme.indexOf(END);
-  if (start < 0 || end < 0) {
+// A marker is a LINE whose entire content is the marker, never a substring.
+//
+// Matching anywhere in the text was a real defect with real damage: the edition README documents the opt-in by
+// quoting the marker strings inside a sentence, `indexOf` found that mention first, and `--write` spliced the
+// whole generated table into the middle of the sentence. The actual table further down was then never
+// rewritten, and the drift check compared the same wrong span and passed, so the gate that exists to keep the
+// table honest was silently guarding the wrong sixty lines. Documenting a mechanism should not be capable of
+// breaking it.
+//
+// Two markers of the same kind on their own lines are ambiguous rather than harmless, so that is refused too.
+function findMarkers(readme) {
+  const lines = readme.split('\n');
+  const begins = [];
+  const ends = [];
+  lines.forEach((line, index) => {
+    if (line.trim() === BEGIN) {
+      begins.push(index);
+    }
+    if (line.trim() === END) {
+      ends.push(index);
+    }
+  });
+  if (begins.length === 0 || ends.length === 0) {
     return null;
   }
-  return readme.slice(0, start) + table + readme.slice(end + END.length);
+  if (begins.length > 1 || ends.length > 1) {
+    return { ambiguous: `README.md carries ${begins.length} begin and ${ends.length} end conformance markers on their own lines; exactly one pair is required.` };
+  }
+  if (ends[0] < begins[0]) {
+    return { ambiguous: 'README.md carries the conformance end marker before the begin marker.' };
+  }
+  return { lines, begin: begins[0], end: ends[0] };
+}
+
+export function hasMarkers(readme) {
+  return findMarkers(readme) !== null;
+}
+
+export function spliceTable(readme, table) {
+  const found = findMarkers(readme);
+  if (found === null) {
+    return null;
+  }
+  if (found.ambiguous) {
+    return { error: found.ambiguous };
+  }
+  const { lines, begin, end } = found;
+  return [...lines.slice(0, begin), ...table.split('\n'), ...lines.slice(end + 1)].join('\n');
 }
 
 // The README table check, in the one form both callers use. Skipping is a reported outcome, never a silent
@@ -173,10 +214,13 @@ export function checkTable(editionRoot, record, { write = false } = {}) {
     return { errors: [], skipped: 'no README.md at the edition root, so there is no table to hold' };
   }
   const readme = readFileSync(readmeFile, 'utf8');
-  if (!readme.includes(BEGIN) || !readme.includes(END)) {
+  if (!hasMarkers(readme)) {
     return { errors: [], skipped: 'README.md carries no conformance markers, so it holds no generated table' };
   }
   const next = spliceTable(readme, renderTable(record));
+  if (next !== null && typeof next === 'object' && next.error) {
+    return { errors: [next.error], skipped: null };
+  }
   if (write) {
     writeFileSync(readmeFile, next);
     return { errors: [], skipped: null, written: true };

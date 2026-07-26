@@ -500,6 +500,56 @@ if (conformance.record && conformance.errors.length === 0) {
   }
 }
 
+// Every finding id an edition cites is defined in the findings register, and no id is cited that the register
+// does not define.
+//
+// The register is the definition site for the edition-build findings, and an edition's conformance rows, its
+// README table, its verification log and its source comments all cite them by id. Nothing checked that a cited
+// id existed. One did not: an id was cited seven times across four files with no entry anywhere, two of those
+// citations in `conformance.json` and in the table generated from it, which are the artifacts that seed into
+// every instantiated project. A seeded tree therefore inherited a machine-readable conformance record pointing
+// at a finding that existed in no register, and neither the conformance gate (which proves internal consistency
+// of the record) nor the documentation gate could see it.
+//
+// Conditional, and the skip is announced, on the same rule as the catalog-completeness check: the register lives
+// in the kernel repo's working records, above the edition, and a seeded project carries the CITATIONS without
+// the register. Keyed on the register file itself rather than on the directory, so a project that happens to sit
+// beside an unrelated `record/` does not silently get a check against the wrong file.
+//
+// This tool names no finding id literally, so it needs no exemption from its own check. A scan whose predicate
+// is a set of literals cannot be run over the file that declares the set, and the cheapest way out of that is to
+// not declare one.
+const FINDING_ID = /\b([ABCES]-\d+)\b/g;
+const registerFile = join(editionRoot, '../../record/edition-findings.md');
+if (!existsSync(registerFile)) {
+  notes.push('the findings register is not present, so cited finding ids were NOT checked (expected in a seeded project)');
+} else {
+  const register = readFileSync(registerFile, 'utf8');
+  // A finding is DEFINED by its own heading in the register. Anything else that mentions the id is a citation,
+  // including the register's own cross-references, which is why the register is scanned as a citing surface too:
+  // the dangling id lived there first and was copied outward.
+  const defined = new Set([...register.matchAll(/^###\s+([ABCES]-\d+)\b/gm)].map((match) => match[1]));
+  const citing = [
+    ...allFiles
+      .filter(({ rel }) => !isGeneratedLockfile(rel) && !BINARY_EXTENSIONS.some((ext) => rel.toLowerCase().endsWith(ext)))
+      .map(({ file, rel }) => ({ file, label: rel })),
+    ...walk(join(editionRoot, '../../record'))
+      .filter((file) => file.endsWith('.md'))
+      .map((file) => ({ file, label: `record/${relative(join(editionRoot, '../../record'), file).split(sep).join('/')}` })),
+  ];
+  const dangling = new Map();
+  for (const { file, label } of citing) {
+    for (const match of readFileSync(file, 'utf8').matchAll(FINDING_ID)) {
+      if (!defined.has(match[1])) {
+        dangling.set(match[1], (dangling.get(match[1]) ?? new Set()).add(label));
+      }
+    }
+  }
+  for (const [id, where] of [...dangling].sort()) {
+    fail(`finding id '${id}' is cited in ${[...where].sort().join(', ')} but has no entry in the findings register; a citation is not a definition.`);
+  }
+}
+
 if (errors.length > 0) {
   for (const error of errors) {
     console.error(`docs-lint: ${error}`);

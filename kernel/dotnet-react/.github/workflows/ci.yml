@@ -55,17 +55,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # The detector's own controls run first. This ordering is the point of E-11: the scan it replaces was a
+      # regular expression in this file, which nobody could execute while editing it and which asserted nothing
+      # about what it caught, so it was blind three ways for four rounds while reporting green every run.
+      - name: Assert what the secret scan catches (SEC-5)
+        run: node tools/secret-scan.mjs --self-test
       - name: Scan committed source and config for secrets (SEC-5)
-        run: |
-          if grep -rInE '(-----BEGIN [A-Z ]*PRIVATE KEY-----|(password|pwd|secret|apikey|api_key)[[:space:]]*[:=][[:space:]]*.?[A-Za-z0-9+/_-]{8,})' \
-            --include='*.json' --include='*.cs' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.jsx' \
-            --include='*.env' --include='.env' --include='.env.*' --include='*.yml' --include='*.yaml' --include='*.props' --include='*.config' --include='.npmrc' \
-            --exclude='*.lock.json' --exclude='package-lock.json' \
-            --exclude-dir=node_modules --exclude-dir=bin --exclude-dir=obj --exclude-dir=dist . ; then
-            echo "Potential committed secret found (SEC-5). Move it to user-secrets or a vault."
-            exit 1
-          fi
-          echo "No committed secrets found."
+        run: node tools/secret-scan.mjs
 
   e2e-wire:
     runs-on: ubuntu-latest

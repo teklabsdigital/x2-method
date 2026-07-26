@@ -36,6 +36,7 @@ const MANIFEST = [
   'docs/work/_template.md',
   'tools/conformance.mjs',
   'tools/docs-lint.mjs',
+  'tools/secret-scan.mjs',
 ];
 
 // Never composed: build output and installed dependencies are not shared-tier content.
