@@ -32,7 +32,7 @@ violations (MET-08). Seed exists so neither happens again.
    - Never commit unless explicitly directed.
    - Least code that solves the problem. YAGNI. Standard library over wrappers.
    - Pin exact versions, no floating, per the standing version policy. The cooling-off window is
-     ruled (invariants pass, 2026-07-11): 90 days, and the number lives in ONE place, the project's
+     ruled (window pass, 2026-07-26): 30 days, and the number lives in ONE place, the project's
      `VERSIONS.md` header, copied down from the edition; cite it from there, never restate it.
      Container images pin tag@digest and get a ledger row like any package.
    - The turn-report shape and the rule that intake's classification governs (both decayed under
