@@ -79,16 +79,22 @@ The row key is `repo:tag`; the digest below is the value every surface carries.
 | vite | 6.4.3 | 2026-06-01 | npmjs.com |
 | vitest | 3.2.6 | 2026-06-01 | npmjs.com |
 
-**One transitive pin is overridden, and the reason is a conflict DEP-1 does not resolve.** `postcss` is pulled in
-by `vite` and is pinned to 8.5.15 through an `overrides` entry in the shared tier's `package.json`. It carries
-GHSA-r28c-9q8g-f849 (path traversal in source-map auto-loading), which is fixed in 8.5.18 and later. **No postcss
-release satisfies both rules at once**: 8.5.15 (2026-05-19) clears the window and carries the advisory, and the
-first release clearing the advisory is 8.5.18 (2026-07-12), which is inside the window. Left to itself npm
-resolved 8.5.16 (2026-06-28), which is the worst of the three, inside the window AND still vulnerable, which is
-why this is pinned rather than left to resolution.
+## Pins taken under DEP-1's advisory rule
 
-The pin honours the rule DEP-1 actually states, the window, and leaves the advisory open and named rather than
-breaking a stated rule silently. This is the same window-versus-advisory conflict E-3 recorded against `vite` at
-the 90-day window, recurring in a different package at 30, which is the evidence for E-3's insistence that
-shortening the window made the conflict rarer without supplying the missing rule. Revisit when 8.5.18 clears the
-window (2026-08-11) or when DEP-1 gains a resolution order.
+DEP-1 rules that where no available version satisfies both the cooling-off window and a live advisory, the
+advisory outranks the window above the 7-day hard floor, by explicit owner decision, and that the pin carries a
+row here whether the dependency is direct or transitive. This section is that ledger. It is expected to be short
+and to empty itself: a row leaves when its pin clears the window, at which point the pin is ordinary.
+
+| Package | Version | Published | Advisory | Decision | Clears the window |
+|---------|---------|-----------|----------|----------|-------------------|
+| postcss | 8.5.18 | 2026-07-12 | GHSA-r28c-9q8g-f849, path traversal in source-map auto-loading | owner ruling, adjudication pass 2026-07-26 (ruling 9a) | 2026-08-11 |
+
+**The history, kept because the rule was written from it.** `postcss` is reached transitively through `vite` and
+is pinned through an `overrides` entry in the shared tier's `package.json`. No release satisfied both rules at
+once: 8.5.15 (2026-05-19) cleared the window and carried the advisory, and the first release clearing the
+advisory is the 8.5.18 pinned above, which was inside the window when it was taken. The tree carried 8.5.15 by
+decision until the adjudication ruling, on the grounds that the window was the rule DEP-1 actually stated. Left
+to itself, npm resolved 8.5.16 (2026-06-28), inside the window AND still vulnerable, which is the one outcome
+satisfying neither rule and the reason "decide each time" is not a neutral option (E-18). The pin is above the
+7-day floor, which does not bend and did not have to here.
