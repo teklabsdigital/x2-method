@@ -95,6 +95,16 @@ a way an enum would not be, because several of them encode a real hybrid the two
 reachable locus in prose. The repair (a two-value `locus` plus a separate `locus_note`, or a three-value enum
 admitting `hybrid`) is an adjudication decision.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 10, option b).** `locus` is an enum of exactly two
+values and every qualification moves to a free-text `locus_note`. 20 files split, mechanically on the leading
+word, giving 55 `centralized` and 14 `per-seam`, which is the tally the catalog already quoted, so nothing moved
+when the prose became a field and no hybrid was flattened. A docs-lint check enforces the enum wherever the
+catalog is present and announces its skip where it is not, red-green proven in eight probes including the seeded
+shape. One probe found a hole the finding did not predict: the shared front-matter parser reads a key with an
+empty value as absent, so `locus_note:` with nothing after it was invisible, and the check reads the raw block
+because of it. Class C is now a mechanical comparison rather than an eyeball judgement, which was the reason to
+do it.
+
 ### S-3. Per-claim status had no machine-readable home, and the catalog knew
 
 **Claim:** all 69. **Found:** Phase 0a. **Repaired in this pass** (the one finding here that was repaired
@@ -133,6 +143,13 @@ materializes it into each edition, and `--check` fails the build on any divergen
 a link for drift purposes; weaker than CON-2's ruling in that the copies exist. Recorded rather than assumed,
 in `kernel/shared/README.md` and here. Whether CON-2's weakening notes should name the precondition is an
 adjudication question.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 8c, yes).** CON-2's weakening notes now name the
+precondition (both consumers live under one root that travels together) and the sanctioned alternative (one
+authoritative source plus a materializer with a drift check, which is what `kernel/tools/compose.mjs` already
+is), with this repository's own shared tier named as the measured case. The statement is unchanged, because it
+is right wherever its precondition holds. Two copies plus a test comparing them stays rejected, and the
+difference is stated: a materializer has a source and copies, the rejected shape has two peers and an opinion.
 
 ### E-1. DEP-1 is tagged `proven` while the CI toolchain floats
 
@@ -262,6 +279,15 @@ only the Contracts assembly and leans on MOD-2 placement to close the gap. That 
 obligation, written once, for one claim, in a stack-specific vocabulary, filed as a weakness rather than as a
 part of the mechanism.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 2, option c).** The file schema now states that a
+mechanism class is a surface, a predicate, and a completeness obligation carrying three parameters, and each
+parameter is written into the schema with the measurement that found it. A `- Completeness obligation:` bullet
+is written into the eight built claims only (SEC-1, SEC-2, SEC-3, TEN-1, CFG-1, SEC-5, DATA-5, TIME-1); the
+other 61 gain theirs at the pass that builds them, because an obligation written in advance of a mechanism is an
+aspiration and guessing is what put a false mechanism in a claim file once already. Two shipped rows in
+`kernel/dotnet-react/` are falsified by it, SEC-2 and TIME-1, and both now read `owed` with their built halves
+stated as `proven` obligations rather than collapsing to one word.
+
 ### B-1. The route-scan claims encode free enumeration; the locus survives anyway
 
 **Claims:** SEC-1, SEC-3, TEN-1 (route half), and TEN-1's half of the SEC-2 body scan.
@@ -275,6 +301,11 @@ Class C is **refuted**, which is the better half of the finding. All three remai
 in Node: one scan over one enumeration covers the whole surface, and a violation cannot merge. What changes is
 that the edition owes a stated reason why the enumeration is complete. The handover's day-one worry, that a
 large block of centralized claims would drop to per-seam in Node, did not happen.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 2), which is where this finding was folded rather
+than into the portable-vocabulary ruling.** Free enumeration is not a vocabulary leak, it is the unstated first
+parameter of a completeness obligation: what the claim was assuming is that the surface can be enumerated at all,
+and when. The schema now says so, and the route-scan claims state when their enumeration is taken.
 
 ### B-2. The contract-surface hypothesis is refuted, and inverted: Node is the stronger realization
 
@@ -363,6 +394,11 @@ Three reasons it is not merely a second instance of E-2:
 Also recorded: the exclusion list in this finding and in B-2's row 3 is one item short. There are five, and the
 fifth is `type.Namespace is null`. See E-6.
 
+**Status consequence, adjudication pass 2026-07-26.** Still open and still blocked on the same split, but it
+is no longer sitting under a row that reads `proven`: SEC-2, SEC-3 and TEN-1 in `kernel/dotnet-react/` now carry an
+enumeration obligation that reads `owed` and cites this finding by id, so the hole this finding measured is visible
+in the machine-readable record rather than only in a prose note.
+
 ### S-6. The shared linter was not stack-neutral, and nothing said so
 
 **Claim:** DEP-1. **Found:** Phase 2, on the first attempt to point the shared tooling at a second edition.
@@ -437,6 +473,11 @@ built: the shared tools could be run against a synthetic minimal edition in CI, 
 surfaces and nothing else, so that any new hardcoded path fails on the fixture rather than on the next real
 stack. That would move the discovery cost from one edition to one test.
 
+**RULED AND QUEUED, adjudication pass 2026-07-26 (ruling 11a).** Queued in `record/candidates.md` with its
+three instances and its named, unbuilt mechanism, and deliberately not minted: minting a claim whose enforcement
+does not exist is the aspirational-claim failure this candidate is itself about. What settles it is building the
+synthetic minimal edition fixture, at the next pass that touches the shared tier.
+
 ### A-1. The route set is not the authored set, and the per-route claims assume it is
 
 Found in Phase 2, on the first real route.
@@ -477,6 +518,12 @@ This did not bite in Phase 2 because both editions target GitHub, so the mechani
 logged now, while the evidence is in hand, rather than rediscovered when someone ports the kernel to a different
 forge. It is the same shape as the route-scan finding in B-1: the claim reads portable only because every
 witness so far shares an assumption nobody wrote down.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 7, option b).** HUM-1's mechanism class now names
+a committed ownership declaration and a merge gate on the hosting platform, with the split stated: which paths are
+irreversible is portable and fixed, where each one lives is the edition's to declare, and whether the remote
+enforces the gate is the arming step. The same artifact named in the weakening notes was repaired with it, because
+repairing one and not the other would have left the file arguing with itself.
 
 ### B-4. A closed declaration is a runtime filter and not a description, at the level that closes itself and at no other
 
@@ -686,6 +733,15 @@ different package at the shortened window, which is what this finding predicted 
 record the gap as resolved. Filed as E-18, separately, because the genuinely new part is what unpinned resolution
 does when both rules are invisible to it. DEP-1 still owes the resolution order.
 
+**RULED AND APPLIED AND EXECUTED, adjudication pass 2026-07-26 (ruling 9).** The half this finding recorded
+as explicitly unclosed is closed: DEP-1's statement now carries the resolution order (a live advisory outranks the
+cooling-off window, above the 7-day hard floor, by explicit owner decision), and any pin taken under that rule
+carries a ledger row whether the dependency is direct or transitive, which is the recording gap this finding named
+one level out. DEP-1's weakening notes now record that the window's value is independent of any standing policy
+outside this repository, so the next pass cannot re-derive it from a document the catalog cannot see. DEP-2's
+trigger moves to the next edition build pass in both editions' rows, on this finding's argument that a trigger
+names the event that makes a mechanism buildable and not the event that makes its absence noticed.
+
 ### E-4. DEP-1's own enforcement checked a name and nothing else
 
 Found by the Phase 2 audit, in the mechanism that E-3 relies on.
@@ -779,6 +835,14 @@ Two consequences for the adjudication pass, separately:
   the attack learns nothing and neither does anyone else, and OBS-2 (security event log) is owed in both
   editions, so there is nowhere to record the attempt. Recorded rather than resolved.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 5, option b).** TEN-1's mechanism class now
+requires a mechanism of a different kind for the fourth surface, and says why: a caller may send a header nobody
+declared, there is no enumeration of the headers a request can carry, so the surface takes a runtime mechanism
+(tenant-shaped headers removed or the request refused before any handler, plus a test that tenant resolution does
+not consult a header even when one arrives) and neither half substitutes for the other. The statement is
+untouched, because it was right; a claim that narrows its statement to match a mechanism nobody built is the
+aspirational-claim failure run backwards.
+
 ### A-3. SEC-1's fallback and SEC-1's scan are independent only where the enumeration is free
 
 **Claim:** SEC-1. **Locus:** `centralized`. **Found:** Phase 3, step 2, before reading the sibling.
@@ -808,6 +872,14 @@ completeness obligation). This finding suggests a fourth thing the catalog does 
 claim names two mechanisms and asserts a relationship between them ("belt to the braces"), the RELATIONSHIP is
 part of the claim and is not portable for free. Naming the two mechanisms and leaving their independence to be
 inferred is how an edition ends up with one mechanism and two names for it.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 4, option b).** The file schema now states that an
+asserted relationship between two of a claim's mechanisms is part of the claim, and that the edition owes evidence
+for the relationship and not only for each mechanism. SEC-1 carries the resulting `- Mechanism relationship:`
+bullet: independence means the two fail on different inputs, the scan reads the enumeration and the fallback
+answers a request the enumeration never contained, and splitting on what each consults rather than on when it runs
+is what buys the independence back. Scoped inside a claim; the cross-claim case has one witness and is queued in
+`record/candidates.md`.
 
 ### A-4. The residual hole S-5 calls irreducible is closed by SEC-1's other mechanism
 
@@ -941,6 +1013,11 @@ pass, and opening it to repair it would destroy that pass permanently. Recorded 
 than done or forgotten. The practical exposure is smaller than it sounds: the host scan is the guard that reaches
 every body-bound type on a real route, and it now recurses, so the request surface is covered by the guard whose
 job it is. The Contracts-assembly scan is a second net that remains one level deep.
+
+**Status consequence, adjudication pass 2026-07-26 (ruling 2).** The repaired host half now reads `proven` as
+an obligation in its own right, and the flat contracts half reads `owed` beside it with MOD-2's delta pass as its
+trigger. The row is `owed` overall. The sentence this finding argued for, that a reader taking `proven` to mean
+both guards reach every depth would be wrong, is now unnecessary, because the record no longer says `proven`.
 
 ### E-7. SEC-1's fallback admits every authenticated caller, and the test that would notice reads a field
 
@@ -1161,6 +1238,15 @@ a legitimate body carries.
    the right answer; the catalog's silence on the comparison is what let two editions each pick a different
    half of it and each believe they had picked the whole.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 6, option b), with the wider scope E-16 argued
+for.** The comparison is part of the mechanism class, stated once in the file schema as a rule over ANY mechanism
+whose predicate matches a name against a list, and written as an obligation into the four measured claims: SEC-2,
+SEC-3, TEN-1 and SEC-5. The rule names what the comparison must resolve (compounds, concatenations,
+decompositions, plurals) and how the surrounding format spells a name, and it says that enumerating the spellings
+by hand is a list standing in for a comparison and does not discharge it. Three shipped rows in
+`kernel/dotnet-react/` are falsified: SEC-2, SEC-3 and TEN-1, each now `owed` with a comparison obligation that
+reads `owed` beside a predicate obligation that reads `proven`.
+
 ### S-8. The conformance vocabulary has no value for a claim that is half realized
 
 **Claim:** TEN-1, and structurally any claim whose statement contains separable obligations. **Found:** Phase 3,
@@ -1214,6 +1300,18 @@ builder's confidence in a half-built mechanism turned out to be the unreliable p
 **Verdict: `owed` stands, and the reasoning for it is now stronger and different from the reasoning originally
 given.** The adjudication question is unchanged and is the real repair: the vocabulary has no value for a claim
 with separable obligations, and choosing the least-wrong of four is not a fix.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 3, option c, with a weakest-wins roll-up).**
+`conformance.json` rows may carry an `obligations` array, one entry per separable duty with its own status and
+its own sentence; the row declares a roll-up status and the tool checks it against the weakest obligation rather
+than computing it, so a hand-edited row cannot disagree with its own halves. Eight validation paths and the
+renderer, red-green proven in eleven probes, composed into both editions. 13 rows carry obligations: 9 in
+`kernel/dotnet-react/` and the 4 measured here. All four of the rows this finding was measured on now state their
+built half as `proven` inside a row that still reads `owed`, which is what the finding asked for.
+
+**And it does not reach three of the nine sibling rows**, which is recorded as S-11 rather than smoothed: where a
+row's weakest obligation is a deferred extension rather than an unbuilt half, weakest-wins reads `owed`, and
+`owed` means "not built" in this vocabulary, which would be false of a mechanism that gates merges today.
 
 ### E-10. A closure obligation has a depth, and stating it without one bought the property at level zero
 
@@ -1360,6 +1458,12 @@ buys, because an edition can supply one without the other and the claim currentl
 weakening note already gropes toward it by observing that a fixed offset is not a zone; the same sentence one
 step earlier is that an instant is not an offset.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 8a, yes).** TIME-1's statement now separates the
+two properties and says what each buys: unambiguity, which is what its entire harm paragraph is about, and offset
+retention, which is what the display edge and an incident reader need. A type with the first and not the second is
+named as neither the forbidden shape nor the permitted one, and an edition realizing the claim on such a type
+states which property it has and where the other is carried, rather than reporting the ban satisfied.
+
 ### B-5. TIME-1's mechanism class names assemblies
 
 **Claim:** TIME-1. **Found:** Phase 3 round 2.
@@ -1377,6 +1481,13 @@ a statement about surfaces rather than about assemblies, and which a second edit
 begin. Measured, the translation is not one-to-one in either direction: this edition's surfaces are the wire
 contracts (JSON Schema on the route table) and the source text (a lint on the clock constructors), and it has no
 persistence surface at all, so a four-item assembly list maps onto a two-item surface list plus a hole.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 7, option b).** TIME-1's mechanism class now reads
+"every layer the statement names", by whatever means that stack exposes its declarations, and PERF-4's reads "the
+server's own code, in whatever unit that stack compiles or ships it as". DATA-1 is deferred to the pass that
+builds it, as ruled: its substitution sounds easy and is exactly the kind of translation this register has been
+wrong about when it was done from an armchair. The four remaining instances in Weakening-notes sections are open
+and recorded as B-6.
 
 ### E-11. SEC-5 reads `proven` while the edition's own signing key would sit undetected in the file the claim is named for
 
@@ -1441,6 +1552,11 @@ the tree reported a correctly ignored local `.env` as a committed secret; that i
 reader to ignore the scan, and it is explicitly NOT an answer to E-12, which is about a path and stays open. And
 justified exceptions moved into a per-edition `secret-scan.allow.json` keyed on (file, key) with a mandatory
 reason, after a shared list carried one edition's exceptions into the other where they were reported stale.
+
+**RULED AND APPLIED at the catalog level, adjudication pass 2026-07-26 (ruling 4).** The repair landed in
+the edition on the day this was found; what the catalog owed was the rule that made the gap statable, and SEC-5
+now carries it as a `- Mechanism relationship:` bullet. Independence of mechanism is not independence of blind
+spot, and the claim now says so rather than leaving it as a fact about one edition's bad afternoon.
 
 ### E-12. SEC-5 reads `proven` while a development secret lives inside the repository tree
 
@@ -1553,6 +1669,12 @@ mechanisms are real, neither covers the other's surface, and TIME-1's statement 
 persistence") is satisfied by neither alone. A single-edition catalog cannot see that, because with one witness
 the mechanism is the claim.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 2).** The deliberate non-repair ends here as
+predicted: TIME-1's completeness obligation now requires the layer set to be derived from a rule the test can check
+rather than a hand-written list, with this finding's control as the argument, and `kernel/dotnet-react/` TIME-1
+reads `owed` with the omitted layer as its own obligation. The one-line repair is still owed and now has a trigger
+and a status instead of a governance hold.
+
 ### A-6. CFG-1 names three homes for a value and this stack has four
 
 **Claim:** CFG-1. **Locus:** `centralized`. **Found:** Phase 3 round 2, step 2, before the sibling was opened.
@@ -1584,6 +1706,13 @@ includes an environment-variable provider, so an environment read there arrives 
 declared key and a per-environment surface. The claim generalized from a platform where the fourth home is
 already inside the first, and said nothing, because there was nothing to say.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 8b, yes).** CFG-1's statement names the ambient
+process environment as a fourth home and, unlike the third, does not ban it: overriding a setting at deploy time
+is legitimate and a ban would be routed around. It is closed by being brought inside the config system, so an
+environment read resolves only through the declared configuration surface under a name derived from a declared
+key, and an ad hoc read anywhere else is named as the same defect as a literal in code and one worse. The
+mechanism class and the completeness obligation both cover the third route.
+
 ### S-10. A closure obligation has a remedy as well as a when and a depth
 
 **Claims:** SEC-2, DATA-5, and structurally every claim whose surface is a closed declaration. **Found:** Phase 3
@@ -1609,6 +1738,13 @@ from a confused client into a failed request, which is the reasoning A-2 already
 three parameters (when the enumeration is taken, how deep the closure goes, and what happens to a member that is
 not declared). None of the three is stated in any claim, all three have been discovered one at a time by building,
 and each was invisible until a mechanism was built that got it wrong.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 2).** The remedy is the third parameter of the
+completeness obligation in the file schema, with this finding's measurement as its argument: two closed surfaces
+in one edition have opposite correct behaviours on an undeclared member, so the remedy is a ruling the claim owes
+and not a default. Written into the eight built claims. DATA-5's obligation states the operator-facing remedy
+(refuse an undeclared key) beside SEC-2's caller-facing one (refuse or remove, ruled per surface) and says why
+they are deliberately opposite.
 
 ### E-5 second instance. A registry of forbidden values contains the forbidden values
 
@@ -1699,6 +1835,14 @@ scan runs, so the scan's EXTENT is asserted in the same artifact as the scan and
 than passing unnoticed in a run nobody rereads. The three inputs that evaded the grep are three of the controls,
 named as such.
 
+**RULED AND APPLIED, adjudication pass 2026-07-26 (rulings 4 and 6).** This finding is why ruling 6 is a
+schema rule rather than three claim edits: the same failure arrived in a fourth claim that is not a name-registry
+claim at all, so the property belongs to any name-matching predicate. SEC-5 accordingly carries a comparison
+obligation naming the format-spelling case (a key written as `"password":` in one format and `Password=` in
+another is the same key, and a pattern anchored on one separator sees neither), and the same claim carries the
+`- Mechanism relationship:` bullet ruling 4 minted, because this finding is the third of the three independent
+blind spots that made the pair's union less than it looked.
+
 ### E-17. A committed signing key in the architecture-test harness, found by the mechanism that was repaired to find it
 
 **Claim:** SEC-5. **Status carried:** `proven`. **Found:** the flow-back pass, 2026-07-26, on the FIRST run of the
@@ -1721,6 +1865,12 @@ nobody was looking for, and the first run of this one found a committed credenti
 had walked past. It is filed separately from E-11 rather than folded into it because E-11 is a finding about two
 blind mechanisms and this is a finding about the tree they were blind to, and the register's own rule is that a
 count is not a reason to merge.
+
+**RULED AND APPLIED, adjudication pass 2026-07-26 (ruling 4).** The joint gap this instance demonstrates is
+now stated in SEC-5's `- Mechanism relationship:` bullet: the evidence the claim asks for is an assertion that the
+union of the two mechanisms' scopes covers the tracked set, plus a control that a credential planted in each
+half's territory is caught by that half. Each scope was defensible alone, and the union was assumed to be total by
+nobody in particular, which is exactly what an unstated relationship costs.
 
 ### E-18. Left to itself, resolution picks the version that satisfies neither rule
 
@@ -1758,6 +1908,104 @@ DEP-1 actually states (the window) and leaving the advisory open and NAMED in bo
 than breaking a stated rule silently. That is a judgement call in the absence of a rule, it is recorded as one,
 and the adjudication pass still owes DEP-1 the resolution order E-3 asked for. Revisit when 8.5.18 clears the
 window (2026-08-11).
+
+**RULED AND EXECUTED, adjudication pass 2026-07-26 (ruling 9a).** The advisory wins. `postcss` is re-pinned
+from 8.5.15 to 8.5.18 in the shared tier, recomposed into both editions, and the pin carries the first row of a new
+"Pins taken under DEP-1's advisory rule" section in both `VERSIONS.md` files, naming the advisory, the decision,
+and the date the pin clears the window (2026-08-11). Measured after: `npm audit` reports **0 vulnerabilities** over
+the shared client tier and over both editions' composed client trees, down from 1 high. The pin is above the 7-day
+floor, which did not have to bend. This finding's general point survives the fix and is now in the claim: deciding
+nothing is not neutral, because a resolver picks a version uncorrelated with both rules.
+
+### B-6. The portable-layer rule now has four open instances the ruling that stated it does not name
+
+**Claim:** AI-3, DATA-2, TEN-1, TIME-1. **Found:** the adjudication application pass, 2026-07-26, applying
+ruling 7. **Measured** by reading the four Weakening-notes sections, not by the keyword scan that first counted
+them.
+
+Ruling 7 states a rule in the file schema (the portable layer names no artifact, type, tool, or convention
+belonging to one stack) and repairs three instances: HUM-1, TIME-1, PERF-4. All three are `Mechanism class:`
+bullets, which is the surface the ruling's evidence table measured. S-1 recorded a second surface at the same
+time, five Weakening-notes sections, and ruling 1 explicitly left them to rulings 7 and 8; neither ruling names
+them, so the pass repaired one of the five as collateral (HUM-1's, because it names the same artifact as the
+mechanism-class instance in the same file, and repairing one and not the other would have left the file arguing
+with itself) and left four:
+
+| Claim | What the weakening note names |
+|---|---|
+| AI-3 | one runtime's packaging unit, in the sentence scoping the prompt-literal ban |
+| DATA-2 | one data-access library's materialization call, as the example of the unbounded read |
+| TEN-1 | one runtime's packaging unit, in the sentence bounding the contract scan's reach |
+| TIME-1 | three of one runtime's date types, in the sentences permitting calendar concepts and describing the offset-versus-zone gap |
+
+**Why this is a finding and not a cleanup.** The catalog now carries a stated rule with four known violations in
+it, which is a worse state than an unstated rule with four instances: a rule that is stated and not held is the
+aspirational-claim failure applied to the catalog's own governance. It is left open deliberately rather than
+repaired quietly, because the scope guard on this pass is that an edit no ruling authorizes is a finding, and
+because three of the four (DATA-2's and TIME-1's especially) are the cases ruling 7 itself flagged as needing a
+build rather than an armchair: the portable substitution for a named date type is the pair of properties TIME-1's
+statement now separates, and getting that wrong in the weakening note would undo ruling 8a in the same file.
+
+**What it costs while open:** nothing an edition can trip on today, since both editions read the mechanism class
+and not the weakening note. It costs the next editor, who will read the schema rule, find four counter-examples,
+and have to discover which of the two is authoritative.
+
+### S-11. The weakest-wins roll-up cannot express a row whose weakest obligation is a deferred extension
+
+**Claim:** the conformance vocabulary, therefore all 69. **Found:** the adjudication application pass,
+2026-07-26, applying ruling 3 to the nine rows the ruling names. **Measured on those nine**, not reasoned from
+the schema.
+
+Ruling 3 gives a row per-obligation statuses with a roll-up in which the weakest obligation wins. Six of the nine
+rows decompose cleanly and keep their status: their second status in prose is either a per-seam residue that
+`patterned` already means (TEN-2, SEC-6, UI-4's two directions, AI-2) or a named upgrade behind a mechanism that
+is built and tested (SEC-4's durable version store, SEC-5's second scanner). Three do not:
+
+| Row | The second status in prose | What weakest-wins would make the row read |
+|---|---|---|
+| TEN-4 | the write-provenance stamps are `owed`, trigger: the next edition build pass | `owed`, for a save-pipeline guard that runs on every write today |
+| UI-4 | the prototype-to-ledger exporter is `owed`, and the statement names it | `owed`, for two fidelity directions that are tested and gating |
+| DEP-1 | the kernel-provenance check is `latent` until an instantiation fills a real pin | `latent`, for exact pins, lockfiles, locked-mode restore and the ledger, all of which run in the loop |
+
+**The defect is in the vocabulary, not in the ruling.** `owed` is defined as "not built; recorded with the
+trigger that promotes it. Out of the v1 cut line, not lost", so it carries a claim about the CUT LINE and not only
+about strength. Rolling an in-cut proven duty together with an out-of-cut deferred one and taking the weakest
+produces a word that is false in the vocabulary's own terms: TEN-4 is built, gating, and red-green proven, and no
+reading of `owed` describes it. The conservative direction is right for a security claim and the failure is at the
+bottom of the scale, where "weakest" and "absent" are the same word.
+
+**What was done, and it is deliberately partial.** All 13 named rows gained the structure. For these three, the
+obligations written are the duties the row's status actually covers, and the deferred piece stayed in the note
+where it already was. Ruling 3 is therefore applied for 13 rows and does not reach 3 second statuses, which is
+recorded here rather than smoothed by moving three shipped statuses no ruling authorized: the pass's own scope
+guard is that an edit no ruling authorizes is a finding, not a repair.
+
+**What would close it,** neither proposed nor priced here: an obligation would carry whether it is inside the
+edition's cut line, and the roll-up would take the weakest obligation that is. That is a second field and a
+second rule on the same structure, so it wants a ruling and evidence from a third edition rather than a same-pass
+extension.
+
+### E-19. A conformance note went stale inside the same pass that repaired the mechanism it describes
+
+**Claim:** SEC-5, in `kernel/node-react/`. **Found:** the adjudication application pass, 2026-07-26, writing
+ruling 3's obligations into the row. **Measured**, not inferred: `.github/workflows/ci.yml` in that edition runs
+`node tools/secret-scan.mjs --self-test` and then `node tools/secret-scan.mjs` as a required job.
+
+The row's note reads that "the CI secret-scan gate the claim names as its second mechanism is not built, so a
+credential assigned to a non-secret-shaped name is invisible". That was true when it was written and stopped
+being true a few hours later, in the E-16 repair, which replaced a YAML grep with a composed shared-tier scanner
+and wired it into both editions' loops. The repair updated the sibling's row and the register entry and did not
+update this row, because the row belongs to the edition the repair was flowing back FROM.
+
+**Why it is recorded rather than quietly corrected.** The register's own standard is that a status the record
+cannot honestly carry is a finding, and this is one: the row understated its own edition by one whole mechanism.
+It is also the second instance of a shape worth naming, the first being E-14: a prose sentence describing another
+tree's mechanism has no checker on either side, and here both trees were in the same repository and the same day.
+The gate that exists (`conformance.mjs`) proves the record is internally consistent and cannot read a claim a note
+makes about the world.
+
+**What changed:** the obligation is written as `proven` with the mechanism named, and the note's stale clause is
+removed. No status changed: SEC-5 in that edition rolls up to `owed` on the vault port either way.
 
 ## Audit, 2026-07-26
 

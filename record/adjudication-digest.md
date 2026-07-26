@@ -5,7 +5,14 @@ status: working
 
 # Adjudication digest, 2026-07-26
 
-Prepared for the owner's ruling on `record/edition-findings.md`. Nothing in `kernel/claims/` has been edited.
+Prepared for the owner's ruling on `record/edition-findings.md`.
+
+**Corrected 2026-07-27, in place, because this file has become the pass's own record rather than only its
+proposal.** The line that stood here said nothing in `kernel/claims/` had been edited. That was true when the
+digest was written and stopped being true when the owner ruled: all eleven rulings are now applied, ruling 1 in
+its own commit and rulings 2 through 11 in the working tree beneath this one. The `Applied?` column below is the
+authority on what landed; the ruling sections keep their evidence, options and recommendations exactly as they
+were written, because a recommendation rewritten after the fact is no longer evidence of anything.
 The register's own discipline binds this file: recording evidence and pre-empting a ruling are different acts,
 so every section below states a question, its evidence, its options and their consequences, and a
 recommendation. The recommendation is a view, not a decision.
@@ -16,7 +23,9 @@ recommendation. The recommendation is a view, not a decision.
   S-1 to S-10, E-1 to E-15. Counted from the headings, 36 headings resolved to 35 ids because
   `E-5 second instance` re-opens a defined id. B-4 was the only gap and is now written (below).
   **Now 39**, re-counted 2026-07-26 after the flow-back pass: B-4 plus E-16, E-17 and E-18, with zero dangling
-  ids, which the new docs-lint check enforces rather than leaving to a sweep.
+  ids, which the new docs-lint check enforces rather than leaving to a sweep. **42 after the application pass**
+  (2026-07-27): B-6, S-11 and E-19, each found while applying a ruling and each given a new id in an existing
+  class rather than folded into a neighbour to keep the count down.
 - **S-2's numbers.** `locus` holds 22 distinct values across 69 claims; 49 are exactly `centralized` or
   `per-seam`; 20 qualify in prose. Re-measured, matches the register.
 - **S-3's numbers.** 42 claim files carry a status word inside their `- Edition:` bullet: 35 where the bullet
@@ -41,16 +50,16 @@ evidence, options and recommendation unchanged; this table is what was chosen.
 | # | Decision | Applied? |
 |---|---|---|
 | 1 | **(b)** Remove edition realizations from claim files entirely | **Applied.** 69 `- Edition:` bullets and 69 index status lines removed; file schema and status-tag section rewritten; recorded as a dated pass in the catalog changelog |
-| 2 | **(c)** Schema gains the completeness obligation; written now for the 8 built claims only | not yet |
-| 3 | **(c)** Optional per-obligation statuses in `conformance.json`, **plus a single roll-up where the weakest obligation wins** | not yet |
-| 4 | **(b)** An asserted relationship between two mechanisms is part of the claim; within a claim only, cross-claim dependency deferred to `candidates.md` | not yet |
-| 5 | **(b)** TEN-1's mechanism class gains a non-scan mechanism for the header surface; the statement is unchanged because it was right | not yet |
-| 6 | **(b)** The comparison is part of the mechanism class, **as a schema rule covering any name-matching mechanism plus a written obligation in the four measured claims: SEC-2, SEC-3, TEN-1 and SEC-5** | not yet |
-| 7 | **(b)** for HUM-1, TIME-1 and PERF-4, **(c)** for DATA-1 (repaired when it is built, not from an armchair) | not yet |
-| 8 | **Yes to all three**: 8a TIME-1's fused properties split, 8b CFG-1's fourth home, 8c CON-2's unstated precondition in the weakening notes | not yet |
-| 9 | **9a (i)** advisory outranks the window above the 7-day floor; **9b (ii)** the catalog's number is deliberately independent of any standing policy outside the repo; **9c** DEP-2's trigger moves to the next edition build pass; **plus: DEP-1's ledger extends to any pin taken under the advisory rule, direct or transitive** | not yet |
-| 10 | **(b)** `locus` becomes two values plus a free-text `locus_note` | not yet |
-| 11 | **Queue both** in `record/candidates.md`; mint neither | not yet |
+| 2 | **(c)** Schema gains the completeness obligation; written now for the 8 built claims only | **Applied.** Schema section 'What a mechanism class states' added to `kernel/claims/README.md`; a `- Completeness obligation:` bullet with when, closure and remedy written into the 8 built claims (SEC-1, SEC-2, SEC-3, TEN-1, CFG-1, SEC-5, DATA-5, TIME-1) and into none of the other 61 |
+| 3 | **(c)** Optional per-obligation statuses in `conformance.json`, **plus a single roll-up where the weakest obligation wins** | **Applied, partly.** `conformance.mjs` gains the optional array, eight validation paths and the renderer, all red-green proven (11 probes); composed into both editions; 13 rows carry obligations (9 + 4). Three of the nine second statuses could not be written without moving a shipped status the ruling does not authorize, recorded as S-11 rather than smoothed. dotnet TIME-1 rolls up to `owed` here |
+| 4 | **(b)** An asserted relationship between two mechanisms is part of the claim; within a claim only, cross-claim dependency deferred to `candidates.md` | **Applied.** Schema sentence added; a `- Mechanism relationship:` bullet written into SEC-1 (independence of the fallback from the scan) and SEC-5 (independence of blind spot, not of mechanism). The cross-claim dependency field is queued in `record/candidates.md` under its own heading, not built |
+| 5 | **(b)** TEN-1's mechanism class gains a non-scan mechanism for the header surface; the statement is unchanged because it was right | **Applied.** TEN-1's mechanism class now requires a runtime, non-scan mechanism for the header surface (strip or refuse before any handler, plus a test that resolution does not consult a header) and says why a scan cannot reach it. The statement is untouched |
+| 6 | **(b)** The comparison is part of the mechanism class, **as a schema rule covering any name-matching mechanism plus a written obligation in the four measured claims: SEC-2, SEC-3, TEN-1 and SEC-5** | **Applied.** Schema sentence covers any mechanism matching a name against a list; a written comparison obligation added to SEC-2, SEC-3, TEN-1 and SEC-5 |
+| 7 | **(b)** for HUM-1, TIME-1 and PERF-4, **(c)** for DATA-1 (repaired when it is built, not from an armchair) | **Applied.** Schema sentence added; HUM-1, TIME-1 and PERF-4 repaired. DATA-1 deferred as ruled. HUM-1's weakening note was repaired too (same artifact, same file); the other four weakening-note instances are open and recorded as B-6 |
+| 8 | **Yes to all three**: 8a TIME-1's fused properties split, 8b CFG-1's fourth home, 8c CON-2's unstated precondition in the weakening notes | **Applied.** 8a: TIME-1's statement separates unambiguity from offset retention and says what each buys. 8b: CFG-1 names the ambient environment as a fourth home and closes it by declaration rather than by ban. 8c: CON-2's weakening notes name the precondition and the sanctioned alternative |
+| 9 | **9a (i)** advisory outranks the window above the 7-day floor; **9b (ii)** the catalog's number is deliberately independent of any standing policy outside the repo; **9c** DEP-2's trigger moves to the next edition build pass; **plus: DEP-1's ledger extends to any pin taken under the advisory rule, direct or transitive** | **Applied and executed.** DEP-1's statement gains the resolution order (advisory outranks the window above the 7-day floor, by explicit decision, with a ledger row for any pin taken under it, direct or transitive); its weakening notes record that the number is independent of any policy outside this repo; DEP-2's trigger moves to the next edition build pass in both editions' rows. `postcss` re-pinned 8.5.15 to 8.5.18 in the shared tier, recomposed, first advisory-rule ledger section written in both `VERSIONS.md` files. `npm audit` over the shared tier and over both editions' composed client trees: **0 vulnerabilities**, from 1 high |
+| 10 | **(b)** `locus` becomes two values plus a free-text `locus_note` | **Applied.** 20 claim files split, mechanically on the leading word, giving 55 `centralized` and 14 `per-seam`, which is the tally the catalog already quoted; the schema section and the centralized-versus-per-seam section rewritten; a docs-lint check added, conditional on the catalog and announcing its skip, red-green proven in 8 probes including the seeded shape. One probe found a hole in the shared front-matter parser (a key with an empty value parses as absent) and the check reads the raw block because of it |
+| 11 | **Queue both** in `record/candidates.md`; mint neither | **Applied.** Both queued in `record/candidates.md` with their evidence and their why-not-minted, under a new section for claim-shaped items; neither minted. Ruling 4's deferred cross-claim dependency field is queued in the same section |
 
 **Application order, and it is not the numbering.** Ruling 3 goes first: rulings 2, 5 and 6 falsify four
 `proven` rows in `kernel/dotnet-react/` (SEC-2, SEC-3, TEN-1, TIME-1), and ruling 3 is what gives those rows
@@ -663,7 +672,7 @@ Edition defects, not catalog decisions. Listed with a severity read and no rulin
 | **E-11** | SEC-5 | **Repaired in the flow-back pass**, both halves, red-green proven with a control. See the escalation below, kept because it records what was true for four rounds |
 | E-12 | SEC-5 | High, **deferred with a stated reason**: it touches the secret-provisioning path and the integration tier that needs Docker, which is down, so the repair could only have been made from source and unproven. Still open |
 | E-7 | SEC-1 | Repaired in the flow-back pass, both halves, red-green proven. Closed |
-| E-15 | TIME-1 | High, and **deliberately not repaired**: excluded pending ruling 2. The flow-back pass notes the repair itself is one line and the reason to wait is governance, not difficulty |
+| E-15 | TIME-1 | High. **Ruled: the governance hold ends.** TIME-1's completeness obligation now requires the layer set to be derived from a checkable rule, and the .NET row reads `owed` with the omitted layer as its own obligation. The one-line repair is still owed and now carries a trigger instead of a hold |
 | E-6 | SEC-2 | **Repaired in part**, red-green proven with a flat-walk control: the composed-host scan now recurses. `ContractShapeTests` is still flat, because repairing it would have burned MOD-2's delta pass. The residual is a contract type carrying no route, which cannot be posted to and is caught by the host scan the moment it gains one. The SEC-2 mechanism string names the narrower basis rather than describing the repair as complete |
 | E-2 | SEC-2, SEC-3, TEN-1 | High, **deferred and blocked**. Its own argument is that one predicate cannot serve SEC-2 and SEC-3/TEN-1 at once, so the fix is a split, and SEC-3 awaits ruling 6 |
 | E-1 | DEP-1 | Medium-high. The CI toolchain floats on mutable major tags with no ledger row, inside the loop that gates every other claim |
@@ -673,11 +682,11 @@ Edition defects, not catalog decisions. Listed with a severity read and no rulin
 | E-8 | SEC-1 | **Repaired**, keyed by method and pattern with a required justification. An anonymous POST on an allowlisted path, a stale entry, and an empty justification are each proven red separately. Closed |
 | E-4 | DEP-1 | Repaired in the shared linter, red-green proven, and it immediately caught three unledgered client pins. Closed |
 | E-5 | (tooling) | Repaired. Closed |
-| E-9 | SEC-2, SEC-3, TEN-1 | Partly repaired in the flow-back pass. The rest depends on ruling 6, whose scope E-16 has since widened |
+| E-9 | SEC-2, SEC-3, TEN-1 | Partly repaired in the flow-back pass. **Ruled (6), at the wider scope E-16 argued for:** the comparison is a schema rule over any name-matching mechanism, plus a written obligation in four claims. All three .NET rows now read `owed` with a comparison obligation that reads `owed` beside a predicate obligation that reads `proven` |
 | E-10 | (node edition) | Repaired in `kernel/node-react/`, eight evasions refused at boot with permanent tests. Closed |
 | E-16 | SEC-5 | **Repaired.** The CI grep could not match a quoted key, so it was blind to every JSON file in both editions. Replaced by `kernel/shared/tools/secret-scan.mjs`, whose `--self-test` asserts eleven positive and thirteen negative controls before the scan runs, so the scan's extent is asserted in the same artifact as the scan. Bears on rulings 4 and 6 |
 | E-17 | SEC-5 | **Resolved by allowlisting, with the reasoning written out.** A committed test-harness signing key in `KernelApiFactory.cs`, found by the first run of the repaired scan, not injected. Not a vulnerability: it signs an in-process test host and must be committed for the same tests to mint and verify. Bears on ruling 4 |
-| E-18 | DEP-1, DEP-2 | **Not repairable at the edition level; it is ruling 9's evidence.** The window-versus-advisory conflict recurred immediately at the shortened window, and left to itself resolution picks the version satisfying neither rule. postcss is pinned by decision at 8.5.15 pending the ruling |
+| E-18 | DEP-1, DEP-2 | **Ruled and executed (9a).** The advisory outranks the window above the 7-day floor; postcss re-pinned 8.5.15 to 8.5.18, first advisory-rule ledger row written in both editions, `npm audit` 0 vulnerabilities. The general point survives the fix and is now in DEP-1: deciding nothing is not neutral, because a resolver picks a version uncorrelated with both rules |
 
 **Escalation: E-11.** A plaintext signing key committed to `appsettings.json` leaves **all 49 architecture tests
 green and the CI secret scan silent**, measured with a control. Both of SEC-5's mechanisms miss it, for two

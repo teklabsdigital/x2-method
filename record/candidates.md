@@ -34,6 +34,48 @@ All nine mints are tagged `owed` in the edition with named promotion triggers (p
 reference project, not yet realized in the kernel edition); the edition build pass that realizes
 the next-build-pass triggers (DATA-6, TEST-4, SRV-1) is the standing owed work.
 
+## Queued by the adjudication pass, 2026-07-26 (claim-shaped, evidence attached, deliberately not minted)
+
+Three items, all ruled by the owner on that date: two candidate claims queued rather than minted (ruling 11),
+and one field deferred out of ruling 4. The bar they fail is this catalog's own, and it is the same bar in each
+case: a claim whose enforcement does not exist is the aspirational-claim failure, and one instance is not a
+pattern. Queueing costs nothing and keeps the evidence attached to the item rather than in a register nobody
+reads at mint time. The next edition build is the event that settles all three.
+
+- **11a. The shared tier has no mechanism that detects a stack-specific assumption inside itself.** From S-7.
+  Three instances found, each by a second edition tripping over it: the DEP-1 manifest paths hardcoded to one
+  stack's two files, HUM-1's PascalCase path fragments, and the MET-08 lockfile paths. The count of remaining
+  instances is unknown and the discovery cost is one edition each, which is the expensive part. The candidate
+  mechanism is named and unbuilt: run the shared tools against a synthetic minimal edition fixture in the loop,
+  so a newly hardcoded path fails on the fixture rather than on the next real stack. **Why not minted:** the
+  mechanism does not exist, and the catalog applies "a mechanism must be enforced, not intended" to product code
+  while the kernel's own shared tier is the one place it has never been applied to itself. That asymmetry is the
+  argument for the claim and it is also why minting it today would be the failure it describes. **What settles
+  it:** building the fixture, at the next pass that touches the shared tier.
+
+- **11b. A scan cannot be run over the file that declares its own predicate.** From E-5 and its second instance.
+  Two instances now, in mechanisms sharing nothing but their shape: the conformance generator broke on the
+  README sentence documenting its own markers, splicing a table into the middle of a sentence and then guarding
+  the wrong sixty lines, and the configuration scan reported its own exemption list and its own registry file.
+  The general form is that a registry of forbidden values contains the forbidden values, so the scan's own
+  declaration site is inside its own surface. **Why not minted:** two instances, both inside this repository's
+  own tooling rather than in a product, so the generality is asserted and not measured; the register's own
+  closing standard was "one instance is not a pattern yet" and two in the same tree is barely more. **What
+  settles it:** a third instance in product code, or a second edition hitting it in a mechanism nobody here
+  wrote. Note the workaround is already known and cheap (declare no literal, as the finding-id check does), which
+  lowers the value of minting and not the value of recording.
+
+- **A cross-claim dependency field in the conformance record.** Deferred out of ruling 4, which ruled the
+  within-a-claim half and stopped there. The evidence is one witness: CFG-1's mechanism class ends by delegating
+  its two right homes to SEC-5 and DATA-5, so CFG-1's enforcement is complete only if two other claims are
+  realized, and a record that is one row per claim has nowhere to say it. Measured as unremarked in the first
+  edition, where all three read `proven` and the composition held by accident of scheduling. The candidate is a
+  dependency field plus a check that a claim is not `proven` while a claim it depends on is `owed`. **Why not
+  built:** one witness, a real build cost, and it interacts with the per-obligation structure ruling 3 has just
+  added, so building both in one pass would mean neither had been used before it was extended. **What settles
+  it:** a second claim whose enforcement rests on another claim being realized, which the next build pass will
+  either produce or fail to.
+
 ## Still queued (methodology and edition items, not claim-shaped)
 
 - **PC-8 Provisioning feedback.** Applies when a CLI provisions accounts or credentials. An
