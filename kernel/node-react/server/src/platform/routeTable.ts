@@ -35,11 +35,19 @@ export type ContractSchema = Readonly<{
 // registration and allows two routes on the same method and URL distinguished only by `constraints`, so the
 // constraint set is part of a route's identity: dropping it made two distinct routes into four byte-identical
 // rows, and a scan that dedupes would have seen one route where two existed.
+//
+// `config` is held BY REFERENCE, not copied, and that is load-bearing rather than an economy. Fastify passes a
+// synthesized HEAD the very same options object as the GET it was synthesized from, so reference identity is a
+// proof of synthesis that no comparison of values can give: two routes whose configs are deep-equal may still
+// have been written separately and may still diverge later. SEC-1's allowlist uses that identity to cover a
+// synthesized HEAD under its GET's entry without covering an explicitly registered HEAD that merely looks the
+// same, which is A-1's attribution problem answered rather than assumed away.
 export type RecordedRoute = Readonly<{
   method: string;
   url: string;
   constraints: Readonly<Record<string, unknown>>;
   schema: ContractSchema;
+  config: Readonly<Record<string, unknown>>;
 }>;
 
 declare module 'fastify' {

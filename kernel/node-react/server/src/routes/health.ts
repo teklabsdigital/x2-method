@@ -1,12 +1,14 @@
 import type { FastifyInstance } from 'fastify';
+import { ANONYMOUS } from '../platform/authorization.ts';
 
-// The one route the scaffold ships, so that the recorder has something real to record and the completeness
-// tests have a composed app to run against. It carries no tenancy and no authorization yet; both arrive with
-// their claims in the build pass, and until they do the conformance record says so.
+// The liveness route, and the edition's one anonymous surface. Anonymity is declared here and justified in
+// `ANONYMOUS_ROUTES`, not asserted here: a reason written next to the route is a reason nobody reviewing the
+// security surface will ever find, because they are reading the list.
 export async function registerHealth(app: FastifyInstance): Promise<void> {
   app.get(
     '/health',
     {
+      config: { policy: ANONYMOUS },
       schema: {
         // Declared empty rather than omitted. Every route answers the query-string question explicitly,
         // because a query string has no syntactic tell in the URL and an omitted declaration is
