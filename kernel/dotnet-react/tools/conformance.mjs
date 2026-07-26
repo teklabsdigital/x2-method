@@ -29,9 +29,34 @@ import { fileURLToPath } from 'node:url';
 //     holds the table; a seeded project's README is the PRODUCT's, and nothing should force a conformance
 //     table into it. A project that wants one adds the markers and gets the same drift gate.
 
+// The four states, written strongest first. That order is not decoration: it IS the strength order the
+// per-obligation roll-up reads, so a row carrying obligations takes the status of the one furthest down this
+// list. Stated here rather than in a second constant, because two orders that must agree are one order that
+// will eventually disagree.
 export const STATUSES = ['proven', 'patterned', 'latent', 'owed'];
 const BEGIN = '<!-- conformance:begin -->';
 const END = '<!-- conformance:end -->';
+
+// A row may carry an `obligations` array: one entry per separable duty the claim's statement names and this
+// edition answers separately, each with its own status and its own sentence. Adjudication ruling 3 of
+// 2026-07-26, answering S-8.
+//
+// What it fixes, measured: 4 of 5 built claims in the second edition sit at `owed` with a red-green-proven
+// half, and 9 rows in the first edition already wrote a second status inside a parenthetical because the
+// four-word vocabulary had nowhere else to put it. The vocabulary was being worked around in prose for 27
+// percent of the realized claims before anyone named the defect.
+//
+// The roll-up is the WEAKEST obligation, by owner ruling: the conservative direction is the one a security
+// claim should be read in, and a tally that summed the strongest halves would repeat the lie by summation that
+// splitting `built` into four states was minted to kill. The roll-up is not computed into the row; the row
+// DECLARES its status and the roll-up is checked against it, so a hand-edited row cannot quietly disagree with
+// its own obligations.
+//
+// A row without the array means exactly what it meant before: one claim, one status. That is the majority and
+// it is deliberately untouched.
+export function rollUp(obligations) {
+  return STATUSES[Math.max(...obligations.map((obligation) => STATUSES.indexOf(obligation.status)))];
+}
 
 export function load(editionRoot) {
   const file = join(editionRoot, 'conformance.json');
@@ -77,12 +102,79 @@ export function load(editionRoot) {
     if (row.status !== 'owed' && (typeof row.mechanism !== 'string' || row.mechanism.trim().length === 0)) {
       errors.push(`conformance.json: ${id} is '${row.status}' but names no mechanism.`);
     }
-    // An owed claim without a trigger is a claim quietly dropped rather than deferred.
+    errors.push(...obligationErrors(id, row));
+  }
+  return { errors, record };
+}
+
+// The obligations half of a row's validation, and the trigger rule for the whole row, because the two cannot
+// be separated: an owed row discharges the trigger obligation on its note, and an owed row that ROLLS UP from
+// obligations discharges it per obligation, since that is where the deferral is actually described. Requiring
+// both would force every trigger to be written twice, and a fact written twice is a fact that drifts.
+function obligationErrors(id, row) {
+  const errors = [];
+  const triggerOnNote = () => {
     if (row.status === 'owed' && !/trigger:/i.test(row.note ?? '')) {
       errors.push(`conformance.json: ${id} is owed but its note names no trigger.`);
     }
+  };
+
+  if (row.obligations === undefined) {
+    triggerOnNote();
+    return errors;
   }
-  return { errors, record };
+  // Fewer than two is refused rather than tolerated: a single obligation is the row's own status wearing a
+  // second costume, and it would let a row claim per-obligation precision while carrying none.
+  if (!Array.isArray(row.obligations) || row.obligations.length < 2) {
+    errors.push(
+      `conformance.json: ${id} has an 'obligations' array that is not a list of at least two entries; a claim with one obligation is a flat row, so drop the array.`,
+    );
+    triggerOnNote();
+    return errors;
+  }
+
+  const names = new Set();
+  let shaped = true;
+  for (const [index, obligation] of row.obligations.entries()) {
+    const where = `${id} obligation ${index + 1}`;
+    if (typeof obligation?.name !== 'string' || obligation.name.trim().length === 0) {
+      errors.push(`conformance.json: ${where} has no name; an obligation nobody can cite is not machine-readable.`);
+      shaped = false;
+    } else if (names.has(obligation.name)) {
+      errors.push(`conformance.json: ${id} carries two obligations named '${obligation.name}'; the name is how a row's halves are told apart.`);
+    } else {
+      names.add(obligation.name);
+    }
+    if (!STATUSES.includes(obligation?.status)) {
+      errors.push(`conformance.json: ${where} has status '${obligation?.status ?? ''}'; use one of ${STATUSES.join(', ')}.`);
+      shaped = false;
+    }
+    // The whole point of the array is that a second status stops being prose. An obligation with a status and
+    // no sentence moves the prose out without moving anything in.
+    if (typeof obligation?.text !== 'string' || obligation.text.trim().length === 0) {
+      errors.push(`conformance.json: ${where} has no text; the status says how much is built and the text says what.`);
+    } else if (obligation?.status === 'owed' && !/trigger:/i.test(obligation.text)) {
+      errors.push(`conformance.json: ${where} is owed but names no trigger; an obligation quietly dropped reads the same as one deferred.`);
+    }
+  }
+
+  if (!shaped) {
+    return errors;
+  }
+  const weakest = rollUp(row.obligations);
+  if (row.status !== weakest) {
+    const name = row.obligations.find((obligation) => obligation.status === weakest).name;
+    errors.push(
+      `conformance.json: ${id} reads '${row.status}' but its weakest obligation ('${name}') is '${weakest}'; the row status is the roll-up and the weakest obligation wins.`,
+    );
+  }
+  // The same rule the row-level check applies, one level down: if any obligation asserts something is built,
+  // the row owes the name of what proves it. Without this a row could roll up to `owed`, escape the row-level
+  // mechanism rule, and still assert a proven half with nothing named.
+  if (row.obligations.some((obligation) => obligation.status !== 'owed') && (row.mechanism ?? '').trim().length === 0) {
+    errors.push(`conformance.json: ${id} has an obligation that is not owed but the row names no mechanism.`);
+  }
+  return errors;
 }
 
 // The completeness gate the second edition made necessary: every claim in the catalog owes a row here, and no
@@ -127,21 +219,46 @@ export function checkAgainstCatalog(record, catalogDir) {
 
 export function renderTable(record) {
   const tally = STATUSES.map((s) => `${Object.values(record.claims).filter((r) => r.status === s).length} \`${s}\``);
+  const split = Object.values(record.claims).filter((r) => Array.isArray(r.obligations)).length;
   const lines = [
     BEGIN,
     `Generated from \`conformance.json\` by \`tools/conformance.mjs\`; edit the JSON, not the table.`,
     `${Object.keys(record.claims).length} claims at catalog pass ${record.catalogPassDate}: ${tally.join(', ')}.`,
-    '',
-    '| Claim | Edition mechanism | Status |',
-    '|-------|-------------------|--------|',
   ];
+  if (split > 0) {
+    lines.push(
+      '',
+      `${split} of those rows state a status per obligation; the row's own status is the weakest of them, so the tally above reads a split row at its weakest half and never at its strongest.`,
+    );
+  }
+  lines.push('', '| Claim | Edition mechanism | Status |', '|-------|-------------------|--------|');
   for (const [id, row] of Object.entries(record.claims)) {
     const mechanism = row.mechanism.trim().length > 0 ? row.mechanism : 'not built';
-    const status = row.note.trim().length > 0 ? `${row.status}; ${row.note}` : row.status;
-    lines.push(`| ${id} ${lowerFirst(row.title)} | ${mechanism} | ${status} |`);
+    lines.push(`| ${id} ${lowerFirst(row.title)} | ${mechanism} | ${renderStatus(row)} |`);
   }
   lines.push(END);
   return lines.join('\n');
+}
+
+// The status cell. A split row renders its roll-up, then one segment per obligation, then the note: the
+// obligation's sentence lives in the record now, so the table has to show it or the generated document would
+// carry less than the machine-readable file it is generated from.
+function renderStatus(row) {
+  const parts = [];
+  if (Array.isArray(row.obligations)) {
+    parts.push(`${row.status} (the weakest of ${row.obligations.length} obligations)`);
+    for (const obligation of row.obligations) {
+      parts.push(`**${obligation.name}** \`${obligation.status}\`: ${obligation.text}`);
+    }
+  } else {
+    parts.push(row.status);
+  }
+  if (row.note.trim().length > 0) {
+    parts.push(row.note);
+  }
+  // Segments are joined with a semicolon, so a segment that already ends in a full stop would render `.;`.
+  // The last segment keeps its punctuation, because nothing follows it.
+  return parts.map((part, index) => (index === parts.length - 1 ? part : part.replace(/\.$/, ''))).join('; ');
 }
 
 // Titles are catalog headings ("Tenant comes from the credential only"); in a table cell they read as a

@@ -500,6 +500,47 @@ if (conformance.record && conformance.errors.length === 0) {
   }
 }
 
+// S-2, ruled 2026-07-26: `locus` is an enum of exactly two values and every qualification lives in `locus_note`.
+//
+// The field was documented as an enum and realized as prose, 22 distinct values across 69 claims. That held as
+// long as a human read it, because the qualified values all lead with the word the enum wanted; it stops holding
+// the moment anything mechanical needs the comparison, and the comparison a second edition needs is "this claim
+// declares centralized and this stack reaches only per-seam". A field nothing checks drifts to whatever the last
+// editor felt like writing, which is how 22 values happened.
+//
+// Conditional and announced, on the same rule as the conformance catalog-completeness check and the finding-id
+// check: the catalog lives above the edition in the kernel repo, and a seeded project carries the edition
+// without it. Three checks that skip for the same reason state the reason three times rather than sharing a
+// flag, because each names the artifact it could not read.
+const LOCI = new Set(['centralized', 'per-seam']);
+const catalogDir = join(editionRoot, '../claims');
+if (!existsSync(catalogDir)) {
+  notes.push('the claims catalog is not present, so claim `locus` values were NOT checked (expected in a seeded project)');
+} else {
+  for (const claimFile of readdirSync(catalogDir).filter((entry) => /^[A-Z]+-[0-9]+-.*\.md$/.test(entry))) {
+    const raw = readFileSync(join(catalogDir, claimFile), 'utf8');
+    const fm = frontMatter(raw);
+    if (fm === null) {
+      fail(`claims/${claimFile}: missing front matter, so it declares no locus (DOC-1).`);
+      continue;
+    }
+    if (!LOCI.has(fm.locus)) {
+      fail(
+        `claims/${claimFile}: locus '${fm.locus ?? ''}' is not one of ${[...LOCI].join(', ')}; a qualification belongs in locus_note (S-2).`,
+      );
+    }
+    // Read from the raw block rather than from the parsed object, and the difference is not pedantry: the
+    // parser's value pattern requires at least one character, so `locus_note:` with nothing after it parses as
+    // the key being ABSENT. For a mandatory key that is harmless, since absent and empty both fail the same
+    // check. For an optional one it is a hole exactly the size of the key, and an empty note is the shape a
+    // hybrid claim gets written into when someone means to come back to it.
+    const block = raw.slice(3, raw.indexOf('\n---', 3));
+    if (/^\s*locus_note\s*:\s*$/m.test(block)) {
+      fail(`claims/${claimFile}: locus_note is present and says nothing; drop the key or state what qualifies the locus (S-2).`);
+    }
+  }
+}
+
 // Every finding id an edition cites is defined in the findings register, and no id is cited that the register
 // does not define.
 //
