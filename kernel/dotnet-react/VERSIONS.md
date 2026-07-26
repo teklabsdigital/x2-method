@@ -1,7 +1,7 @@
 # Dependency ledger (DEP-1)
 
 One ledger for the whole edition. Every direct dependency is pinned exactly, restored in locked mode
-(`dotnet restore --locked-mode`, `npm ci`), and listed here with its publish date. **The cooling-off window is 90
+(`dotnet restore --locked-mode`, `npm ci`), and listed here with its publish date. **The cooling-off window is 30
 days**; this header is the one place the number lives (DEP-1 points here), and every entry below is well past it.
 A vendored component may carry its own internal window (the teklabs engine uses 15 for its own development); that
 governs the component's development, not what a host project consumes, and the host applies this window to what
@@ -71,10 +71,24 @@ The row key is `repo:tag`; the digest below is the value every surface carries.
 | @types/react | 19.1.8 | 2025-06-11 | npmjs.com |
 | @types/react-dom | 19.1.6 | 2025-06-04 | npmjs.com |
 | @vitejs/plugin-react | 4.5.0 | 2025-05-23 | npmjs.com |
-| eslint | 9.27.0 | 2025-05-16 | npmjs.com |
-| eslint-plugin-react-hooks | 5.2.0 | 2025-02-28 | npmjs.com |
+| eslint | 10.4.1 | 2026-05-29 | npmjs.com |
+| eslint-plugin-react-hooks | 7.1.1 | 2026-04-17 | npmjs.com |
 | jsdom | 26.1.0 | 2025-04-13 | npmjs.com |
 | typescript | 5.8.3 | 2025-04-05 | npmjs.com |
-| typescript-eslint | 8.32.0 | 2025-05-05 | npmjs.com |
-| vite | 6.3.5 | 2025-05-05 | npmjs.com |
-| vitest | 3.1.4 | 2025-05-19 | npmjs.com |
+| typescript-eslint | 8.60.1 | 2026-06-01 | npmjs.com |
+| vite | 6.4.3 | 2026-06-01 | npmjs.com |
+| vitest | 3.2.6 | 2026-06-01 | npmjs.com |
+
+**One transitive pin is overridden, and the reason is a conflict DEP-1 does not resolve.** `postcss` is pulled in
+by `vite` and is pinned to 8.5.15 through an `overrides` entry in the shared tier's `package.json`. It carries
+GHSA-r28c-9q8g-f849 (path traversal in source-map auto-loading), which is fixed in 8.5.18 and later. **No postcss
+release satisfies both rules at once**: 8.5.15 (2026-05-19) clears the window and carries the advisory, and the
+first release clearing the advisory is 8.5.18 (2026-07-12), which is inside the window. Left to itself npm
+resolved 8.5.16 (2026-06-28), which is the worst of the three, inside the window AND still vulnerable, which is
+why this is pinned rather than left to resolution.
+
+The pin honours the rule DEP-1 actually states, the window, and leaves the advisory open and named rather than
+breaking a stated rule silently. This is the same window-versus-advisory conflict E-3 recorded against `vite` at
+the 90-day window, recurring in a different package at 30, which is the evidence for E-3's insistence that
+shortening the window made the conflict rarer without supplying the missing rule. Revisit when 8.5.18 clears the
+window (2026-08-11) or when DEP-1 gains a resolution order.

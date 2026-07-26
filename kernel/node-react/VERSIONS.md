@@ -1,7 +1,7 @@
 # Dependency ledger (DEP-1)
 
 One ledger for the whole edition. Every direct dependency is pinned exactly, restored in locked mode (`npm ci`),
-and listed here with its publish date. **The cooling-off window is 90 days**; this header is the one place the
+and listed here with its publish date. **The cooling-off window is 30 days**; this header is the one place the
 number lives (DEP-1 points here), and every entry below is well past it. tools/docs-lint.mjs fails the build if a
 direct dependency in any manifest this edition declares in `edition.json` is missing a row here, and if any
 container image reference floats or is missing its row below.
@@ -45,14 +45,22 @@ appear in both sections at different pins. Where the versions differ the reason 
 | typescript-eslint | 8.59.0 | 2026-04-20 | npmjs.com |
 | vitest | 4.1.5 | 2026-04-21 | npmjs.com |
 
-The eslint and vitest pins are ahead of the client's deliberately, not by drift. This tree was first installed at
-the client's pins (eslint 9.27.0, vitest 3.1.4) and `npm audit` reported one critical and eleven high advisories:
+These pins diverged from the client's deliberately, not by drift. This tree was first installed at the client's
+pins (eslint 9.27.0, vitest 3.1.4) and `npm audit` reported one critical and eleven high advisories:
 GHSA-5xrq-8626-4rwp against vitest below 3.2.6, and the brace-expansion chain GHSA-mh99-v99m-4gvg reaching eslint
-below 10. The versions above are the oldest ones that clear both the 90-day window and those advisories, and at
-them this tree installs with zero advisories reported. Both advisory ranges also cover the client's pins, so both
-apply there; the client's own total was not measured, because the registry audit endpoint was failing when it was
-attempted. The client's pins are carried below as the shared tier ships them. The gap between the two sections is
-a recorded finding, not a decision this ledger settles.
+below 10. The versions above are the oldest ones that cleared both the then-current 90-day window and those
+advisories, and at them this tree installs with zero advisories reported.
+
+The window pass (2026-07-26) cut the window to 30 days, which does not obligate any pin here to move: a shorter
+window is strictly more permissive and every version above still clears it.
+
+**The client caught up on 2026-07-26 (the flow-back pass, E-3), so "ahead of the client" no longer describes the
+gap and the direction is now mixed.** The client is at eslint 10.4.1 and typescript-eslint 8.60.1, both newer than
+this section's 10.2.1 and 8.59.0; this section is at vitest 4.1.5 against the client's 3.2.6, which is a major line
+apart. Nothing here is wrong: DEP-1 sets a floor on a version's age and does not require two trees to agree, and
+the two were bumped by different passes for different reasons. It is recorded because the previous sentence in this
+place asserted a direction that has since reversed, and a ledger that explains a gap has to be re-read when the gap
+moves. Converging the two is a shared-tier decision, not this edition's to make unilaterally.
 
 ## Client (client-web, npm, save-exact)
 
@@ -67,12 +75,12 @@ tier's; changing them is a shared-tier change that re-composes into every editio
 | @types/react | 19.1.8 | 2025-06-11 | npmjs.com |
 | @types/react-dom | 19.1.6 | 2025-06-04 | npmjs.com |
 | @vitejs/plugin-react | 4.5.0 | 2025-05-23 | npmjs.com |
-| eslint-plugin-react-hooks | 5.2.0 | 2025-02-28 | npmjs.com |
+| eslint-plugin-react-hooks | 7.1.1 | 2026-04-17 | npmjs.com |
 | jsdom | 26.1.0 | 2025-04-13 | npmjs.com |
-| vite | 6.3.5 | 2025-05-05 | npmjs.com |
-| eslint | 9.27.0 | 2025-05-16 | npmjs.com |
-| typescript-eslint | 8.32.0 | 2025-05-05 | npmjs.com |
-| vitest | 3.1.4 | 2025-05-19 | npmjs.com |
+| vite | 6.4.3 | 2026-06-01 | npmjs.com |
+| eslint | 10.4.1 | 2026-05-29 | npmjs.com |
+| typescript-eslint | 8.60.1 | 2026-06-01 | npmjs.com |
+| vitest | 3.2.6 | 2026-06-01 | npmjs.com |
 
 The last three rows are the client's pins for packages the server pins differently, and they are here because a
 ledger row is a statement about a VERSION, not about a name. An earlier draft of this file left them out and
@@ -83,3 +91,17 @@ the build for a pin with no dated row, which is what caught this.
 
 `@types/node` (22.15.30) and `typescript` (5.8.3) are direct dependencies of both surfaces at the same pin, so
 one row each covers both.
+
+**One transitive pin is overridden, and the reason is a conflict DEP-1 does not resolve.** `postcss` is pulled in
+by `vite` and is pinned to 8.5.15 through an `overrides` entry in the shared tier's `package.json`. It carries
+GHSA-r28c-9q8g-f849 (path traversal in source-map auto-loading), which is fixed in 8.5.18 and later. **No postcss
+release satisfies both rules at once**: 8.5.15 (2026-05-19) clears the window and carries the advisory, and the
+first release clearing the advisory is 8.5.18 (2026-07-12), which is inside the window. Left to itself npm
+resolved 8.5.16 (2026-06-28), which is the worst of the three, inside the window AND still vulnerable, which is
+why this is pinned rather than left to resolution.
+
+The pin honours the rule DEP-1 actually states, the window, and leaves the advisory open and named rather than
+breaking a stated rule silently. This is the same window-versus-advisory conflict E-3 recorded against `vite` at
+the 90-day window, recurring in a different package at 30, which is the evidence for E-3's insistence that
+shortening the window made the conflict rarer without supplying the missing rule. Revisit when 8.5.18 clears the
+window (2026-08-11) or when DEP-1 gains a resolution order.
