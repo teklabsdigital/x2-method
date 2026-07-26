@@ -57,7 +57,19 @@ public sealed class WireConventionTests(KernelApiFactory factory) : IClassFixtur
 
         var response = await client.GetAsync("/no-such-route");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        // This asserted NotFound until SEC-1's fallback was changed from RequireAuthenticatedUser to a deny (see
+        // Program.cs and E-7). The authorization middleware applies the fallback to requests that match no
+        // endpoint as well as to endpoints carrying no authorization metadata, so an unknown route is now refused
+        // rather than reported absent. The old assertion is recorded here rather than quietly swapped, because
+        // the status change is a real behaviour change and not a test detail.
+        //
+        // Refusing is the better answer and the node-react edition reached the same 403 by a different route: an
+        // unauthenticated caller learns nothing about which URLs exist, and 404 stays available and meaningful
+        // inside a gated endpoint, where One_tenant_cannot_read_another_tenants_note depends on it.
+        //
+        // What this test is actually about is unchanged: CON-1's one wire dialect, so the error renders RFC 9457
+        // problem+json whatever the code.
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
 

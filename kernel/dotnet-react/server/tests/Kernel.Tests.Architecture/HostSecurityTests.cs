@@ -105,4 +105,36 @@ public sealed class HostSecurityTests(KernelApiFactory factory) : IClassFixture<
             .GetAsync($"/notes/{note!.Id}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    /// <summary>
+    /// TEN-1's header surface at run time, which is the half a scan cannot cover. `EndpointSpineTests` proves no
+    /// endpoint DECLARES a tenant header binding; this proves that a header arriving anyway changes nothing,
+    /// which is the property the claim's statement actually asserts ("the tenant a request operates in is
+    /// resolved SOLELY from the validated authentication credential").
+    ///
+    /// The two are not redundant, and A-3 is the reason to say so: the scan is a static enumeration and its blind
+    /// spot is a surface it does not enumerate, while this reads a status code and its blind spot is a route it
+    /// does not exercise. A middleware that started preferring a header over the claim would leave the scan green
+    /// and turn this red.
+    /// </summary>
+    [Fact]
+    public async Task A_forged_tenant_header_does_not_move_the_request_into_another_tenant()
+    {
+        var victimTenant = Guid.NewGuid();
+        var created = await ClientWith(TestTokens.Mint(victimTenant, permissions: "notes.write"))
+            .PostAsJsonAsync("/notes", new CreateNoteRequest("A tenant-A note", "body"));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var note = await created.Content.ReadFromJsonAsync<NoteResponse>();
+
+        // An attacker in their own tenant, naming the victim's tenant in every spelling a middleware might read.
+        var attacker = ClientWith(TestTokens.Mint(Guid.NewGuid(), permissions: "notes.read"));
+        foreach (var header in new[] { "X-Tenant-Id", "Tenant-Id", "tenant_id", "TenantId", "X-Org-Id" })
+        {
+            attacker.DefaultRequestHeaders.Remove(header);
+            attacker.DefaultRequestHeaders.Add(header, victimTenant.ToString());
+        }
+
+        var response = await attacker.GetAsync($"/notes/{note!.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

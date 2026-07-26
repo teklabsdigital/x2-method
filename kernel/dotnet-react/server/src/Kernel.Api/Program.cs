@@ -75,9 +75,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// SEC-1: deny by default. An endpoint that forgets its attribute is unreachable, not public.
+// SEC-1: deny by default, and deny means deny. This was RequireAuthenticatedUser(), which made an endpoint with
+// no authorization metadata reachable by every authenticated caller in the system, with no permission and across
+// tenants. SEC-1's statement asks for a forgetful endpoint to be "unreachable, not public", and one sentence
+// earlier the same claim forbids exactly that gate: "Bare 'authenticated is enough' registrations are rejected".
+// The claim rejected bare authentication at the endpoint and the realization then accepted it as the floor.
+//
+// Denying outright costs nothing, because EndpointSpineTests already guarantees every real endpoint names a
+// non-empty perm policy or is on the reviewed anonymous allowlist. Nothing legitimate reaches the fallback.
+// Recorded as E-7 in the node-react edition's findings register, which is where it was found.
 builder.Services.AddAuthorizationBuilder()
-    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAssertion(_ => false).Build());
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
 // CON-1: one wire dialect. Problem details for errors, a single enum converter, camelCase (the web default).
