@@ -1,7 +1,8 @@
 ---
 id: TEN-2
 family: tenancy
-locus: per-seam (central accessor, per-entry obligation)
+locus: per-seam
+locus_note: central accessor, per-entry obligation
 provenance: X-1, risk item 3
 ---
 

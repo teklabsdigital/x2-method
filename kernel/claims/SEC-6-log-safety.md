@@ -1,7 +1,8 @@
 ---
 id: SEC-6
 family: security
-locus: per-seam (named tests at each logging surface)
+locus: per-seam
+locus_note: named tests at each logging surface
 provenance: Bucket 3
 ---
 

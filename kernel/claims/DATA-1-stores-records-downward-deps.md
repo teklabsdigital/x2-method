@@ -1,7 +1,8 @@
 ---
 id: DATA-1
 family: data
-locus: centralized (per-module rules, centrally tested)
+locus: centralized
+locus_note: per-module rules, centrally tested
 provenance: X-3 ruling, B2-2
 ---
 

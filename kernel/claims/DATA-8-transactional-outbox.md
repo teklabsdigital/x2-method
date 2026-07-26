@@ -1,7 +1,8 @@
 ---
 id: DATA-8
 family: data
-locus: centralized restriction, per-seam crash proof
+locus: centralized
+locus_note: centralized restriction, per-seam crash proof
 provenance: patterns pass 2026-07-24 (architecture stream: microservices.io transactional outbox; AWS Prescriptive Guidance, outbox pattern)
 ---
 

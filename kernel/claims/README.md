@@ -18,7 +18,21 @@ The edition realizations (concrete arch tests, lint rules, skeleton) live in `ke
 
 ## File schema
 
-One file per claim: `{ID}-{slug}.md`. Front matter: `id`, `family`, `locus` (centralized or per-seam), `provenance` (register/decision refs; an in-place extension is recorded there with its pass date). Body sections: **Statement** (portable), **Harm** (named, concrete), **Enforcement** (mechanism class only), **Weakening notes** (where enforcement is honest about its limits).
+One file per claim: `{ID}-{slug}.md`. Front matter: `id`, `family`, `locus` (exactly `centralized` or `per-seam`, nothing else, enforced by docs-lint), `locus_note` (optional free text, where the claim is a real hybrid and the enum value alone would mislead), `provenance` (register/decision refs; an in-place extension is recorded there with its pass date). Body sections: **Statement** (portable), **Harm** (named, concrete), **Enforcement** (mechanism class only), **Weakening notes** (where enforcement is honest about its limits).
+
+The Enforcement section holds up to three bullets. `- Mechanism class:` is mandatory and is the claim. `- Completeness obligation:` states the three parameters below and is written where a claim has been realized at least once, because an obligation written in advance of a mechanism is an aspiration and the catalog exists to kill those. `- Mechanism relationship:` is written where the claim names two mechanisms and asserts something about the pair.
+
+### What a mechanism class states
+
+Four rules bind the portable layer. All four were ruled by the adjudication pass of 2026-07-26, and every one of them was minted from a measurement taken while a second edition realized the claim, never from a preference; the finding ids are in `record/edition-findings.md`.
+
+**A mechanism class is a surface, a predicate, and a completeness obligation** (S-5, E-10, S-10). The obligation carries three parameters, and each was discovered by a mechanism that stated the earlier ones and was wrong anyway. **When** the enumeration of the surface is taken: a recorder sitting on the registration path was overtaken by a later hook that rewrote a route, so the table read `/decoy` while the server served `/admin/impersonate`, with nothing failing. How deep the **closure** goes: a closure obligation bought at level zero let an open nested object deliver `author.tenantId` to the handler with the scan silent. And the **remedy** for a member the enumeration does not declare: two closed surfaces in one edition have opposite correct behaviours, a silent strip for a caller and a refusal for an operator, so the remedy is a ruling the claim owes and not a framework default nobody wrote down. A claim that names a surface and a predicate and stops has not stated its mechanism; it has stated the part an edition can satisfy while still missing the input the claim exists to catch.
+
+**A mechanism that matches a name against a list states what its comparison resolves** (E-9, E-16). The registry's contents and the comparison over them are different properties, and only the first was ever written down. Measured: two editions realized the same three claims with matchers that are incomparable rather than ordered, so case-insensitive equality let `emailAddress` past a list containing `email` while a tokenized run let `firstname`, `dateofbirth`, `tenantid` and `orgid` past a list containing all of their parts, and a third class (`e_mail`, `EMailAddress`, `mail`, `emails`, `email1`) escaped both. A fourth mechanism was blind to every key in every JSON file in both editions because its pattern required a separator after the term and the next character was a quote. So the rule is general rather than a list of three claims: any mechanism whose predicate matches a name against a list states which morphological classes the comparison resolves (compounds, concatenations, decompositions, plurals) and how the surrounding format spells a name, and the edition owes evidence for the comparison and not only for the list.
+
+**An asserted relationship between two of a claim's mechanisms is part of the claim** (A-3, E-11, E-16, E-17). Where a claim names two mechanisms and says anything about the pair, the edition owes evidence for the relationship, not only for each mechanism. Independence of mechanism is not independence of blind spot: measured, a claim naming two mechanisms had both miss the same injected credential for three unrelated reasons, none visible to the other, and the union of two defensible scopes was assumed to be total by nobody in particular. The rule is scoped inside one claim. A claim whose enforcement rests on another claim being realized is a real case with exactly one witness, and it is queued in `record/candidates.md` rather than built.
+
+**The portable layer names no artifact, type, tool, or convention belonging to one stack** (B-3, B-5). Not a style rule: a `Mechanism class:` bullet naming one runtime's packaging unit is a claim that a second edition cannot satisfy as written, and it reads as though the first edition's realization were the claim. The portable content is always available, because it is what the claim meant: a named human owner on the irreversible paths rather than a particular hosting product's review feature, the layers where a value is declared rather than that runtime's word for them.
 
 **A claim file carries no edition realization, and no status.** Ruled by the adjudication pass of 2026-07-26. Both live in each edition's `conformance.json`, which is machine-checked, generates that edition's table, and can hold as many editions as exist. A realization inside a claim file had three defects and all three were measured: the schema has one slot and there are now two editions (S-1); the delta protocol says read only the claim file, so a realization inside it contaminated every step 2 in the second edition's build before it started (S-9); and it went stale without anything noticing, which DATA-5's bullet did by naming a mechanism the edition does not have (E-14). What a claim owes an edition is an **obligation**, which is portable and belongs here; what an edition did about it is that edition's fact and belongs there.
 
@@ -28,6 +42,8 @@ The catalog's honesty rests on one distinction, and every file declares which si
 
 - **Centralized** claims are provable by a single scan or one configuration point: a route-table scan, a reflection sweep over a type set, one serializer config. One test covers the whole surface, and a violation cannot merge (e.g. TEN-1, SEC-1, TIME-1, MOD-2).
 - **Per-seam** claims cannot be proved globally; each seam that could violate them owes a named test plus a review obligation. There is no single scan that proves an arbitrary future side effect is idempotent or an arbitrary future log line is redacted (e.g. DATA-3, DATA-4, SEC-6, UI-4, AI-2). These files say so plainly rather than claim a coverage they do not have; asserting a global proof where only a per-seam obligation exists is the exact aspirational-claim failure the extraction set out to kill.
+
+The field was documented as this two-value enum and realized as prose: measured at the adjudication pass, 22 distinct free-text values across 69 claims, 49 of them exactly one of the two words and 20 qualifying in prose (S-2). It was being read as an enum by eye, by splitting on the leading word, and the reading had held; what it could not do is carry a mechanical comparison, and "this claim declares centralized and the second stack reaches only per-seam" is exactly the comparison a second edition needs to make. Since the ruling of 2026-07-26 the enum is the two words and nothing else, checked by docs-lint wherever the catalog is present, and the qualification moves to `locus_note`. The 20 hybrids are real and none was flattened: `locus_note` is where DATA-8's centralized restriction meets its per-seam crash proof, and where UI-5's centralized import ban meets its per-flow smoke line. The split is 55 centralized, 14 per-seam, which is the tally this file already quoted, so nothing moved when the prose became a field.
 
 ### The status tag, and why it is not just "built"
 
@@ -42,7 +58,7 @@ v1 tally (retrued by the invariants pass, 2026-07-11): 25 `proven` (two of them,
 
 The P2 extraction pass (2026-07-21, `record/candidates.md`) minted nine further claims, every one proven in the reference project and honestly tagged `owed` in the edition with a named promotion trigger: SEC-7, SEC-8, SEC-9, DATA-6, CON-3, AI-3, OBS-1, TEST-4, SRV-1. The same pass extended five existing claims in place (TEST-2 probe-surface gating, UI-4 exception scoping, DEC-1 ruled bounds, SEC-5 store-to-store transfer, UI-5 built-form assertion). Tally after that pass: 25 `proven`, 6 `patterned`, 2 `latent`, 13 `owed`. Total 46.
 
-The compliance-mapping pass (2026-07-24) checked the catalog against two external regimes, the ASD Essential Eight and the SOC 2 Trust Services Criteria, and minted five claims where an application-layer invariant with a nameable mechanism was missing: DEP-2, SEC-10, TEN-6, DATA-7, OBS-2. Unlike the P2 nine, these are minted from the mapping, not extracted from a reference system; each records the control requirement it answers in its provenance, and all five enter `owed` with named triggers. The same pass extended TEN-4 in place with write-provenance stamps (owed, trigger: next edition build pass). Current tally: 25 `proven`, 6 `patterned`, 2 `latent`, 18 `owed`. Total 51.
+The compliance-mapping pass (2026-07-24) checked the catalog against two external regimes, the ASD Essential Eight and the SOC 2 Trust Services Criteria, and minted five claims where an application-layer invariant with a nameable mechanism was missing: DEP-2, SEC-10, TEN-6, DATA-7, OBS-2. Unlike the P2 nine, these are minted from the mapping, not extracted from a reference system; each records the control requirement it answers in its provenance, and all five enter `owed` with named triggers. The same pass extended TEN-4 in place with write-provenance stamps (owed, trigger: next edition build pass). Tally in the v1 edition after that pass: 25 `proven`, 6 `patterned`, 2 `latent`, 18 `owed`. Total 51.
 
 The versioning pass (2026-07-24) closed the version-skew gap between the kernel and the projects seeded from it: a seeded project is a copy, and nothing recorded which kernel it was a copy of. The pass named the catalog's versioning scheme and claim-identity rule (the section below) and extended DEP-1 in place: the kernel a project is seeded from is itself a pinned, ledgered dependency, recorded in the project's VERSIONS.md at instantiation and enforced by the edition's docs-lint kernel-provenance check. The edition gained the upgrade procedure for seeded projects. No claims were minted; the tally is unchanged.
 
@@ -61,9 +77,12 @@ The adjudication pass (2026-07-26) is the first pass driven by a second edition 
 catalog, and it is the largest change to the file schema since the catalog was extracted. `record/edition-findings.md`
 recorded 39 findings from building `kernel/node-react/` against these 69 claims under a delta protocol; eleven
 rulings were prepared in `record/adjudication-digest.md` and all eleven were ruled by the owner on this date.
-Each ruling names the findings it answers.
+Each ruling names the findings it answers. Applying them produced three more findings, taking the register to 42:
+one about the roll-up the pass had just built (S-11), one about the portable-vocabulary rule the pass had just
+stated (B-6), and one row that was understating its own edition (E-19). A pass that produces no findings while
+rewriting the schema has not been looking.
 
-**Ruling 1, applied in this commit.** A claim file carries no edition realization and no status. The `- Edition:`
+**Ruling 1, applied first and in its own commit.** A claim file carries no edition realization and no status. The `- Edition:`
 bullet is removed from all 69 files and the per-claim `- **Edition (v1):**` status line from this index; the file
 schema and the status-tag section are rewritten above. Answers S-1 (one slot, two editions), S-9 (the bullet
 contaminated every step 2 in the second edition's build, because the protocol requires reading the claim file
@@ -71,28 +90,51 @@ and the claim file contained one stack's answer) and S-3's residual (three homes
 made from the claim files alone and was deliberately NOT reconciled against either edition's mechanism column,
 because that reconciliation would have destroyed step 2 for the 61 claims that still owe one.
 
-The other ten rulings are recorded in the digest with their decisions and are not yet applied. In summary:
-mechanism classes gain a completeness obligation with when, depth and remedy, written now for the eight built
-claims only (2); conformance rows gain optional per-obligation statuses with a weakest-wins roll-up (3); an
-asserted relationship between two of a claim's mechanisms becomes part of the claim (4); TEN-1's mechanism class
-gains the header surface its statement always named (5); the comparison a name-matching predicate uses becomes
-part of the mechanism class, as a schema rule plus four measured claims (6); the portable layer may name no
-stack artifact, repairing HUM-1, TIME-1 and PERF-4 now and DATA-1 when it is built (7); three claim-text repairs
-land in TIME-1, CFG-1 and CON-2 (8); DEP-1 gains a resolution order in which a live advisory outranks the
-cooling-off window above the 7-day floor, with any pin taken under that rule ledgered, and DEP-2's trigger moves
-to the next edition build pass (9); `locus` becomes a two-value enum plus a `locus_note` (10); two candidate
-claims are queued rather than minted (11).
+**Rulings 2 through 11, applied 2026-07-26 and 2026-07-27**, in the order the evidence required rather than the
+order they are numbered: ruling 3 first, because three of the others falsify shipped rows and ruling 3 is what
+gives those rows somewhere honest to land.
 
-Rulings 2, 5 and 6 falsify four `proven` rows in `kernel/dotnet-react/`: SEC-2, SEC-3, TEN-1 and TIME-1. None is
-a newly discovered vulnerability; each is a guard measurably narrower than its row claims, and ruling 3 is
-sequenced first so those rows have somewhere honest to land rather than collapsing to a single word that
-understates them.
+A mechanism class is now a surface, a predicate, and a **completeness obligation** with three parameters, and the
+schema states all three with the measurement that found each; a `- Completeness obligation:` bullet is written
+into the eight built claims and into none of the other 61, because an obligation written ahead of a mechanism is
+an aspiration (2, from S-5, E-10, S-10, B-1). A conformance row may carry **per-obligation statuses** with a
+weakest-wins roll-up the tool checks against the row's declared status; 13 rows now carry them, 9 in
+`kernel/dotnet-react/` and 4 in `kernel/node-react/`, and every one of those rows was already writing a second
+status in prose (3, from S-8). An **asserted relationship** between two of a claim's mechanisms is part of the
+claim and the edition owes evidence for the pair, not only for each half; SEC-1 and SEC-5 carry the first two
+`- Mechanism relationship:` bullets (4, from A-3, E-11, E-16, E-17). TEN-1's mechanism class gains a **non-scan
+mechanism for the header surface**, because a caller may send a header nobody declared and there is no
+enumeration to scan; the statement is untouched, since it was right (5, from A-2). Any mechanism matching a name
+against a list now states **what its comparison resolves**, as a schema rule rather than a list of claims, plus a
+written obligation in SEC-2, SEC-3, TEN-1 and SEC-5 (6, from E-9 and E-16). The **portable layer names no stack
+artifact**: HUM-1, TIME-1 and PERF-4 repaired, DATA-1 deferred to the pass that builds it (7, from B-3, B-5).
+Three claim-text repairs land: TIME-1 separates unambiguity from offset retention and says what each buys, CFG-1
+names the ambient process environment as a fourth home and closes it by declaration rather than by ban, and
+CON-2's weakening notes name the precondition its mechanism was assuming and the sanctioned alternative where it
+does not hold (8, from A-5, A-6, S-4). DEP-1 gains a **resolution order**, a live advisory outranks the
+cooling-off window above the 7-day floor by explicit decision, with a ledger row for any pin taken under it
+whether direct or transitive, and records that the window's number is independent of any policy outside this
+repository; DEP-2's trigger moves to the next edition build pass (9, from E-3 and E-18). `locus` becomes the
+two-value enum it was always documented as, with a free-text `locus_note` for the 20 real hybrids, checked by
+docs-lint (10, from S-2). Two candidate claims are queued in `record/candidates.md` and neither is minted (11,
+from S-7 and E-5).
 
-Recorded because it will come up again: the conflict this ruling dissolves is not gone, it is made less likely.
-A window of any length can still have no overlap with the set of releases that clear a live advisory, and DEP-1
-still says nothing about what to do then. That gap is open and is separate from the number.
+**What it did to the shipped record.** Four rows in `kernel/dotnet-react/` stop reading `proven`: SEC-2 and
+TIME-1 under ruling 2, SEC-3 under ruling 6, TEN-1 under rulings 5 and 6. None is a newly discovered
+vulnerability and no mechanism changed; each is a guard measurably narrower than its row claimed, and each now
+carries per-obligation statuses so the row says which half it meets rather than collapsing to one word. That
+edition's tally moves from 25 `proven`, 6 `patterned`, 2 `latent`, 36 `owed` to **21, 6, 2, 40**;
+`kernel/node-react/` is unchanged at **4 `proven`, 65 `owed`**, its four measured rows now stating a `proven`
+half inside an `owed` row. A tally quoted in this file is a quotation from an edition's record and never a
+property of the catalog, which is what ruling 1 settled.
 
-The patterns pass (2026-07-24) mapped the catalog against three published bodies of practice: architectural pattern catalogs, resilience and operability practice, and performance measurement science. Like the compliance five, its mints come from a mapping, not an extraction; each claim's provenance names its source literature, and all enter `owed` with named triggers. The pass found the catalog complete in its founding territories (tenancy, security, AI trust, UI, docs) and thin in what happens over time and under failure, so it opened two families. Resilience (RES-1 to RES-6) rules what happens when a dependency hangs, a queue poisons, or an instance dies. Performance (PERF-1 to PERF-6) is chartered on counted work: merges gate on deterministic per-operation counts (statements, roundtrips, allocations, scaling ratios), never on raw wall time. The pass also minted DATA-8 to DATA-11 (producer atomicity, lost updates, bounded growth, expand/contract migrations), SEC-11 (split database credentials), and CON-4 (the breaking-change gate that mechanizes HUM-1's detection), and extended four claims in place: TIME-1 (monotonic durations), OBS-1 (trace-context propagation), DATA-6 (migration lock timeout), and DATA-4 (compensation named as a per-seam limit). Current tally: 25 `proven`, 6 `patterned`, 2 `latent`, 36 `owed`. Total 69.
+**One thing the pass did not close, recorded so it is not assumed.** Ruling 3's weakest-wins roll-up cannot
+express a row whose weakest obligation is a deferred extension rather than an unbuilt half, because the weakest
+word in the vocabulary also means "not built": three sibling rows (TEN-4, UI-4, DEP-1) therefore keep a second
+status in prose that no ruling authorizes moving. It is recorded as S-11 rather than smoothed. The window-versus-
+advisory conflict the window pass left open IS now closed, by ruling 9 above.
+
+The patterns pass (2026-07-24) mapped the catalog against three published bodies of practice: architectural pattern catalogs, resilience and operability practice, and performance measurement science. Like the compliance five, its mints come from a mapping, not an extraction; each claim's provenance names its source literature, and all enter `owed` with named triggers. The pass found the catalog complete in its founding territories (tenancy, security, AI trust, UI, docs) and thin in what happens over time and under failure, so it opened two families. Resilience (RES-1 to RES-6) rules what happens when a dependency hangs, a queue poisons, or an instance dies. Performance (PERF-1 to PERF-6) is chartered on counted work: merges gate on deterministic per-operation counts (statements, roundtrips, allocations, scaling ratios), never on raw wall time. The pass also minted DATA-8 to DATA-11 (producer atomicity, lost updates, bounded growth, expand/contract migrations), SEC-11 (split database credentials), and CON-4 (the breaking-change gate that mechanizes HUM-1's detection), and extended four claims in place: TIME-1 (monotonic durations), OBS-1 (trace-context propagation), DATA-6 (migration lock timeout), and DATA-4 (compensation named as a per-seam limit). Tally in the v1 edition after that pass: 25 `proven`, 6 `patterned`, 2 `latent`, 36 `owed`. Total 69.
 
 One dependency sits under every `proven` and `patterned` tag: a mechanism gates a merge only once **TEST-3's loop is armed by branch protection**, which is an instantiation step, not the workflow file. Until then the pipeline runs but blocks nothing, so every gating tag reads "enforced once armed". The kernel acceptance test must verify instantiation actually arms it; see TEST-3.
 
@@ -123,7 +165,7 @@ Six claims, layered so no single one is load-bearing: the tenant is read only fr
 #### [TEN-1](TEN-1-tenant-from-claim-only.md) - Tenant comes from the credential only
 - **Statement:** The tenant a request operates in is resolved solely from the validated auth credential (the tenant claim in the token). Tenant identity never travels as a route, query, header, or body parameter, and no request contract carries a tenant-identifier field.
 - **Harm:** Horizontal privilege escalation by parameter tampering: one forged tenant id yields full cross-tenant read and write.
-- **Enforcement (centralized):** An architecture test scans the real route table for tenant-shaped route and query parameters, plus a reflection scan over all request-contract types rejecting tenant-id fields.
+- **Enforcement (centralized):** An architecture test scans the real route table for tenant-shaped route and query parameters, plus a reflection scan over all request-contract types rejecting tenant-id fields, plus a runtime mechanism for the header surface, which no scan can reach because a caller may send a header nobody declared. The comparison resolves compounds, concatenations and decompositions of a listed word; a longer list is not a comparison.
 - **Weakening:** The contract scan covers only the Contracts assembly; a request type declared elsewhere escapes it. MOD-2 (types live where they belong) closes that gap. The identity mint surface (TEN-6) is the scans' one sanctioned carve-out: it accepts a tenant selection to mint the credential, never to scope a product request.
 
 #### [TEN-2](TEN-2-ambient-scope-fail-closed.md) - Ambient scope, fail-closed
@@ -169,13 +211,13 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 #### [SEC-2](SEC-2-anti-mass-assignment.md) - Anti mass-assignment
 - **Statement:** No request contract exposes a field the server owns: entity ids on create, tenant id, timestamps, audit fields, status or state, concurrency tokens, role or permission grants. The server assigns those; model binding cannot.
 - **Harm:** Mass assignment: a caller posts `"status":"Approved"` or `"createdBy":"admin"` and the binder obliges, invisible in per-DTO review.
-- **Enforcement (centralized):** A reflection scan over every body-bound type asserts no member matches a single named forbidden-field registry. The edition scans immutable, constructor-bound DTOs too (via constructor parameters, not only writable properties) and excludes injected services structurally.
+- **Enforcement (centralized):** A reflection scan over every body-bound type, at every depth, asserts no member matches a single named forbidden-field registry, with a comparison that resolves compounds, concatenations and decompositions of a listed word. The edition scans immutable, constructor-bound DTOs too (via constructor parameters, not only writable properties) and excludes injected services structurally.
 - **Weakening:** Name-based matching is heuristic (`newState` slips past a registry listing `status`); the registry is extended deliberately per project.
 
 #### [SEC-3](SEC-3-no-pii-in-urls.md) - No PII in URLs
 - **Statement:** No route or query parameter carries PII (email, phone, name, national id, date of birth); PII travels in request bodies over TLS, because URLs persist in logs, proxies, browser history, and referrer headers.
 - **Harm:** PII leakage through every log aggregator and intermediary that sees a URL, turning observability into a privacy incident.
-- **Enforcement (centralized):** A runtime scan over the composed route table rejects parameters whose names match a PII name list, covering wrapper, collection, and date parameter types that naive scans miss.
+- **Enforcement (centralized):** A runtime scan over the composed route table rejects parameters whose names match a PII name list, covering wrapper, collection, and date parameter types that naive scans miss, with a comparison that resolves compounds, concatenations, decompositions and plurals of a listed word.
 - **Weakening:** A name list is heuristic; novel PII parameter names escape it, so the list is extended per project at D-000. Opaque surrogate ids in URLs are the sanctioned pattern.
 
 #### [SEC-4](SEC-4-jwt-hardening-and-revocation.md) - JWT hardening and revocation
@@ -187,7 +229,7 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 #### [SEC-5](SEC-5-no-secrets-in-config.md) - No secrets in config
 - **Statement:** No credential, key, or token appears in any committed config file; dev secrets live in the developer-local secret store; deployed integration credentials live behind a vault port where the stored row holds only an opaque handle. The secret is never modelled as a domain property nor logged.
 - **Harm:** Committed secrets outlive their commit in history, forks, and backups, and rotate only when someone remembers.
-- **Enforcement (centralized):** A CI secret-scan gate over the repo plus a config-shape test that fails the build when secret-shaped keys hold non-placeholder values in committed config.
+- **Enforcement (centralized):** A CI secret-scan gate over the repo plus a config-shape test that fails the build when secret-shaped keys hold non-placeholder values in committed config, each with a comparison that resolves the term in either direction and the way the surrounding format spells a name, and with evidence that the union of the two scopes covers the tracked set: independence of mechanism is not independence of blind spot.
 - **Weakening:** Scanners are heuristic; the structural fix is the vault-port idiom, so there is no secret-shaped value to commit in the first place.
 
 #### [SEC-6](SEC-6-log-safety.md) - Log safety
@@ -229,9 +271,9 @@ Deny by default (SEC-1), keep server fields off the wire (SEC-2), keep PII out o
 ### Time
 
 #### [TIME-1](TIME-1-utc-offset-only.md) - UTC, offset-aware, and nothing else
-- **Statement:** All time values in domain types, contracts, and persistence are UTC-anchored, offset-aware types; naive local wall-clock types never appear in those layers. Conversion to a user's local time happens at the display edge, using the timezone stored on the authenticated principal (refusing when absent, per DATA-5). Durations come from the monotonic source through one clock seam, never from wall-clock subtraction (extended 2026-07-24: the wall clock steps under NTP correction).
+- **Statement:** All time values in domain types, contracts, and persistence are UTC-anchored, offset-aware types, which is two properties the claim names separately because a stack can supply one without the other: unambiguity (the value denotes one instant) and offset retention (the value keeps the offset it was written in). Naive local wall-clock types have neither and never appear in those layers; a type with the first and not the second is neither the forbidden shape nor the permitted one, and an edition says which property it has and where the other is carried. Conversion to a user's local time happens at the display edge, using the timezone stored on the authenticated principal (refusing when absent, per DATA-5). Durations come from the monotonic source through one clock seam, never from wall-clock subtraction (extended 2026-07-24: the wall clock steps under NTP correction).
 - **Harm:** Naive datetimes are ambiguous at every DST transition and cross-region deployment: double bookings, off-by-hours scheduling, unorderable audit trails.
-- **Enforcement (centralized):** An architecture test reflects over domain, contracts, application, and persistence assemblies and rejects properties or parameters of forbidden time types (`DateTimeOffset` only; naive `DateTime` banned), recursing nullable, array, and generic shapes.
+- **Enforcement (centralized):** A structural test over every layer the statement names (domain, contracts, application, persistence) rejects declarations of forbidden time types, recursing nullable, array, and generic shapes. Its completeness obligation requires the layer set to be derived from a rule the test can check, because a hand-written list omits a layer silently and the omission reads exactly like coverage.
 - **Weakening:** Date-only and time-only concepts (a birth date, a clinic opening hour) are legitimately zoneless; `DateOnly` and `TimeOnly` are permitted so the ban stays crisp. And the permitted shape is insufficient for a category the claim does not yet name: `DateTimeOffset` records an offset, not a zone, so a scheduled *future* local event breaks when the zone's DST rules change; a future event stores wall time plus the IANA zone id, resolved at read. The v1 exemplar has no future scheduling, so that rule is recorded for the first scheduling slice, not yet scanned.
 
 ### Data
@@ -307,7 +349,7 @@ Layering that flows downward (DATA-1), reads that stay bounded (DATA-2), side ef
 ### Configuration
 
 #### [CFG-1](CFG-1-operational-settings-are-config.md) - Operational settings are configuration, not code
-- **Statement:** Non-secret operational settings (a model id, a provider endpoint, a feature flag, a timeout) resolve from configuration and live in committed appsettings; secrets live in the secret store (SEC-5); mandatory values fail fast (DATA-5). A literal in code is the third, wrong home and is banned; scripts never duplicate a committed config value, they read it.
+- **Statement:** Non-secret operational settings (a model id, a provider endpoint, a feature flag, a timeout) resolve from configuration and live in committed appsettings; secrets live in the secret store (SEC-5); mandatory values fail fast (DATA-5). A literal in code is the third, wrong home and is banned; scripts never duplicate a committed config value, they read it. The ambient process environment is a fourth home and is not banned but declared: an environment read resolves only through the declared configuration surface, under a name derived from a declared key.
 - **Harm:** The path of least resistance puts the model id in the composition root as a string: changing it needs a recompile and redeploy, the value escapes config review and per-environment variation, and tests cannot vary it. The acceptance-test pilot hit it twice (a model id in Program.cs; a script duplicating committed issuer and audience values).
 - **Enforcement (centralized):** A cheap architecture test scans host source and shipped scripts for a registry of operational-setting literal shapes (model ids, known provider endpoints); the registry is heuristic by design and extends per project at D-000.
 - **Weakening:** A novel operational-setting shape escapes the registry until it is added; the real defense is that the two right homes are the path of least resistance, and the scan is the cheap net.
@@ -326,7 +368,7 @@ One dialect for the whole API (CON-1), a shared fixture wherever a contract is m
 - **Statement:** Every cross-boundary contract maintained by hand on both sides (an enum, a DTO shape, a parser grammar) is pinned by one shared fixture corpus, physically the same file, exercised by tests on both sides, so drift on either side fails that side's build.
 - **Harm:** Mirrored contracts drift silently (the server renames a union member, the client keeps parsing the old one) and surface as a runtime blank screen weeks later.
 - **Enforcement (centralized):** A single fixture file is consumed natively by the client test and physically linked into the server test project, so there is exactly one corpus and no copy to rot.
-- **Weakening:** Scoped to hand-mirrored contracts only, and it compares the field-name set, not types or nullability. If a slice generates client types from the schema, the obligation collapses to the generator running in the build; never double-mandate.
+- **Weakening:** Scoped to hand-mirrored contracts only, and it compares the field-name set, not types or nullability. The mechanism assumes both consumers live under one root that travels together; where they do not, the sanctioned alternative is one authoritative source plus a materializer with a drift check, never two peers and a comparison test. If a slice generates client types from the schema, the obligation collapses to the generator running in the build; never double-mandate.
 
 #### [CON-3](CON-3-read-completeness.md) - Read completeness for action-bearing surfaces
 - **Statement:** A read backing a user-facing surface returns every field the availability of that surface's actions depends on; no action's enabled state derives from data only a different flow populates; derived tests cover each action-bearing surface's cold-entry paths (fresh load, session restore).
@@ -547,7 +589,7 @@ Three tiers on real engines (TEST-1), an out-of-process e2e harness through the 
 #### [HUM-1](HUM-1-irreversible-surfaces-human-turn.md) - Irreversible surfaces get a human turn, unconditionally
 - **Statement:** A change to a persistent schema (a migration) or a published external contract cannot merge without a named human approval, every time, no exception. These are the two surfaces a regeneration cannot cheaply reverse.
 - **Harm:** The one rule standing between disposable code and destroying production: a regenerated migration that drops a column, or a silently changed wire contract, ships damage no revert repairs.
-- **Enforcement (centralized):** CODEOWNERS on the migrations and published-contract paths plus branch protection requiring code-owner review; docs-lint proves the file covers all three surfaces locally; arming shares TEST-3's instantiation step.
+- **Enforcement (centralized):** A committed ownership declaration naming a human owner for the migrations and published-contract paths, plus a merge gate on the hosting platform requiring that owner's approval; docs-lint proves the declaration covers all three surfaces locally; arming shares TEST-3's instantiation step.
 - **Weakening:** Like TEST-3, the gate blocks nothing until branch protection is armed at instantiation; the manifest carries the arming step and the acceptance test verifies it.
 
 ### AI trust boundary

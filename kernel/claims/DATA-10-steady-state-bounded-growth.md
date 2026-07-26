@@ -1,7 +1,8 @@
 ---
 id: DATA-10
 family: data
-locus: centralized inventory, per-class sweep
+locus: centralized
+locus_note: centralized inventory, per-class sweep
 provenance: patterns pass 2026-07-24 (resilience stream: Nygard, Release It!, steady state)
 ---
 

@@ -1,7 +1,8 @@
 ---
 id: RES-5
 family: resilience
-locus: centralized declaration, per-queue test
+locus: centralized
+locus_note: centralized declaration, per-queue test
 provenance: patterns pass 2026-07-24 (resilience stream: Enterprise Integration Patterns, dead-letter channel; SQS redrive policy; Azure Service Bus dead-lettering)
 ---
 

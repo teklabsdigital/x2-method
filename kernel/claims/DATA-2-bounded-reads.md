@@ -1,7 +1,8 @@
 ---
 id: DATA-2
 family: data
-locus: per-seam (skeleton makes the default safe)
+locus: per-seam
+locus_note: the skeleton makes the default safe
 provenance: Bucket 3 (AsNoTracking/keyset conventions)
 ---
 

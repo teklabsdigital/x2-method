@@ -1,7 +1,8 @@
 ---
 id: UI-4
 family: client-ui
-locus: per-seam (one ledger per shipped screen)
+locus: per-seam
+locus_note: one ledger per shipped screen
 provenance: X-7
 ---
 

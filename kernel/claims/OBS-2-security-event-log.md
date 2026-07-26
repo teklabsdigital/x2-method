@@ -1,7 +1,8 @@
 ---
 id: OBS-2
 family: observability
-locus: per-seam (one central emitter)
+locus: per-seam
+locus_note: per-seam refusal paths, one central emitter
 provenance: compliance-mapping pass 2026-07-24 (security-event logging: E8 maturity level 2 event logs; SOC 2 TSC CC7.2)
 ---
 

@@ -1,7 +1,8 @@
 ---
 id: RES-1
 family: resilience
-locus: centralized chokepoint, per-seam fault proof
+locus: centralized
+locus_note: centralized chokepoint, per-seam fault proof
 provenance: patterns pass 2026-07-24 (resilience stream: Nygard, Release It!; AWS Builders' Library, timeouts, retries and backoff with jitter; Well-Architected REL05-BP03)
 ---
 

@@ -1,7 +1,8 @@
 ---
 id: DATA-7
 family: data
-locus: centralized declaration, per-class mechanism
+locus: centralized
+locus_note: centralized declaration, per-class mechanism
 provenance: compliance-mapping pass 2026-07-24 (retention and disposal: SOC 2 TSC C1.2 and the privacy criteria); promotes crypto-shredding RTBF from the explicitly-out list
 ---
 

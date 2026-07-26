@@ -1,7 +1,8 @@
 ---
 id: TEN-4
 family: tenancy
-locus: centralized (one save pipeline)
+locus: centralized
+locus_note: one save pipeline
 provenance: X-1, risk item 3; write-provenance extension, compliance-mapping pass 2026-07-24 (SOC 2 TSC CC7.2 and PI1; E8 privileged-action evidence)
 ---
 

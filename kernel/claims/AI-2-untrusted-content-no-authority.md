@@ -1,7 +1,8 @@
 ---
 id: AI-2
 family: ai-trust
-locus: per-seam (per-tool guarantees)
+locus: per-seam
+locus_note: per-tool guarantees
 provenance: B1-3
 ---
 

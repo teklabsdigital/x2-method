@@ -1,7 +1,8 @@
 ---
 id: TEN-3
 family: tenancy
-locus: centralized (model-level assertion)
+locus: centralized
+locus_note: model-level assertion
 provenance: X-1
 ---
 

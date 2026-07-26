@@ -1,7 +1,8 @@
 ---
 id: TEN-6
 family: tenancy
-locus: centralized (the mint path)
+locus: centralized
+locus_note: the mint path
 provenance: compliance-mapping pass 2026-07-24 (closes the mint-time door TEN-1 cannot; SOC 2 TSC CC6.1)
 ---
 

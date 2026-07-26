@@ -1,7 +1,8 @@
 ---
 id: UI-5
 family: client-ui
-locus: centralized (import ban) + per-seam (one smoke line per primary flow)
+locus: centralized
+locus_note: centralized import ban, plus per-seam: one smoke line per primary flow
 provenance: INV-07 (acceptance-test record, turns 18b and 20), CONF-02
 ---
 

@@ -1,7 +1,8 @@
 ---
 id: TEN-5
 family: tenancy
-locus: centralized ledger, per-entry named tests
+locus: centralized
+locus_note: centralized ledger, per-entry named tests
 provenance: X-1, B2-7
 ---
 

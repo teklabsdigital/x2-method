@@ -1,7 +1,8 @@
 ---
 id: DEC-1
 family: decisions
-locus: centralized (upward provenance lint); the downward link is owed
+locus: centralized
+locus_note: centralized for the upward provenance lint; the downward link is owed
 provenance: catalog named-gap promotion (invariants pass R7, 2026-07-11), X2 authority model
 ---
 

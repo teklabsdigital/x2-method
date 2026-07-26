@@ -18,11 +18,14 @@ the external consumers already broke). Before promotion this rule lived in an ou
 mechanism, which is exactly the aspirational-claim failure the catalog exists to kill.
 
 **Enforcement.**
-- Mechanism class: CODEOWNERS entries on the migrations path and the published-contract paths, plus branch
-  protection requiring code-owner review, so a diff touching either surface cannot merge without the named owner.
-  Armed at instantiation, sharing TEST-3's arming step.
+- Mechanism class: a committed ownership declaration naming a human owner for the migrations path and for each
+  published-contract path, plus a merge gate on the hosting platform that requires that owner's approval on any
+  diff touching either surface, so the change cannot merge without the named human. The declaration is checkable
+  locally and the gate is not: which paths are irreversible is portable and fixed, where each one lives is the
+  edition's to declare, and whether the remote actually enforces the gate is the arming step. Armed at
+  instantiation, sharing TEST-3's arming step.
 
 **Weakening notes.** Like TEST-3, the gate blocks nothing until branch protection is armed at instantiation; the
 manifest carries the arming step and the kernel acceptance test verifies instantiation arms it. The local lint
-proves the CODEOWNERS file and its path entries exist, not that the remote enforces them; that residue is the
-same honest asterisk TEST-3 carries, and the two arm together.
+proves the ownership declaration and its path entries exist, not that the remote enforces them; that residue is
+the same honest asterisk TEST-3 carries, and the two arm together.

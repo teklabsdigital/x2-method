@@ -1,7 +1,8 @@
 ---
 id: DATA-3
 family: data
-locus: per-seam (named tests per side-effecting seam)
+locus: per-seam
+locus_note: named tests per side-effecting seam
 provenance: X-9
 ---
 
