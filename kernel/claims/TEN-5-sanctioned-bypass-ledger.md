@@ -13,7 +13,6 @@ provenance: X-1, B2-7
 
 **Enforcement.**
 - Mechanism class: a committed ledger document (one row per sanctioned access: path, justification, test name) plus one named architecture or behavior test per entry proving exclusivity.
-- Edition: `docs/claims/tenant-bypass-ledger.md` in the project tree; sole-reader tests in the arch-test project (dependency scan or call-site inventory). The kernel skeleton ships the ledger file with zero entries and the test harness for adding one.
 
 **Weakening notes.** A prior system documented this idiom but its own scheduler sole-reader test was owed, not built (B2-7): the ledger without the tests is a promise. The kernel treats a ledger entry without its named test as a docs-lint failure.
 

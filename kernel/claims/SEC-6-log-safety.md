@@ -13,6 +13,5 @@ provenance: Bucket 3
 
 **Enforcement.**
 - Mechanism class: named log-safety tests per surface (hub/realtime logging, harness output, error handlers) asserting redaction of secret-shaped values (key patterns, JWT shape) and absence of content fields.
-- Edition: the harness redaction surface (key redaction plus JWT-shape scrub) is unit-tested and wired into the CI loop; the hub log-safety surface is owed with RT-1 (trigger: realtime).
 
 **Weakening notes.** This is a per-seam obligation, honestly stated: no global scan proves an arbitrary future log statement safe. Each slice that adds a logging surface near sensitive data owes its named test. Debug logging of key state transitions remains mandatory (fail-fast observability); the claim governs what the entries contain, not whether they exist. The metrics-plane content allowlist (MeterListener tag-key pattern) is the v2 extension of this claim.

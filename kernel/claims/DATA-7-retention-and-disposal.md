@@ -13,6 +13,5 @@ provenance: compliance-mapping pass 2026-07-24 (retention and disposal: SOC 2 TS
 
 **Enforcement.**
 - Mechanism class: an architecture test rejects an entity carrying PII-shaped members (a name-list heuristic, the SEC-3 idiom) without a retention-class declaration; each class's disposal mechanism owes a named test; cross-tenant sweeps carry TEN-5 ledger rows.
-- Edition: owed; trigger: the first PII-bearing entity in an edition project, or the first contractual deletion clause, whichever lands first.
 
 **Weakening notes.** The PII-shape list is heuristic and extends per project at D-000, like SEC-3's. The scan proves declaration, not that the ruled bound is right: the bound is a legal and contractual question, a D-000 ruling the claim records rather than answers. Crypto-shredding is the named mechanism where backups can reach the data: a disposal sweep cannot reach a backup, key destruction can; it is built when the first class needs it, not before.

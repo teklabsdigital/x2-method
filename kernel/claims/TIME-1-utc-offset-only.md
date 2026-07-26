@@ -13,7 +13,6 @@ provenance: B1-7; monotonic-durations extension, patterns pass 2026-07-24
 
 **Enforcement.**
 - Mechanism class: an architecture test reflecting over domain, contracts, application, and persistence assemblies rejecting properties/parameters of forbidden time types. The monotonic-durations extension adds a lint banning wall-clock-delta idioms (subtracting two now-readings) outside the clock seam, which exposes the monotonic source.
-- Edition: `DateTimeOffset` only; `DateTime` banned by the arch scan. A prior scan covered Core/App/Contracts but not the persistence assembly (a verified gap); the kernel scan includes persistence; UTC values are set by the service, not by database column defaults. The wall-clock-delta lint is owed; trigger: the next edition build pass (OBS-1's elapsed-time logging is its first customer).
 
 **Weakening notes.** Date-only and time-only domain concepts (a birth date, a clinic opening hour) are legitimately zoneless; the edition uses `DateOnly`/`TimeOnly` for those, which the scan permits, so the ban stays crisp: what is forbidden is ambiguous instants, not calendar concepts.
 

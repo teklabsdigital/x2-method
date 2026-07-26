@@ -13,6 +13,5 @@ provenance: PC-6 (P2 extraction, 2026-07-21); trace-context extension, patterns 
 
 **Enforcement.**
 - Mechanism class: per-seam: each external port owes a named test asserting its accept/settle logging shape, redaction, and the trace context in its log lines; the logger-factory handover is a composition-root review item pinned by the port's test. The RES-1 chokepoint installs the trace propagator, so an outbound seam carries context by construction rather than by each seam remembering.
-- Edition: owed; trigger: the first external side-effect port in an edition project. This claim opens the observability family the v1 cut deliberately deferred.
 
 **Weakening notes.** Per-seam by nature: no scan proves a future port logs. Deep awaiting of terminal provider status is gated to diagnostic configurations where it would widen a timing side-channel or slow a hot path; the operation id is the always-on part.

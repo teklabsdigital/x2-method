@@ -51,14 +51,29 @@ and every claim file realizes it as two bullets: `- Mechanism class:` and `- Edi
 A catalog that expects N editions has one field for the realization, so the second edition has nowhere to
 write and the first edition's mechanism reads as though it were the claim's.
 
-MOD-2 has already broken the schema under exactly this pressure: alone among the 69 it carries
-`- Edition (.NET):` and `- Edition (TS):`, because its subject (naming and placement) obviously differed
-across the two languages of a single edition. The strain was visible before a second edition existed; nobody
-generalized it.
+MOD-2 has already broken the schema under exactly this pressure: alone among the 69 its bullet is labelled
+`- Edition (.NET):` and carries the TS half inside the same bullet, because its subject (naming and placement)
+obviously differed across the two languages of a single edition. The strain was visible before a second edition
+existed; nobody generalized it.
 
-**What was done instead:** nothing yet, by ruling. Recorded for the adjudication pass, where the shape of the
-repair (an `- Edition (<name>):` bullet per edition, or moving realizations out of the catalog entirely and
-leaving only the mechanism class) is a decision, not a mechanical edit.
+**Corrected 2026-07-26 while applying the ruling below**, measured without reading the bullet's content: this
+finding previously said MOD-2 carried two bullets, `- Edition (.NET):` and `- Edition (TS):`. It carries one,
+labelled for .NET, with `(TS)` inside it. The substance is unchanged and the form is not what was recorded.
+
+**RULED AND APPLIED, 2026-07-26 (adjudication ruling 1, option b).** Realizations are removed from the catalog
+entirely, leaving only the mechanism class. Neither alternative the register floated survives contact with the
+other two findings this composes with: a bullet per edition leaves S-9's contamination exactly where it was,
+since the contamination is the bullet's existence and not its cardinality, and it leaves E-14's staleness free
+to recur in N places instead of one.
+
+All 69 `- Edition:` bullets are removed, along with the 69 duplicate `- **Edition (v1):**` status lines in
+`kernel/claims/README.md` (S-3's accepted residual, closed by the same ruling), and the file schema and
+status-tag sections are rewritten. Realization and status now live only in each edition's `conformance.json`,
+which is machine-checked and can hold as many editions as exist.
+
+What replaces the bullet is not nothing: ruling 2 puts a completeness **obligation** in the claim, which is
+portable and is what an edition actually needs from a claim. Applied from the claim files alone, never
+reconciled against either edition's mechanism column, because 61 claims still owe a step 2.
 
 ### S-2. `locus` is documented as an enum and realized as prose
 

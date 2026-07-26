@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (architecture stream: microservices.io tran
 
 **Enforcement.**
 - Mechanism class: an architecture test restricts producer-client types to the relay namespace, so a service publishing directly cannot merge; the outbox write is part of the save pipeline's tested surface; the seam owes a crash-window test in DATA-4's style: kill the process between commit and relay, restart, assert the event is delivered exactly as the row promised.
-- Edition: owed; trigger: the first event publish in an edition project (arrives with the first broker, alongside RES-5).
 
 **Weakening notes.** The outbox is an append-only operational table and therefore DATA-10's first customer: relayed rows are swept on a ruled clock or the outbox becomes the unbounded growth it was built to prevent. At-least-once is the honest guarantee; exactly-once is the composition of this claim with DATA-3 on the consuming side, and the claim says so rather than promising it alone.

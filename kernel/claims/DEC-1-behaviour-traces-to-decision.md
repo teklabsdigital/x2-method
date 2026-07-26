@@ -24,8 +24,6 @@ decisions.
 **Enforcement.**
 - Mechanism class: docs-lint on decision front matter (upward, centralized); the downward link has no clean
   mechanism yet and is recorded as owed rather than claimed.
-- Edition: docs-lint fails any `docs/decisions/*.md` without a `provenance` field; the decision template models
-  the field.
 - Owed piece 1, the downward link (trigger: the first regeneration of a module from its decisions). Two candidate
   mechanisms, both honestly weak: a regeneration-idempotence check on one module per slice (regenerate from the
   decisions, diff against the committed code; a non-empty diff means a decision hid in the code), or a per-module

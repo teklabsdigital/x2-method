@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (performance stream: counted-cost scaling r
 
 **Enforcement.**
 - Mechanism class: a two-size ratio property test on a counted quantity, instrumented at the seam (a counter threaded through the algorithm, a query counter, a byte counter); counted cost only, never wall time, so the test is deterministic on any runner.
-- Edition: owed; trigger: the first hand-written algorithm over unbounded input in an edition project; library calls and database queries are not designations (the library's complexity is its documentation's promise, and query shape is PERF-1's and DATA-2's).
 
 **Weakening notes.** The ratio gate catches complexity-class regressions, linear versus quadratic, which is the class that kills; it honestly cannot distinguish n from n log n, and fitted big-O assertion over timings is excluded from the catalog as unmechanizable (curve fitting on noise). Choice of N matters: too small and constant factors dominate the ratio; the test's N is part of the seam's designation and sized so the asymptotic term dominates.

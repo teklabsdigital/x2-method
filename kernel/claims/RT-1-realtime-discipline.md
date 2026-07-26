@@ -13,6 +13,5 @@ provenance: X-11, B1-5
 
 **Enforcement.**
 - Mechanism class: server-side, a hub-surface architecture test rejecting binary-typed hub method parameters and asserting a bounded maximum receive size; client-side, structural review that exactly one connection factory exists and all modules register through its dispatcher.
-- Edition: owed, trigger: first realtime slice (the v1 edition is REST-only). The promotion set: an arch test scanning hub methods for `byte[]`/`Stream`/file types, `MaximumReceiveMessageSize` asserted, the single `createHub` client seam with dispatcher and one pure reducer (the proven shape: settled/transient events folding through one reducer, writes as invokes, takeover via REST), and the socket harness scenario (TEST-2).
 
 **Weakening notes.** The client-side single-connection rule has no cheap static proof in TS; the skeleton's structure (one factory module, deep-path import bans keeping modules off the raw transport) is the mechanism, plus the e2e harness exercising the socket path end to end (TEST-2).

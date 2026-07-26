@@ -13,6 +13,5 @@ provenance: compliance-mapping pass 2026-07-24 (MFA requirements: E8 maturity le
 
 **Enforcement.**
 - Mechanism class: host tests in the SEC-4 family: a privileged-scope token without the method assertion is refused, the mint path refuses privileged single-factor issuance, and the harness exercises the real sign-in path through its gated profile (TEST-2).
-- Edition: owed; trigger: first identity slice (shared with SEC-4's version store and TEN-6).
 
 **Weakening notes.** The application verifies what the credential asserts, not what happened at the sign-in ceremony; trust in the issuer is SEC-4's premise, and a lying issuer is out of scope. The phishing resistance of the factor itself is a per-project ruling; this claim mandates the presence and verification of the assertion, not the ceremony's strength.

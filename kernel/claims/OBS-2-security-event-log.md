@@ -13,6 +13,5 @@ provenance: compliance-mapping pass 2026-07-24 (security-event logging: E8 matur
 
 **Enforcement.**
 - Mechanism class: per-seam: each refusal path owes a named test asserting its event reaches the emitter with identifiers and without payload; the emitter itself is one centralized seam with its own SEC-6 redaction test.
-- Edition: owed; trigger: the first deployed edition host (alongside SEC-9; the refusal seams it instruments are already built and tested, so the events attach to existing tested paths).
 
 **Weakening notes.** Per-seam by nature: no scan proves an arbitrary future refusal emits. Emission is not detection: alerting, aggregation, retention, and log protection live outside the application layer; the claim puts the facts on the wire and no further. The emitter must never become a payload channel; SEC-6 governs it like any other logging surface.

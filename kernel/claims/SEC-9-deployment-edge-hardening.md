@@ -13,6 +13,5 @@ provenance: PC-16 (P2 extraction, 2026-07-21)
 
 **Enforcement.**
 - Mechanism class: host tests pin the header set (asserted on a re-executed error response, not only the happy path) and the forwarded-header trust options; a configuration test fails a boot that names no trust while claiming proxy deployment.
-- Edition: owed; trigger: the first deployed edition host (arrives with the launch pre-flight).
 
 **Weakening notes.** A content-security policy is deliberately not in this claim: an SPA shipping an inline bootstrap needs its own design pass, and framing denial already covers clickjacking. Transport-security subdomain and preload flags are owner opt-ins, never defaults.

@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (performance stream: counted-work gating; D
 
 **Enforcement.**
 - Mechanism class: test-time counters at the driver or transport seam (a command interceptor, a query-event hook, a recording transport with call-count assertion) wrapped around the designated operation at a defined workload; the budget constant lives in the test.
-- Edition: owed; trigger: the next edition build pass (the v1 exemplar's list endpoint is the first designated seam; the interceptor rides the same seam TEN-4's stamps use).
 
 **Weakening notes.** Per-seam by design: "hot" is a D-000 designation, not a property a scan can discover, so undesignated operations are ungated and the designation list is a review item at each slice. The count gates statements and roundtrips, not their cost; a budget of three obscene queries passes where one lean query would not, so DATA-2's bounded-read shape is the companion, not a substitute. Payload-size budgets (bytes per response for a defined workload) are the same mechanism pointed at a different counter and join the seam's test when a seam's risk is size rather than chattiness.

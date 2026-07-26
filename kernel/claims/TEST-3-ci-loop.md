@@ -13,7 +13,6 @@ provenance: B2-1, the headline extraction finding
 
 **Enforcement.**
 - Mechanism class: the pipeline itself, plus branch protection requiring the pipeline. This claim is self-referential by design: it is the mechanism that makes every other claim's "enforced" tag true.
-- Edition: a GitHub Actions workflow in the kernel skeleton running the full gate set; the arch-test project is a single, unfilterable job (X-8: never split flagship guards into a skippable suite); branch protection on the default branch.
 
 **Weakening notes.** CI cost is managed by tier design (TEST-1), not by dropping gates. If a gate must be temporarily bypassed, the bypass is a visible, dated waiver in the ledger, never a deleted job: an invisible bypass recreates B2-1 one convenience at a time.
 

@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (performance stream: cloud-microbenchmark v
 
 **Enforcement.**
 - Mechanism class: a banned-API lint over test directories rejects raw timing assertions (stopwatch-comparison idioms, elapsed-time asserts); the benchmark harness, the published results series, and the fix-or-revert norm are policy backed by review, and the catalog says so plainly rather than dressing policy as mechanism.
-- Edition: owed; trigger: the first wall-time benchmark in an edition project; the lint half can land at the next edition build pass, ahead of any benchmark existing, since its job is to keep the first timing assert out.
 
 **Weakening notes.** The lint is the strong half; the statistical-control half is the weakest mechanism in the family, named as such: review enforces that benchmarks use the harness, and no scan proves a published series is being watched. The claim bans a practice more than it builds one, and that is its value: the banned practice is the one that was going to be written first. Timeout assertions (a test failing because RES-1's deadline fired) are not wall-time assertions and are exempt; they assert behavior at a bound, not speed.

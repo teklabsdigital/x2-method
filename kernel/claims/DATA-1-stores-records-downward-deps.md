@@ -13,6 +13,5 @@ provenance: X-3 ruling, B2-2
 
 **Enforcement.**
 - Mechanism class: dependency-direction architecture tests: no endpoint/host type references a store implementation or DbContext; no persistence type references application services; store implementations are reachable only via their interfaces.
-- Edition: NetArchTest-style rules in the arch-test project (the kernel's `DependencyDirectionTests` realizes the technique), in the CI loop.
 
 **Weakening notes.** The rule set is dependency direction, not folder taxonomy. Whether a module needs an orchestration tier above its business services is a per-module design decision made at D-000, guided but not mandated (X-3): a single-service module is legal when YAGNI says so. Mandating the full orchestration/business/technical taxonomy on every module fails the impose-on-an-unmet-project bar.

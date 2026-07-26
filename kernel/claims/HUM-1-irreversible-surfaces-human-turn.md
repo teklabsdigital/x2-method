@@ -21,10 +21,6 @@ mechanism, which is exactly the aspirational-claim failure the catalog exists to
 - Mechanism class: CODEOWNERS entries on the migrations path and the published-contract paths, plus branch
   protection requiring code-owner review, so a diff touching either surface cannot merge without the named owner.
   Armed at instantiation, sharing TEST-3's arming step.
-- Edition: `.github/CODEOWNERS` covers `server/src/Kernel.Persistence/Migrations/`, `server/src/Kernel.Contracts/`,
-  and `docs/contracts/` with an `@OWNER` placeholder renamed at instantiation; docs-lint verifies the file exists
-  and covers all three surfaces (the locally testable half); the instantiation manifest arms branch protection
-  with code-owner review required.
 
 **Weakening notes.** Like TEST-3, the gate blocks nothing until branch protection is armed at instantiation; the
 manifest carries the arming step and the kernel acceptance test verifies instantiation arms it. The local lint

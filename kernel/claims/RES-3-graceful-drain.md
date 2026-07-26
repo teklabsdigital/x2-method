@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (resilience stream: 12-factor IX disposabil
 
 **Enforcement.**
 - Mechanism class: a harness scenario sends the real termination signal to the composed host under in-flight load and asserts the ordering (readiness fails first, accept stops, in-flight completes), the drain budget, and the zero exit code. This is TEST-4's mirror: TEST-4 proves the product boots in its real shape; this proves it dies in its real shape.
-- Edition: owed; trigger: the first deployed edition host (rides SEC-9's deployment-edge work; the drain budget is a CFG-1 operational setting ruled against the platform's grace period).
 
 **Weakening notes.** The scenario proves the host's drain seam, not that every future background worker registered on it; each new worker owes a line in the drain test the same way each new flow owes UI-5 a smoke line. In-flight work longer than any sane drain budget (a long export) does not get a longer budget; it gets moved off the request path onto a resumable worker, which is the design pressure this claim is meant to apply.

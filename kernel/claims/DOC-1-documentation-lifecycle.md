@@ -13,6 +13,5 @@ provenance: X-14 (user-raised)
 
 **Enforcement.**
 - Mechanism class: a docs-lint gate in the CI loop: every markdown file under docs/ has valid front matter with a registry kind; no markdown outside the legal roots; working documents carry a slice id; status transitions move only forward.
-- Edition: registry roots `docs/{claims,decisions,contracts,runbooks,work/{slice}}`; repo root holds README.md and CLAUDE.md only; the skeleton ships the tree and templates so each kind lands deterministically (MOD-2 applied to prose).
 
 **Weakening notes.** The docs-lint proves placement and shape, not the authority direction; code disagreeing with a decision is caught by the human-turn discipline, not by this scan. The structural fix matters more than the lint: X2 itself shrinks byproduct volume (the locked prototype is the acceptance contract; plans are consequences), so the registry stays small. No per-document ownership metadata, no elaborate taxonomy (YAGNI).

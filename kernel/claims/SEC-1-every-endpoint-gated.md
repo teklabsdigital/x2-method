@@ -13,6 +13,5 @@ provenance: X-8, risk items 1-2-4
 
 **Enforcement.**
 - Mechanism class: a runtime scan over the application's composed route table asserting every endpoint carries a permission policy, rejecting bare authenticated-only registrations and any anonymous endpoint not on the allowlist; plus a host test asserting the fallback policy actually denies anonymous callers, not merely that it is registered.
-- Edition: the kernel's `EndpointSpineTests` scans the composed host's EndpointDataSource asserting every endpoint carries a policy, plus a deny-by-default fallback policy registered in `Program.cs` as the belt to the scan's braces. Both live in the single arch-test project that cannot be filtered out of a test run (X-8: splitting flagship guards across the e2e project means filtering e2e silently drops them; the kernel forbids that split).
 
 **Weakening notes.** Per-slice source-text regex guards over endpoint files are brittle and are not the mechanism; the composed-host runtime scan is canonical. Carve-outs (streaming heads, platform-admin policies) must be named in the scan itself with a justification comment, mirroring TEN-5 discipline.

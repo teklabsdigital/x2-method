@@ -13,6 +13,5 @@ provenance: compliance-mapping pass 2026-07-24 (vulnerability-remediation clocks
 
 **Enforcement.**
 - Mechanism class: a CI audit job in locked mode over lockfiles and image digests (push plus schedule); ledger rows record remediation or waiver; the docs-lint ledger check extends to waiver rows.
-- Edition: owed; trigger: the first armed CI loop (TEST-3 at instantiation); the publish-date check DEP-1 names as its upgrade path rides the same job.
 
 **Weakening notes.** Advisory databases lag and miss, so the sweep is a floor, not a proof of absence. A transitive advisory with no exploitable path in this product is waived as a ledger row with a reason, never a suppressed feed; a suppression that outlives its reason is exactly the decay the ledger check exists to catch.

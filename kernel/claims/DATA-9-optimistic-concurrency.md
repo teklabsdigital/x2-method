@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (architecture stream: Fowler, PoEAA optimis
 
 **Enforcement.**
 - Mechanism class: a reflection sweep over the persistence model asserts every mutable entity maps a concurrency token (the TEN-3 marker idiom decides "mutable"); save-pipeline unit tests, in TEN-4's home, assert the stale write throws; contract tests assert the wire behavior (stale condition returns precondition-failed; unconditional update of a guarded resource is refused).
-- Edition: owed; trigger: the next edition build pass (rides TEN-4's interceptor work; the token and the refusal live in the same save pipeline the tenancy guard already owns).
 
 **Weakening notes.** Create-only and append-only entities have no lost update to lose and are exempt by the same marker that scopes the sweep. The token proves the row did not change; it cannot arbitrate which of two changes was right, so flows whose edits must merge rather than exclude (collaborative text) are a different design the claim does not cover. SEC-2 already keeps the token itself off the writable contract surface: the caller presents it as a condition, never sets it as a field.

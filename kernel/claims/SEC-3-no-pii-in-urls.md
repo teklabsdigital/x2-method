@@ -13,6 +13,5 @@ provenance: X-8
 
 **Enforcement.**
 - Mechanism class: a runtime scan over the composed route table rejecting parameters whose names match a PII name list.
-- Edition: a runtime route-table scan rejecting PII-named parameters (list: email, phone, name, ssn, dob), arch-test project, CI loop.
 
 **Weakening notes.** A name list is a heuristic: a novel parameter name carrying PII escapes it. The list is extended per project at D-000 when the domain introduces new identifier kinds (medical record numbers, license plates). Opaque surrogate ids in URLs are the sanctioned pattern.

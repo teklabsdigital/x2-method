@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (architecture stream: Fowler, parallel chan
 
 **Enforcement.**
 - Mechanism class: a migration lint (squawk class) rejects destructive operations outside a tagged contract phase, and the tag must name the expand release it completes; an N-1 compatibility job in the CI loop checks out the previous release's persistence tier and runs it against the migrated schema; both gates sit alongside HUM-1's unconditional human turn on the same files.
-- Edition: owed; trigger: the first production deployment with rolling replacement; the lint half can land at the next edition build pass, ahead of the compatibility job.
 
 **Weakening notes.** DATA-6 rules how migrations run (an explicit mode, never a serving boot); this claim rules what they may contain; the two compose and neither substitutes for the other. The N-1 job proves persistence-tier compatibility, not full behavioral compatibility of mixed-version fleets; contract compatibility between releases is CON-4's half of the same rollout story. Single-instance deployments with downtime windows may re-rule the compatibility job at adoption, recording the decision; the lint keeps its value regardless, because rollback needs the same property the rollout does.

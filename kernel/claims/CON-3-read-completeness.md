@@ -13,6 +13,5 @@ provenance: PC-2 (P2 extraction, 2026-07-21)
 
 **Enforcement.**
 - Mechanism class: per-seam derivation discipline: each action-bearing surface owes a cold-entry scenario in the derived acceptance suite asserting its actions are live from the read alone, with the session-restore path enumerated wherever the product has one.
-- Edition: owed; trigger: the first edition project with a restorable session (the kernel exemplar has none).
 
 **Weakening notes.** Honestly per-seam: no static scan can know which fields an action's availability depends on. The mechanism is the derivation rule plus the exit report's coverage table naming each action-bearing surface's cold-entry scenario; asserting more would be the aspirational-claim failure.

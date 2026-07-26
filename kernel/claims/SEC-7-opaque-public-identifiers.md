@@ -13,6 +13,5 @@ provenance: PC-4 (P2 extraction, 2026-07-21)
 
 **Enforcement.**
 - Mechanism class: a scan over the anonymous-route allowlist (SEC-1's) asserting each anonymous route's identifying parameter binds to the token-typed parameter, plus a persistence check that public tokens are unique-indexed and minted from a CSPRNG, not derived from the row identity.
-- Edition: owed; trigger: the first anonymous resource surface in an edition project (the kernel exemplar has none).
 
 **Weakening notes.** Opaqueness is a property of the minting, not the parameter name; the scan is heuristic on parameter binding, and the real defense is the minting idiom (a short random token column beside the serial). Composes with SEC-3: the token is also the sanctioned opaque-surrogate pattern for URLs.

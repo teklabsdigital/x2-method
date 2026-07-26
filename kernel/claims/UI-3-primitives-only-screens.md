@@ -13,6 +13,5 @@ provenance: X-7, B1-6
 
 **Enforcement.**
 - Mechanism class: lint bans on style-primitive usage in the screens tree and on raw text-element imports outside the primitive layer; business logic testable off-framework (services and reducers unit-tested without rendering).
-- Edition: the proven shape: zero `StyleSheet.create` under `app/`, only the Text primitive imports the platform Text, repos/reducers/transports tested off-React; the skeleton ships the primitive layer plus the lint rules preconfigured.
 
 **Weakening notes.** The logic-placement half is structural rather than lint-provable: the skeleton's shape (data access in repos, state in pure reducers, hooks as the seam) is the mechanism, and the fidelity suites (UI-4) plus off-framework unit tests are the evidence it stays true.

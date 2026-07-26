@@ -13,6 +13,5 @@ provenance: X-13 (user-raised)
 
 **Enforcement.**
 - Mechanism class: an architecture test asserting file name equals declared type name, registry-suffixed types live in their kind's legal location, and routes originate only from endpoint files; lint filename-case and placement rules on the client; the skeleton itself instantiates the names so the loop never invents them.
-- Edition (.NET): closed suffix registry: `{Resource}Endpoints.cs`, `{Subject}Service.cs`, `I{Subject}Store.cs`/`Ef{Subject}Store.cs`, `{Entity}Configuration.cs`, `{Subject}Options.cs`/`Middleware.cs`/`Policy.cs`, `{ExternalSystem}Client.cs`, `{Subject}Tests.cs`. Edition (TS): file name equals primary export; `use{Subject}.ts` hooks, `{domain}Repo.ts` data access, PascalCase components, kebab-case folders, tests mirror the SUT in the nearest `__tests__/`.
 
 **Weakening notes.** Deliberately excluded: aesthetic naming, abbreviation policy, domain word choice. Those are review matters; mandating them fails the YAGNI gate (X-13).

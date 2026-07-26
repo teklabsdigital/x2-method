@@ -32,6 +32,39 @@ Two heuristic measurements are used below and are flagged where they appear: the
 in claim files is a keyword scan, so it is a floor and not a proof. Using a name-list heuristic to size a
 finding about name-list heuristics is noted rather than hidden.
 
+## RULED, 2026-07-26
+
+All eleven ruled by the owner on the date this digest was prepared. Recorded here first, because a decision is
+the scarce artifact and the application is mechanical once it exists. Each ruling section below keeps its
+evidence, options and recommendation unchanged; this table is what was chosen.
+
+| # | Decision | Applied? |
+|---|---|---|
+| 1 | **(b)** Remove edition realizations from claim files entirely | **Applied.** 69 `- Edition:` bullets and 69 index status lines removed; file schema and status-tag section rewritten; recorded as a dated pass in the catalog changelog |
+| 2 | **(c)** Schema gains the completeness obligation; written now for the 8 built claims only | not yet |
+| 3 | **(c)** Optional per-obligation statuses in `conformance.json`, **plus a single roll-up where the weakest obligation wins** | not yet |
+| 4 | **(b)** An asserted relationship between two mechanisms is part of the claim; within a claim only, cross-claim dependency deferred to `candidates.md` | not yet |
+| 5 | **(b)** TEN-1's mechanism class gains a non-scan mechanism for the header surface; the statement is unchanged because it was right | not yet |
+| 6 | **(b)** The comparison is part of the mechanism class, **as a schema rule covering any name-matching mechanism plus a written obligation in the four measured claims: SEC-2, SEC-3, TEN-1 and SEC-5** | not yet |
+| 7 | **(b)** for HUM-1, TIME-1 and PERF-4, **(c)** for DATA-1 (repaired when it is built, not from an armchair) | not yet |
+| 8 | **Yes to all three**: 8a TIME-1's fused properties split, 8b CFG-1's fourth home, 8c CON-2's unstated precondition in the weakening notes | not yet |
+| 9 | **9a (i)** advisory outranks the window above the 7-day floor; **9b (ii)** the catalog's number is deliberately independent of any standing policy outside the repo; **9c** DEP-2's trigger moves to the next edition build pass; **plus: DEP-1's ledger extends to any pin taken under the advisory rule, direct or transitive** | not yet |
+| 10 | **(b)** `locus` becomes two values plus a free-text `locus_note` | not yet |
+| 11 | **Queue both** in `record/candidates.md`; mint neither | not yet |
+
+**Application order, and it is not the numbering.** Ruling 3 goes first: rulings 2, 5 and 6 falsify four
+`proven` rows in `kernel/dotnet-react/` (SEC-2, SEC-3, TEN-1, TIME-1), and ruling 3 is what gives those rows
+somewhere honest to land. Applied after, they collapse to a single word that understates them the way node's
+TEN-1 currently does.
+
+**The consequence of 9a to execute, not to decide.** The tree currently pins `postcss` 8.5.15, which clears the
+window and carries GHSA-r28c-9q8g-f849. Under the ruling the advisory outranks the window, so the pin moves to
+8.5.18 and gets the first ledger row written under the extended rule.
+
+**A standing constraint on applying any of this.** Every claim-file edit must be made from the claim files alone
+and never reconciled against either edition's mechanism column. 61 claims still owe a step 2, and that
+reconciliation would destroy it for all of them. Ruling 1 was applied under that constraint.
+
 ## Decision sheet
 
 | # | Ruling | One-line question | Recommended | Falsifies a shipped `proven`? |

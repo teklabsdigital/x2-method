@@ -22,9 +22,6 @@ so the two copies could drift.
 **Enforcement.**
 - Mechanism class: a cheap architecture test over host source and shipped scripts banning a small registry of
   operational-setting literal shapes, plus the SEC-5 and DATA-5 mechanisms already covering the two right homes.
-- Edition: `OperationalSettingsTests` scans `server/src` and `scripts/` for model-id shapes and known provider
-  endpoints; the shipped e2e script reads Jwt:Issuer and Jwt:Audience from committed appsettings rather than
-  duplicating them.
 
 **Weakening notes.** The registry is heuristic, the cheap net, exactly like UI-2's named-color list: a novel
 operational-setting shape escapes it until it is added, and the registry is extended per project at D-000. The

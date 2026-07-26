@@ -13,6 +13,5 @@ provenance: PC-5 (P2 extraction, 2026-07-21)
 
 **Enforcement.**
 - Mechanism class: configuration validation at load (fail-fast, DATA-5) plus an architecture test banning prompt-shaped literals outside the wire-contract seam, a heuristic registry in the CFG-1 pattern; the client mirror of the config type rides CON-2.
-- Edition: owed; trigger: the first model-backed feature in an edition project.
 
 **Weakening notes.** Prompt-shaped literal detection is heuristic; the structural defense is the single assembly seam, which makes the wrong home harder than the right one. Applies when a product is model-backed; an edition project without model features records nothing.

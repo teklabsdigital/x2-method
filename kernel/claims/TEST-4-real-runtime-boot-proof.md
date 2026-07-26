@@ -13,6 +13,5 @@ provenance: PC-1, PC-3 (P2 extraction, 2026-07-21; the pilot close-out's bootstr
 
 **Enforcement.**
 - Mechanism class: the boot proof is scripted in the verify set (the manifest's start task run to readiness against the real profile), the e2e path exercises the served origin, and the smoke's assertions target the built artifact, not the source.
-- Edition: owed; trigger: the next edition build pass. UI-5's composed smoke already proves entrypoint wiring in-process; the real-boot script assertion and built-form pinning are the promotion set that completes it.
 
 **Weakening notes.** The boot proof is a liveness check, not a behaviour suite; behaviour stays with the tiers. The line it holds is narrow and load-bearing: no verification set is complete while the product has only ever run inside its own test process.

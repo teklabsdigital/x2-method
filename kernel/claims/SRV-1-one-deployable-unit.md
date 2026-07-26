@@ -13,6 +13,5 @@ provenance: PC-14 (P2 extraction, 2026-07-21)
 
 **Enforcement.**
 - Mechanism class: composed-host tests pin the static serving and its headers; an architecture test asserts no cross-origin registration exists; a publish check asserts the artifact contains the client.
-- Edition: owed; trigger: the next edition build pass. Applies to web products; an API-only project re-rules it in its deltas file at adoption.
 
 **Weakening notes.** The SPA-fallback hole opens only when a client router exists, and then each fallback route goes through SEC-1's reviewed anonymous allowlist, never a blanket fallback. A stale staged bundle can show an old UI at the server origin in development; the runbook names the dev door and the build script is the integrated-run entry.

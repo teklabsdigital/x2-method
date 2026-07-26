@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (performance stream: allocation gating; Ben
 
 **Enforcement.**
 - Mechanism class: allocation diagnostics asserted per operation in the test tier (GC-statistics bytes-per-op, normalized allocation rate, tracing allocators, counting allocators, depending on runtime); the budget is a reviewed constant, like PERF-1's.
-- Edition: owed; trigger: the first designated hot path in an edition project; designation before need fails the YAGNI gate, so the family expects most projects to hold zero designations for a long time, honestly.
 
 **Weakening notes.** Allocation accounting quality is runtime-dependent, and the claim is honest about the floor: managed runtimes with per-operation GC statistics support the assertion well; native code uses a counting allocator; JavaScript under V8 has no reliable per-operation allocation assertion, so a Node edition realizes this claim as leak-class scenario diffing (heap growth over k iterations of the path) and says so in its conformance row rather than claiming the per-op budget it cannot measure. Bytes allocated is a proxy for collector pressure, not a latency promise; PERF-6 governs any wall-time verification of the improvement.

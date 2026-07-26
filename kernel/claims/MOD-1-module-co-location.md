@@ -13,6 +13,5 @@ provenance: X-3, Bucket 3
 
 **Enforcement.**
 - Mechanism class: the kernel skeleton instantiates the layout, so the generation loop lands new code in the module by construction; dependency rules in the arch-test project reject direct cross-module type references outside composition-root wiring; client-side, deep-path import bans force modules through their public surface.
-- Edition: the kernel's layout (`Endpoints/`, module folders, `Program.cs` registry) as the skeleton; NetArchTest cross-module rules; an ESLint deep-path import ban.
 
 **Weakening notes.** Shared kernel-level primitives (auth, tenancy, wire conventions) are not a module and live in the platform layer; the arch rules must whitelist that layer explicitly or every module fails the cross-reference check for using the platform.

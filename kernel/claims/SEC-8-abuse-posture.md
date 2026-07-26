@@ -13,6 +13,5 @@ provenance: PC-13 (P2 extraction, 2026-07-21; owner-flagged in the source ledger
 
 **Enforcement.**
 - Mechanism class: a spine test over the composed route table asserting policy attachment on every anonymous and spend-shaped endpoint plus the presence of the global limiter and the body cap; composed-host facts observe the refusal behaviour; the e2e boot opens the windows wide so tiers do not flake.
-- Edition: owed; trigger: the first publicly exposed edition host (the launch pre-flight names it).
 
 **Weakening notes.** In-process limiter state is per-instance; a multi-instance deployment needs a shared store, the named upgrade. Classifying an endpoint as spend-shaped is a review act at D-000, not statically derivable.

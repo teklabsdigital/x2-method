@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (resilience stream: least-privilege databas
 
 **Enforcement.**
 - Mechanism class: a named integration test connects as the runtime role, attempts CREATE, ALTER, and DROP, and asserts each is refused by the engine; the role grants live in provisioning code under review, beside DATA-6's migrate-mode wiring, never hand-applied to production.
-- Edition: owed; trigger: the next edition build pass (rides DATA-6: the migrate mode and the role split are one provisioning story; the integration tier's provisioning path is where both roles are created).
 
 **Weakening notes.** DML-only is still powerful: it reads and writes every row the schema exposes, so this claim bounds the schema, not the data; row-level damage is what TEN-3, TEN-4, and DATA-9 bound. Engines differ in grant vocabulary, so the mechanism is the refusal test, which is engine-portable, rather than an assertion over grant syntax, which is not. Dev-tier conveniences (a single sa credential in throwaway containers) are the provisioning path's business, but the integration tier that proves this claim must provision both roles or the proof never runs.

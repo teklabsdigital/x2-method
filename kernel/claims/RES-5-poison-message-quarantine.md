@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (resilience stream: Enterprise Integration 
 
 **Enforcement.**
 - Mechanism class: a configuration assertion test enumerates every declared queue and subscription and asserts the delivery limit and dead-letter route exist; each queue owes a named test that feeds a poison message and asserts quarantine at exactly N attempts with the queue still draining and the quarantine event emitted.
-- Edition: owed; trigger: the first message broker in an edition project (the transactional outbox relay, DATA-8, is the likely first consumer).
 
 **Weakening notes.** Quarantine is containment, not resolution: what drains the dead-letter queue (replay tooling, an alert, a runbook) is operational design the claim names but does not mandate, and an unwatched quarantine is retention by accident, which puts it under DATA-10's sweep registry like any other append-only artifact. The per-queue test is honestly per-seam; no scan proves a future consumer declared its limits, so each new queue owes its test at its slice.

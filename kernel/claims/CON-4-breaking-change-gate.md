@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (architecture stream: oasdiff-class OpenAPI
 
 **Enforcement.**
 - Mechanism class: a breaking-change diff job in the CI loop (oasdiff class for OpenAPI, buf breaking for proto, registry compatibility mode for event schemas) comparing against the released baseline artifact, failing on breaking categories; the override path is a reviewed, named approval on the HUM-1 surface.
-- Edition: owed; trigger: the first published external contract (a versioned API consumed outside the repo, a partner surface, or the first schema registry; the composed client in the same repo is CON-2's territory, not a published contract).
 
 **Weakening notes.** The diff tools' breaking taxonomies are the mechanism's authority, and they are conservative in both directions: some flagged changes are harmless to every real client (the human turn absorbs these as approvals), and semantic breaks that preserve the shape (a field's meaning changing under a stable name) are invisible to any diff; that case is exactly what the catalog's own claim-identity rule handles for claims, and for contracts it stays a review obligation. The baseline must be the released artifact, not the working copy, or the gate diffs a change against itself.

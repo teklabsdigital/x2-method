@@ -13,6 +13,5 @@ provenance: X-8
 
 **Enforcement.**
 - Mechanism class: a reflection scan over every body-bound request type asserting no member (writable property, or constructor parameter of an immutable DTO) matches the forbidden-field registry; the registry is a single named list in the test, extended deliberately.
-- Edition: a reflection scan over the Contracts assembly plus a composed-host scan of every endpoint's body-bound DTO (injected services excluded structurally), in the arch-test project, in the CI loop.
 
 **Weakening notes.** The body-bound scan means a request type declared outside Contracts cannot escape; MOD-2 placement (request/response records live only in Contracts) is the structural backstop. Name-based matching is heuristic: a field named `newState` slips past a registry listing `status`. The registry grows via review; the claim keeps the registry in one place so growth is cheap.

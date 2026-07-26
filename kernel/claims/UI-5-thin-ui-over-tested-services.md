@@ -24,10 +24,6 @@ callback is all it takes to ship an inert product that reads as done.
 **Enforcement.**
 - Mechanism class: a client lint import ban (modules outside the composition root cannot import the transport or
   data-service modules), plus a composed-entrypoint smoke wired into the CI e2e job.
-- Edition: eslint `no-restricted-imports` bans `api/**` and `data/**` outside the composition root
-  (`src/main.tsx`), the service and transport layers themselves, tests, and the harness/smoke tools, with
-  `allowTypeImports` on; `npm run smoke` boots `src/main.tsx` in jsdom against the live harness server and
-  asserts a real GET (the list loads and renders) and a real POST (create, then a real re-list) reach the server.
 
 **Weakening notes.** The import ban is centralized: a violating import cannot merge. The smoke is per-seam: each
 new primary flow owes its smoke line, and the flow list is reviewed at each slice (the slice-exit report's

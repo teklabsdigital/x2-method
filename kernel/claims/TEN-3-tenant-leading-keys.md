@@ -13,6 +13,5 @@ provenance: X-1
 
 **Enforcement.**
 - Mechanism class: an architecture test over the persistence model asserting every tenant-owned entity's primary key leads with the tenant id; a sanctioned exception carries a named justification and its own guard at the key assertion. A key-shape exemption is not a cross-tenant access path, so it does not belong in the TEN-5 access-ledger schema and has no meaningful sole-reader test; the two exception kinds are recorded in different places.
-- Edition: reflection over the built EF model (`IModel`) in the arch-test project. A prior system had many conforming key sites with one documented exception (a status-leading key for a global poller) but no arch test asserting the rule; the kernel adds the model-level assertion so the convention cannot erode silently.
 
 **Weakening notes.** "Tenant-owned" needs a definition the test can read: the edition marks tenant-owned entities via a marker interface or base type, and the test asserts the key rule over that set plus flags unmarked entities carrying a TenantId property.

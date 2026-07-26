@@ -13,6 +13,5 @@ provenance: X-12, B2-8 superseded
 
 **Enforcement.**
 - Mechanism class: the skeleton ships the three tiers wired and the CI loop runs them; an arch check bans the fake in-memory provider package from test projects.
-- Edition: SQLite (in-memory and temp-file) for the fast tier; Testcontainers with unique database per run and real migrations for integration (the strongest database-test mechanism found during extraction); the EF InMemory package reference is a build failure.
 
 **Weakening notes.** SQLite in the fast tier is a deliberate semantic compromise for speed: anything touching engine-specific behavior (collation, RLS, locking) belongs in the integration tier, and the tier split in the skeleton says so. CI cost governs tier sizing: the expensive engine is confined to the tier that needs referential integrity; e2e stays small because acceptance tests are decisions, not consequences.

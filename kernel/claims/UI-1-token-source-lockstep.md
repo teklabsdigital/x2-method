@@ -13,7 +13,6 @@ provenance: X-7, B2-3
 
 **Enforcement.**
 - Mechanism class: a test that reads the design-system artifact directly and asserts the client token set matches it, with a minimum-token-count floor so an emptied artifact cannot vacuously pass.
-- Edition: the skeleton's `tokenCoverage.test.ts` reads the design-system CSS, asserts token equality, and requires more than 50 variables; it ships wired to the project's design export location.
 
 **Weakening notes.** Deliberate divergences from the design system (for example a single-token override) are structurally permitted by design: they live inside the token source itself, visibly, never scattered in components. Hand-authored derived values (alpha ramps) sit outside the coverage test; keep them in the token file where review sees them.
 

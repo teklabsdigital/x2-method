@@ -13,6 +13,5 @@ provenance: X-9
 
 **Enforcement.**
 - Mechanism class: a per-seam obligation, honestly stated: every side-effecting seam a slice introduces names its two layers, reviewable via the entity configuration (the UNIQUE index is visible) plus a named behavior test including the race case.
-- Edition: owed, trigger: first idempotent external side effect. A proven practice (multiple UNIQUE-constrained sites with behavior tests including races) is the exemplar lifted then; the claim file is cited in slice review.
 
 **Weakening notes.** A static arch test cannot prove layer two exists; this claim's enforcement is named-test-per-seam, and pretending otherwise would be the aspirational-claim failure this catalog exists to prevent. Clinical batch jobs and external syncs need this discipline as much as billing does; it is domain-agnostic.

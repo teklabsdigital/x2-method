@@ -13,6 +13,5 @@ provenance: compliance-mapping pass 2026-07-24 (closes the mint-time door TEN-1 
 
 **Enforcement.**
 - Mechanism class: unit tests on the mint path (foreign-tenant selection refused; membership read at mint time; revoked membership plus version bump kills the scoped credential), an architecture assertion that no endpoint outside the mint surface accepts a tenant-selection parameter (the TEN-1 scan already rejects tenant-shaped parameters; the mint surface is its one named, justified carve-out), and a harness scenario through the real sign-in path (TEST-2's gated profile).
-- Edition: owed; trigger: first identity slice (shared with SEC-4's version store and SEC-10).
 
 **Weakening notes.** The claim rules the flow shape, not the membership model: roles per membership, invitation lifecycles, and the selector UX are the identity slice's D-000 design. A minted credential stays valid for its tenant until expiry or version bump, so SEC-4's cache-TTL note is the revocation-delay bound here too.

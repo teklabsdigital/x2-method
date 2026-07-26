@@ -13,6 +13,5 @@ provenance: patterns pass 2026-07-24 (performance stream: sync-IO bans, eslint n
 
 **Enforcement.**
 - Mechanism class: banned-API lint scoped to server assemblies or modules (sync file and network APIs, sync-over-async idioms, read-to-end idioms), with the startup allowlist named in the lint configuration; a configuration test asserts the platform's sync-IO runtime throw is intact where the platform has one.
-- Edition: owed; trigger: the next edition build pass (a BannedApiAnalyzers configuration plus one host assertion; the client side already carries the idiom under UI-2's lint discipline).
 
 **Weakening notes.** The banned-API list is a registry, heuristic like SEC-2's and CFG-1's, extended per project as new blocking idioms appear; a blocking call hidden inside a dependency escapes the lint and belongs to DEP-1's review at adoption. The streaming ban is scoped to caller-controlled sizes: reading a bounded config file whole is fine, and pretending otherwise would make the lint a nuisance rather than a net.

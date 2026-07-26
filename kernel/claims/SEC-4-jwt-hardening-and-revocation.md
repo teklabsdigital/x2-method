@@ -13,6 +13,5 @@ provenance: B1-4
 
 **Enforcement.**
 - Mechanism class: host configuration asserted by tests: a tampered-token test (signature manipulation yields 401) and a session-version test (bump version, old token rejected).
-- Edition: pinned algorithm + RequireSignedTokens in the host, version-check middleware, and the two named tests. Signing-key configuration is fail-closed outside development (DATA-5, SEC-5).
 
 **Weakening notes.** Version checks cost a lookup per request; a short-TTL cache is acceptable (for example a 5-minute window) provided the TTL is a named, tested bound, because the cache window is exactly the revocation delay.

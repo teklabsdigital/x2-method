@@ -13,7 +13,6 @@ provenance: X-7
 
 **Enforcement.**
 - Mechanism class: per-screen fidelity test suites asserting rendered-atom-set equality with the ledger and per-atom resolved style checks.
-- Edition: the mechanism was proven extensively (multiple suites: ledger, exhaustiveness at the suite level, de-fabrication checks); the skeleton ships one exemplar fidelity suite as the copyable pattern (asserting atom-set equality in both directions; per-atom resolved-style assertions are not in v1). The ledger is derived from the locked prototype at the X2 Contract phase; deriving it is methodology work, enforcing it is this claim.
 
 **Weakening notes.** Fidelity suites are the most maintenance-heavy tests in the catalog; they earn their cost because they are the acceptance contract made executable, which is decision-tier, not consequence-tier. A screen whose prototype is deliberately revised gets a new locked ledger through a human turn, never a test edited to pass. A ledger exception (a theme-invariant panel, a sanctioned divergence) is scoped to named atoms, never to a token family or a surface class; an exception scoped wider than its rationale hides real gaps behind it (PC-24, P2 extraction).
 

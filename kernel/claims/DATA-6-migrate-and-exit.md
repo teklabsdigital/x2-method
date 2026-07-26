@@ -13,6 +13,5 @@ provenance: PC-12 (P2 extraction, 2026-07-21; owner-flagged in the source ledger
 
 **Enforcement.**
 - Mechanism class: host tests assert the mode applies-and-exits without binding the serving surface, and that a serving boot performs no migration against a pending model; a migrate-mode test asserts the lock timeout is set on the session before DDL runs; the composed tier boots only against an already-migrated database.
-- Edition: owed; trigger: the next edition build pass (a small host change; the mechanism is two facts on the composed host).
 
 **Weakening notes.** None material. The claim constrains hosts, not tooling; the ordering (migrate, then author assets if any, then serve) is the runbook's to state.

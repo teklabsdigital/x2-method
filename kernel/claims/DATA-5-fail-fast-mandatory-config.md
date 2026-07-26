@@ -13,6 +13,5 @@ provenance: Bucket 4 promotion
 
 **Enforcement.**
 - Mechanism class: options validation executed at startup (not first-use), with tests asserting startup fails on each mandatory key's absence; runtime refusal idioms unit-tested at the seams that need context.
-- Edition: `ValidateOnStart` on all option types in the skeleton; fail-closed secret checks outside Development (JWT/vault/webhook) as host-startup assertions with tests; the kernel's `ToolExecutor` timezone-refusal idiom (it refuses an empty timezone) as the runtime exemplar.
 
 **Weakening notes.** Development environments may relax specific checks (dev signing key from user-secrets), but each relaxation is conditional on the environment name and visible in one place, never a silent default value in committed config (SEC-5).

@@ -13,6 +13,5 @@ provenance: X-10
 
 **Enforcement.**
 - Mechanism class: a single fixture file consumed by the client test natively and physically linked into the server test project, so there is exactly one corpus and no copy to rot.
-- Edition: the C# test csproj links the client's JSON fixture (`None Include` with `Link`), TypeScript and C# tests assert the identical corpus, and the fixture embeds a comment naming the invariant and both consumers. The skeleton ships one linked fixture as the copyable pattern.
 
 **Weakening notes.** The claim is scoped to hand-mirrored contracts only. Composes with CON-1: the single enum converter keeps the set of things needing fixtures small.

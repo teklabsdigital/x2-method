@@ -13,6 +13,5 @@ provenance: Bucket 3 (AsNoTracking/keyset conventions)
 
 **Enforcement.**
 - Mechanism class: the skeleton makes the safe pattern the path of least resistance: store base helpers expose keyset-paginated, no-tracking query shapes, so writing an unbounded tracked read requires deliberately bypassing the provided seam.
-- Edition: the v1 store implements the shape directly (`AsNoTracking`, a tiebroken keyset cursor, a page-size clamp shared by service and store); with a single module there is no shared store base yet, so each new store owes the same shape by review; list contracts carry cursor + limit shapes.
 
 **Weakening notes.** This claim's static enforcement is the weakest in the catalog and the file says so: no cheap arch test proves an arbitrary query bounded. The mechanism is structural (the skeleton's defaults) plus review. If a project later wants a hard gate, an analyzer banning raw `ToListAsync` outside store helpers is the named upgrade path; it is not v1.
