@@ -1,0 +1,106 @@
+# The kernel repository's own loop.
+#
+# Distinct from kernel/dotnet-react/.github/workflows/ci.yml, which is a TEMPLATE that moves to the repo root
+# when a project is seeded and gates that project. Nothing was gating THIS repository, so the mechanisms it
+# ships (the shared-tier compose check, the conformance-record check, the standing dash constraint) ran only
+# when someone remembered. TEST-3 names that state exactly: a mechanism that runs only when a developer
+# remembers is aspirational, not enforced. This closes it for the repository that makes the claim.
+#
+# Scope is deliberately the repo-level gates plus the shared client tier. The .NET tiers stay in the edition
+# template: they need an engine container and they gate a seeded project, not the catalog.
+name: kernel
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  shared-tier:
+    name: shared tier composes and the editions match
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # A hand-edited composed copy fails here rather than drifting quietly (kernel/shared/README.md).
+      - run: node kernel/tools/compose.mjs --check
+
+  conformance:
+    name: every claim has an honest status in every edition
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # Every edition, not one. The job existed to prove a catalog pass cannot complete while an edition stays
+      # silent, and running it against a single edition proved that of a single edition. The list is explicit
+      # for the same reason compose.mjs keeps one: a new edition joining the gates should be a visible diff.
+      matrix:
+        edition: [dotnet-react, node-react]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # docs-lint carries the conformance check: a catalog claim with no row, a row naming no claim, a
+      # realized claim naming no mechanism, an owed claim naming no trigger, or a stale generated table all
+      # fail here. A catalog pass therefore cannot complete while an edition stays silent about a new claim.
+      - run: node tools/docs-lint.mjs
+        working-directory: kernel/${{ matrix.edition }}
+
+  node-server:
+    name: node-react server tier
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kernel/node-react/server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: kernel/node-react/server/package-lock.json
+      - run: npm ci
+      # tsc, vitest, eslint. The route-recorder completeness proofs and the framework import ban both run here,
+      # which is what keeps the enumeration every future claim scan stands on from quietly becoming partial.
+      - run: npm run verify
+
+  client:
+    name: shared client tier
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kernel/shared/client-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: kernel/shared/client-web/package-lock.json
+      - run: npm ci
+      - run: npm run verify
+
+  dashes:
+    name: no em or en dash anywhere (MET-08)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The edition's docs-lint enforces this inside the edition only. The standing constraint is repo-wide,
+      # so the catalog, the skills, the record layer, and the root documents are covered here. The characters
+      # are built with printf because BSD and GNU grep bracket expressions both false-negative on them.
+      - name: Scan for em and en dashes
+        run: |
+          FOUND=0
+          for CH in $(printf '\342\200\224') $(printf '\342\200\223'); do
+            if git grep -n -I --fixed-strings -- "$CH" -- . \
+              ':(exclude)*package-lock.json' ':(exclude)*packages.lock.json' ; then
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -ne 0 ]; then
+            echo "Em or en dash found; the standing constraint bans both everywhere (MET-08)."
+            exit 1
+          fi
+          echo "No em or en dashes found."

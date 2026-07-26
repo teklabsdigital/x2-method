@@ -1,0 +1,6 @@
+node_modules/
+dist/
+coverage/
+# Local dev secrets (SEC-5): never committed. .env.local holds the Vite dev token.
+.env
+.env.local

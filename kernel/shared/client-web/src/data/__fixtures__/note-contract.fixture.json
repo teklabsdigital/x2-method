@@ -1,0 +1,6 @@
+{
+  "_comment": "CON-2 shared contract-parity fixture. One physical file, two consumers: server tests/Kernel.Tests.Architecture/ContractParityTests.cs (linked in via None Include + Link) and client src/data/__tests__/noteContract.test.ts. Invariant: the Note wire contract field sets match on both sides. If you change the contract, change both consumers; drift fails that side's build.",
+  "createNoteRequest": ["title", "body"],
+  "noteResponse": ["id", "title", "body", "createdAtUtc"],
+  "noteListResponse": ["items", "nextCursor"]
+}

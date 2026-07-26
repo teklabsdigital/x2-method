@@ -1,0 +1,420 @@
+{
+  "edition": "dotnet-react",
+  "catalogPassDate": "2026-07-24",
+  "claims": {
+    "TEN-1": {
+      "title": "Tenant comes from the credential only",
+      "status": "proven",
+      "mechanism": "`TenantScopeMiddleware` reads `tenant_id` from the JWT only; `EndpointSpineTests` bans tenant route/query params; `ContractShapeTests` bans `TenantId` on requests",
+      "note": ""
+    },
+    "TEN-2": {
+      "title": "Ambient scope, fail-closed",
+      "status": "patterned",
+      "mechanism": "`AmbientTenantScope` (AsyncLocal, throws on unset); `AmbientTenantScopeTests`",
+      "note": "the non-HTTP job base class is owed (trigger: first background job)"
+    },
+    "TEN-3": {
+      "title": "Tenant-leading composite keys",
+      "status": "proven",
+      "mechanism": "`NoteConfiguration.HasKey(TenantId, Id)`; `TenantKeyTests` (both directions)",
+      "note": ""
+    },
+    "TEN-4": {
+      "title": "Save-time guard and write provenance",
+      "status": "proven",
+      "mechanism": "`KernelDbContext.GuardTenancy` on both SaveChanges variants; `TenantGuardTests`; integration cross-tenant modify; `BulkWriteBanTests` bans the write paths that bypass the save pipeline (EF set-based, raw SQL, raw ADO)",
+      "note": "the write-provenance stamps are owed (trigger: next edition build pass); the tenancy guard is what is proven here"
+    },
+    "TEN-5": {
+      "title": "Sanctioned-bypass ledger",
+      "status": "latent",
+      "mechanism": "`docs/claims/tenant-bypass-ledger.md` (empty) + docs-lint rule that a row without a sole-reader test fails",
+      "note": "ledger empty; the first sanctioned bypass is its first run"
+    },
+    "TEN-6": {
+      "title": "Tenant is minted from membership, never asserted",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: first identity slice (shared with SEC-4's version store and SEC-10)"
+    },
+    "SEC-1": {
+      "title": "Every endpoint gated",
+      "status": "proven",
+      "mechanism": "deny-by-default fallback policy + cached `PermissionPolicyProvider`; `EndpointSpineTests` asserts the fallback denies, allowlists `/health`, and requires a permission policy per endpoint; the `sv`/tenant gates run after routing and exempt allowlisted-anonymous endpoints",
+      "note": ""
+    },
+    "SEC-2": {
+      "title": "Anti mass-assignment",
+      "status": "proven",
+      "mechanism": "`ContractShapeTests` forbidden-field registry; `EndpointSpineTests` scans every body-bound DTO for server fields, nested and immutable constructor-bound DTOs included; App/Api declare no request/response types",
+      "note": ""
+    },
+    "SEC-3": {
+      "title": "No PII in URLs",
+      "status": "proven",
+      "mechanism": "`EndpointSpineTests` route + query scan ([AsParameters] wrappers, collections, DateTime/TimeOnly)",
+      "note": ""
+    },
+    "SEC-4": {
+      "title": "JWT hardening and revocation",
+      "status": "proven",
+      "mechanism": "pinned HS256, `RequireSignedTokens`, `SessionVersionMiddleware`; `HostSecurityTests` rejects a wrong-algorithm token and a missing-sv token",
+      "note": "EF-backed session store owed (trigger: first identity slice)"
+    },
+    "SEC-5": {
+      "title": "No secrets in config",
+      "status": "proven",
+      "mechanism": "`UserSecretsId` + `SecretConfigShapeTests` over every committed JSON config under `src/` + the CI secret-scan job",
+      "note": "vault-port interface owed (trigger: first runtime credential)"
+    },
+    "SEC-6": {
+      "title": "Log safety",
+      "status": "patterned",
+      "mechanism": "`redact.ts` scrubs Authorization and JWT-shaped strings; `redact.test.ts`",
+      "note": "v1 surfaces tested; hub log-safety owed (trigger: realtime)"
+    },
+    "SEC-7": {
+      "title": "Opaque public identifiers",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first anonymous resource surface in an edition project (the kernel exemplar has none)"
+    },
+    "SEC-8": {
+      "title": "Abuse posture",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first publicly exposed edition host (the launch pre-flight names it)"
+    },
+    "SEC-9": {
+      "title": "Deployment-edge hardening",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first deployed edition host (arrives with the launch pre-flight)"
+    },
+    "SEC-10": {
+      "title": "Authentication strength asserted at mint, verified at the gate",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: first identity slice (shared with SEC-4's version store and TEN-6)"
+    },
+    "SEC-11": {
+      "title": "The runtime credential cannot touch the schema",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass (rides DATA-6: the migrate mode and the role split are one provisioning story; the integration tier's provisioning path is where both roles are created)"
+    },
+    "TIME-1": {
+      "title": "UTC, offset-aware, and nothing else",
+      "status": "proven",
+      "mechanism": "`TimeTypeTests` over Contracts, App, Persistence (recurses Nullable, arrays, generics)",
+      "note": "DB UTC column defaults not used: the service sets the value"
+    },
+    "DATA-1": {
+      "title": "Stores, records, downward deps",
+      "status": "proven",
+      "mechanism": "layer references + `DependencyDirectionTests`; one service call per endpoint",
+      "note": ""
+    },
+    "DATA-2": {
+      "title": "Bounded reads",
+      "status": "patterned",
+      "mechanism": "`EfNoteStore` AsNoTracking + `(CreatedAtUtc, Id)` keyset + the shared page-size clamp; `NoteServiceTests`, integration `KeysetPagingTests` incl. a same-timestamp collision page",
+      "note": "structural + review; single module, no shared store base"
+    },
+    "DATA-3": {
+      "title": "Two-layer at-most-once",
+      "status": "owed",
+      "mechanism": "claim + proven exemplar",
+      "note": "trigger: first idempotent external side effect"
+    },
+    "DATA-4": {
+      "title": "Cross-store reconcile",
+      "status": "owed",
+      "mechanism": "claim + proven exemplar",
+      "note": "trigger: first cross-store sequence"
+    },
+    "DATA-5": {
+      "title": "Fail-fast mandatory config",
+      "status": "proven",
+      "mechanism": "`Required()` startup reads; `StartupConfigTests` fails per missing key",
+      "note": ""
+    },
+    "DATA-6": {
+      "title": "Migrate and exit",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass (a small host change; the mechanism is two facts on the composed host)"
+    },
+    "DATA-7": {
+      "title": "Ruled retention and disposal",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first PII-bearing entity in an edition project, or the first contractual deletion clause, whichever lands first"
+    },
+    "DATA-8": {
+      "title": "A state change and its event commit together or not at all",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first event publish in an edition project (arrives with the first broker, alongside RES-5)"
+    },
+    "DATA-9": {
+      "title": "A stale write is refused, never silently applied",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass (rides TEN-4's interceptor work; the token and the refusal live in the same save pipeline the tenancy guard already owns)"
+    },
+    "DATA-10": {
+      "title": "Everything that grows has a registered sweep",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first append-only operational table in an edition project (DATA-8's outbox is the likely first, with RES-5's dead-letter quarantine close behind)"
+    },
+    "DATA-11": {
+      "title": "A migration never breaks the release running beside it",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first production deployment with rolling replacement; the lint half can land at the next edition build pass, ahead of the compatibility job"
+    },
+    "CFG-1": {
+      "title": "Operational settings are configuration, not code",
+      "status": "proven",
+      "mechanism": "`OperationalSettingsTests` scans `server/src` and `scripts/` for model-id and provider-endpoint literals; `scripts/e2e.sh` reads Jwt values from committed appsettings, never duplicating them",
+      "note": ""
+    },
+    "CON-1": {
+      "title": "One wire dialect",
+      "status": "proven",
+      "mechanism": "ProblemDetails + StatusCodePages + single camelCase enum converter; `WireConventionTests` (naming, enum round-trip, problem+json)",
+      "note": ""
+    },
+    "CON-2": {
+      "title": "Contract parity fixture",
+      "status": "proven",
+      "mechanism": "shared `note-contract.fixture.json` linked into C# tests + read by the TS test; `ContractParityTests`, `noteContract.test.ts`",
+      "note": ""
+    },
+    "CON-3": {
+      "title": "Read completeness for action-bearing surfaces",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first edition project with a restorable session (the kernel exemplar has none)"
+    },
+    "CON-4": {
+      "title": "A breaking change is detected by machine, approved by human",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first published external contract (a versioned API consumed outside the repo, a partner surface, or the first schema registry; the composed client in the same repo is CON-2's territory, not a published contract)"
+    },
+    "RT-1": {
+      "title": "Realtime discipline",
+      "status": "owed",
+      "mechanism": "client is REST-only in v1",
+      "note": "trigger: first realtime slice; the promotion set is the hub arch test, MaximumReceiveMessageSize, the createHub client seam, and the socket harness scenario"
+    },
+    "SRV-1": {
+      "title": "One deployable unit",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass. Applies to web products; an API-only project re-rules it in its deltas file at adoption"
+    },
+    "RES-1": {
+      "title": "Every outbound call is bounded, and retries are earned",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first external service dependency in an edition project. Database session bounds are RES-6's, carved out so this claim stays about the chokepoint shape"
+    },
+    "RES-2": {
+      "title": "No unbounded queue, pool, or backlog in the process",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first background worker or in-process queue in an edition project"
+    },
+    "RES-3": {
+      "title": "The host dies cleanly, and there is a test that kills it",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first deployed edition host (rides SEC-9's deployment-edge work; the drain budget is a CFG-1 operational setting ruled against the platform's grace period)"
+    },
+    "RES-4": {
+      "title": "Liveness answers alone; readiness answers for its dependencies",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first deployed edition host (lands with RES-3 and SEC-9; the health root SEC-1 already allowlists is the surface this claim splits in two)"
+    },
+    "RES-5": {
+      "title": "Poison is quarantined at a counted limit, never retried forever, never dropped",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first message broker in an edition project (the transactional outbox relay, DATA-8, is the likely first consumer)"
+    },
+    "RES-6": {
+      "title": "Every database session carries four finite bounds, each proven where it lives",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass. Everything here runs on the existing integration tier against the real engine, so proven is reachable immediately; nothing waits on a new dependency"
+    },
+    "PERF-1": {
+      "title": "A hot operation's IO is counted, budgeted, and gated",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass (the v1 exemplar's list endpoint is the first designated seam; the interceptor rides the same seam TEN-4's stamps use)"
+    },
+    "PERF-2": {
+      "title": "A designated hot path's allocations are budgeted per operation",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first designated hot path in an edition project; designation before need fails the YAGNI gate, so the family expects most projects to hold zero designations for a long time, honestly"
+    },
+    "PERF-3": {
+      "title": "A designated algorithmic seam proves its scaling with a counted ratio",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first hand-written algorithm over unbounded input in an edition project; library calls and database queries are not designations (the library's complexity is its documentation's promise, and query shape is PERF-1's and DATA-2's)"
+    },
+    "PERF-4": {
+      "title": "No sync IO and no whole-payload buffering on the serving path",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass (a BannedApiAnalyzers configuration plus one host assertion; the client side already carries the idiom under UI-2's lint discipline)"
+    },
+    "PERF-5": {
+      "title": "Every cache is bounded and every entry expires",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first cache in an edition project; the claim deliberately does not mandate caching anywhere, it prices caching where chosen"
+    },
+    "PERF-6": {
+      "title": "Wall time is never asserted raw",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first wall-time benchmark in an edition project; the lint half can land at the next edition build pass, ahead of any benchmark existing, since its job is to keep the first timing assert out"
+    },
+    "MOD-1": {
+      "title": "Module co-location",
+      "status": "latent",
+      "mechanism": "Notes module co-located; client deep-path import bans",
+      "note": "single module; the cross-module rules have no second module to constrain, so the second module is their first real run"
+    },
+    "MOD-2": {
+      "title": "Deterministic naming and placement",
+      "status": "proven",
+      "mechanism": "`NamingPlacementTests` (server source scan) + `namingPlacement.test.ts` (client)",
+      "note": ""
+    },
+    "DOC-1": {
+      "title": "Documentation lifecycle",
+      "status": "proven",
+      "mechanism": "`docs-lint.mjs`: front matter, placement, work slice ids, the narrow design/ governance, the MET-08 dash check (exclusions declared above)",
+      "note": "forward-only status transitions not linted, stateless"
+    },
+    "DEC-1": {
+      "title": "A module's behaviour traces to a decision",
+      "status": "owed",
+      "mechanism": "docs-lint fails a `docs/decisions/*.md` without a `provenance` field (the upward link); the decision template models the field",
+      "note": "the downward link is owed (trigger: first regeneration of a module from its decisions); the artifact-order check rides here too (trigger: next acceptance test); the upward provenance lint is built and proven"
+    },
+    "UI-1": {
+      "title": "Token source lockstep",
+      "status": "proven",
+      "mechanism": "`tokenCoverage.test.ts` reads the export at its canonical home `design/prototype/_ds/colors_and_type.css` (every CSS var has a token, count > 50)",
+      "note": ""
+    },
+    "UI-2": {
+      "title": "Literal visual values are lint errors",
+      "status": "proven",
+      "mechanism": "`eslint.config.js` bans visual literals in styles: colors, font props, radii, hairlines, and spacing/dimension literals (numerics matched on `raw`), with the structural allowlist",
+      "note": ""
+    },
+    "UI-3": {
+      "title": "Screens compose primitives only",
+      "status": "proven",
+      "mechanism": "`Text`/`Button` are the only token importers (eslint no-restricted-imports + naming scan)",
+      "note": ""
+    },
+    "UI-4": {
+      "title": "Fidelity ledger",
+      "status": "patterned",
+      "mechanism": "`NotesScreen.fidelity.test.tsx` exhaustiveness + de-fabrication; ledgers live in `design/ledger/` (INV-01)",
+      "note": "each screen owes its suite; per-atom resolved-style assertions not included; the prototype-to-ledger exporter owed"
+    },
+    "UI-5": {
+      "title": "Thin UI over tested services, composed entrypoint exercised",
+      "status": "patterned",
+      "mechanism": "eslint bans `api/**` and `data/**` imports outside the composition root (`src/main.tsx`); `npm run smoke` boots the ACTUAL `src/main.tsx` in jsdom against the live server, asserting a real GET and a real POST; runs in the CI e2e job and `scripts/e2e.sh`",
+      "note": "the import ban is proven-centralized; each new primary flow owes its smoke line"
+    },
+    "DEP-1": {
+      "title": "Dependency quarantine",
+      "status": "proven",
+      "mechanism": "CPM exact pins + lockfiles + locked-mode restore (`--locked-mode` / `npm ci`) + `VERSIONS.md` (90-day window header, container-images section, kernel-provenance section) + docs-lint ledger, image, and kernel-provenance checks; the SQL Server image is one tag@digest value across runbook, CI, and the Testcontainers fixture",
+      "note": "publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin"
+    },
+    "DEP-2": {
+      "title": "Standing advisory sweep with a remediation clock",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first armed CI loop (TEST-3 at instantiation); the publish-date check DEP-1 names as its upgrade path rides the same job"
+    },
+    "TEST-1": {
+      "title": "Tier strategy",
+      "status": "proven",
+      "mechanism": "SQLite unit/arch, Testcontainers integration; EF InMemory banned by `NamingPlacementTests`",
+      "note": ""
+    },
+    "TEST-2": {
+      "title": "E2E harness",
+      "status": "proven",
+      "mechanism": "`tools/harness/main.ts` drives the real client services (NDJSON + redaction, fails loudly not vacuously); the completeness self-audit fails on any undriven repo method; the gated harness profile refuses outside Development/Testing (`HarnessProfileTests`)",
+      "note": "the harness-profile gate is latent: there is no product-owned provider port to re-bind yet, so the first one is its first re-binding"
+    },
+    "TEST-3": {
+      "title": "CI loop",
+      "status": "proven",
+      "mechanism": "`ci.yml`: server, client, docs-lint, secret-scan, e2e-wire",
+      "note": "mechanism built, not yet armed: branch protection is set at instantiation; until then the loop blocks nothing"
+    },
+    "TEST-4": {
+      "title": "Real-runtime boot proof",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the next edition build pass. UI-5's composed smoke already proves entrypoint wiring in-process; the real-boot script assertion and built-form pinning are the promotion set that completes it"
+    },
+    "HUM-1": {
+      "title": "Irreversible surfaces get a human turn, unconditionally",
+      "status": "proven",
+      "mechanism": "`.github/CODEOWNERS` covers migrations, contracts, and `docs/contracts/` (`@OWNER` renamed at instantiation); docs-lint fails if any of the three loses its owned entry; branch protection requires code-owner review",
+      "note": "mechanism built, not yet armed: it arms with TEST-3 at instantiation; the manifest carries the step"
+    },
+    "AI-1": {
+      "title": "Server-injected identity",
+      "status": "proven",
+      "mechanism": "`ToolExecutor` reject-then-inject + throw-on-unset, rejecting server-owned keys recursively through nested objects and lists; `ToolExecutorTests` incl. a nested-payload case",
+      "note": "nested dictionaries/lists stripped; `JsonElement`-typed nesting remains a per-tool review item"
+    },
+    "AI-2": {
+      "title": "Untrusted content, no authority",
+      "status": "patterned",
+      "mechanism": "`ListNotesTool` read-only + `ListNotesToolReadOnlyTests`; `docs/decisions/ai-trust-tiers.md`",
+      "note": "the v1 tool has its guard test, each new tool owes its own; full taint tracking and the SSRF egress guard are owed (trigger: outbound agentic requests)"
+    },
+    "AI-3": {
+      "title": "Prompt architecture",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first model-backed feature in an edition project"
+    },
+    "OBS-1": {
+      "title": "External-effect seam observability",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first external side-effect port in an edition project. This claim opens the observability family the v1 cut deliberately deferred"
+    },
+    "OBS-2": {
+      "title": "Refusals and privileged actions are security events",
+      "status": "owed",
+      "mechanism": "",
+      "note": "trigger: the first deployed edition host (alongside SEC-9; the refusal seams it instruments are already built and tested, so the events attach to existing tested paths)"
+    }
+  }
+}

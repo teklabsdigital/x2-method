@@ -1,0 +1,13 @@
+{
+  "name": "dotnet-react",
+  "dependencySurfaces": [
+    { "path": "server/Directory.Packages.props", "kind": "msbuild-packages" },
+    { "path": "server/.config/dotnet-tools.json", "kind": "dotnet-tools" },
+    { "path": "client-web/package.json", "kind": "npm-package-json" }
+  ],
+  "irreversibleSurfaces": {
+    "schema-migrations": "/server/src/Kernel.Persistence/Migrations/",
+    "wire-contracts": "/server/src/Kernel.Contracts/",
+    "contract-docs": "/docs/contracts/"
+  }
+}

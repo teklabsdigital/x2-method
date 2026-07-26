@@ -1,0 +1,11 @@
+# HUM-1: irreversible surfaces get a named human review, unconditionally. A diff touching a migration or a
+# published contract cannot merge without the owner named here. Armed at instantiation: branch protection must
+# require review from code owners (the manifest carries the step), and @OWNER is renamed to the product owner.
+# The paths are the ones this edition declares in edition.json; docs-lint verifies all three stay covered.
+#
+# Two of the three directories do not exist yet in this edition: persistence and contracts arrive with their
+# claims in the build pass. Naming the owner before the first migration lands is the point of the claim, not an
+# oversight, and a CODEOWNERS pattern that matches nothing today matches the day it appears.
+/server/src/persistence/migrations/ @OWNER
+/server/src/contracts/ @OWNER
+/docs/contracts/ @OWNER

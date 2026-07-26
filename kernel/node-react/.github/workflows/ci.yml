@@ -1,0 +1,69 @@
+# TEST-3: the enforcement loop runs on every push. This is a TEMPLATE: at instantiation it moves to the repo root
+# and every path here is relative to the edition root (server/, client-web/, tools/). Branch protection must
+# require all four jobs (server, client, docs-lint, secret-scan) before merge.
+#
+# What is NOT here yet, stated so a green run is not read as more coverage than it has: there is no e2e job,
+# because this edition has no store, no auth, and no composed product surface to drive end to end. The sibling
+# edition's e2e job is the shape this one takes when those arrive, and TEST-2 and TEST-4 stay `owed` until then.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run verify
+
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: client-web/package-lock.json
+      - run: npm ci
+      - run: npm run verify
+
+  docs-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tools/docs-lint.mjs
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan committed source and config for secrets (SEC-5)
+        run: |
+          if grep -rInE '(-----BEGIN [A-Z ]*PRIVATE KEY-----|(password|pwd|secret|apikey|api_key)[[:space:]]*[:=][[:space:]]*.?[A-Za-z0-9+/_-]{8,})' \
+            --include='*.json' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.jsx' \
+            --include='*.env' --include='.env' --include='.env.*' --include='*.yml' --include='*.yaml' --include='.npmrc' \
+            --exclude='package-lock.json' \
+            --exclude-dir=node_modules --exclude-dir=dist . ; then
+            echo "Potential committed secret found (SEC-5). Move it to a vault or the local env file."
+            exit 1
+          fi
+          echo "No committed secrets found."

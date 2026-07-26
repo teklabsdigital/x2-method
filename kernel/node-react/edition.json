@@ -1,0 +1,12 @@
+{
+  "name": "node-react",
+  "dependencySurfaces": [
+    { "path": "server/package.json", "kind": "npm-package-json" },
+    { "path": "client-web/package.json", "kind": "npm-package-json" }
+  ],
+  "irreversibleSurfaces": {
+    "schema-migrations": "/server/src/persistence/migrations/",
+    "wire-contracts": "/server/src/contracts/",
+    "contract-docs": "/docs/contracts/"
+  }
+}

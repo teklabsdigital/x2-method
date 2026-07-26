@@ -119,10 +119,13 @@ baseline decisions:
 3. **`deltas.md`** started: where this project deviates from the kernel edition and why.
 4. **`VERSIONS.md`** consolidated: every dependency surface in one ledger (packages, submodule
    pins, container images by digest), exact pins, cooling-off policy stated once.
-5. **The claims conformance table**: every kernel claim mapped onto the project's existing
-   mechanisms, marked proven, patterned, latent, or owed with a named trigger. The kernel is
-   provenance-blind: existing enforcement that holds is mapped and kept, never renamed or rebuilt
-   to match kernel naming. Existing mechanisms with no kernel counterpart are candidate claims.
+5. **The conformance record** (`conformance.json`, the edition's machine-readable home for per-claim
+   status; the prose table is generated from it, never hand-written): every kernel claim mapped onto
+   the project's existing mechanisms, marked proven, patterned, latent, or owed with a named trigger.
+   The record is complete or it is not a record: every claim gets a row, and the edition's docs-lint
+   fails the build on a missing one. The kernel is provenance-blind: existing enforcement that holds is
+   mapped and kept, never renamed or rebuilt to match kernel naming. Existing mechanisms with no kernel
+   counterpart are candidate claims.
 6. **The fate of legacy trace machinery** (code-cites-AC linters and similar) is an explicit D-0xx:
    its claims dimension is X2-native and stays; its AC dimension retires as the ACs dissolve,
    deliberately and gated, never by silently breaking the build.
