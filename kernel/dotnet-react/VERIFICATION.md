@@ -214,6 +214,68 @@ for SEC-3/TEN-1, so it is a design decision rather than an edit. `.env` still si
 The CI toolchain is still unpinned. `TimeTypeTests` still omits `Kernel.Api`. Each is recorded against its
 finding id with the reason.
 
+## Round 7: applying adjudication rulings 2 through 11 (2026-07-26 and 2026-07-27)
+
+No mechanism in this tree changed in this round and no test was added to the suite. What changed is what the
+record CLAIMS about the mechanisms, and two tools in the shared tier that hold the record honest. The round is
+recorded here because the two tools gained new failure modes and a failure mode without a red-green proof is a
+gate nobody has seen work.
+
+**Four rows stop reading `proven`.** SEC-2 and TIME-1 under ruling 2 (a mechanism class now carries a
+completeness obligation, and neither guard meets its closure parameter), SEC-3 under ruling 6 (the comparison is
+part of the mechanism, and case-insensitive equality resolves no morphology), TEN-1 under rulings 5 and 6. Each
+was measured in an earlier round, with a control, and left at `proven` deliberately because lowering it belonged
+to the owner. Each now carries per-obligation statuses, so the row states which half it meets: TEN-1, for
+instance, reads `owed` overall while its route surface, its header mechanism and its credential-only resolution
+each read `proven`. The tally moves from 25 `proven`, 6 `patterned`, 2 `latent`, 36 `owed` to 21, 6, 2, 40.
+
+**Ruling 5's prediction did not hold, and the deviation is the interesting part.** The digest expected TEN-1 to
+be falsified by having no header mechanism. It has one: round 6 built it, after that section of the digest was
+drafted, and it is covered from both sides (a declared binding is a scan violation, an undeclared arrival is
+proven not to move tenancy). TEN-1 is falsified anyway, by the query enumeration and the comparison, so the
+outcome matches the prediction and the reason does not.
+
+**The two tools, and their red-green proofs.** Both are shared-tier files composed into this edition, so both
+proofs bind here.
+
+| Guard (`tools/conformance.mjs`, ruling 3) | Injected violation | Result |
+|-------------------------------------------|--------------------|--------|
+| an obligations array of fewer than two entries | one obligation left on a row | red, naming the row |
+| obligations that are not a list | the array replaced by a string | red |
+| an obligation with no name | name emptied | red, naming the position |
+| two obligations with the same name | second name copied from the first | red |
+| an obligation status outside the vocabulary | `partial` | red, listing the four words |
+| an obligation with no text | text emptied | red |
+| an owed obligation naming no trigger | trigger removed from the text | red |
+| a row stronger than its weakest obligation | row set to `proven` over an `owed` half | red, naming the weakest obligation |
+| a non-owed obligation on a row naming no mechanism | mechanism emptied | red |
+| the generated table not regenerated after an obligation edit | obligation text changed only in the JSON | red (the existing drift check, over the new field) |
+| non-vacuity | the record restored | green in both editions, byte-reverted |
+
+| Guard (`tools/docs-lint.mjs`, ruling 10) | Injected violation | Result |
+|------------------------------------------|--------------------|--------|
+| a qualified locus back in prose | `centralized (model-level assertion)` | red, naming the file |
+| a locus outside the enum | `hybrid` | red |
+| no locus at all | the line removed | red |
+| an empty `locus_note` | the key with nothing after it | red |
+| a claim file with no front matter | the block removed | red |
+| non-vacuity | the file restored | green in both editions, byte-reverted |
+| the seeded shape | the edition copied to a tree with no catalog above it | green, with `note: the claims catalog is not present, so claim locus values were NOT checked` |
+
+The empty-`locus_note` probe found something the ruling did not predict: the shared front-matter parser requires
+at least one character after the colon, so a key with an empty value parses as ABSENT. For a mandatory key that
+is harmless, since absent and empty fail the same check; for an optional one it is a hole the size of the key.
+The check reads the raw front-matter block because of it.
+
+**The dependency half, executed rather than recorded.** Ruling 9a rules that a live advisory outranks the
+cooling-off window above the 7-day floor, so round 6's survivor is resolved: `postcss` moves from 8.5.15 to
+8.5.18 in the shared tier, the lockfile diff touches nothing but that package, and the pin takes the first row of
+a new advisory-rule section in `VERSIONS.md`. Measured after the bump: `npm audit` reports **0 vulnerabilities**
+in the shared client tier and in this edition's composed client tree, down from 1 high. The client verify chain
+passes on the new lockfile.
+
+**Suite after this round: 67 of 67**, unchanged, which is the point: nothing about the code moved.
+
 ## Coverage notes by claim
 
 Scan-coverage detail behind the conformance table's summaries. Nothing here changes a status; these

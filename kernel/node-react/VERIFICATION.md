@@ -431,3 +431,61 @@ lesson applied before rather than after.
 A survey before the check was written found 36 distinct ids across both editions and `record/`, every one of
 them a real citation and no false positive, which is why the id pattern is left broad rather than anchored to a
 citation phrasing.
+
+## Round 7: applying adjudication rulings 2 through 11 (2026-07-26 and 2026-07-27)
+
+No claim was built in this round and no server test was added; the suite is unchanged at **154 of 154**. What
+changed is the record and two shared-tier tools that keep the record honest, and both tools gained failure modes
+that had never been seen to fire.
+
+**What this edition's four rows gained.** SEC-5, DATA-5, TIME-1 and TEN-1 are the rows S-8 was measured on: each
+sits at `owed` with a red-green-proven half, and the four-word vocabulary had nowhere to say so. Each now carries
+per-obligation statuses. TEN-1 reads `owed` because no credential can be minted here, while its prohibition on
+all four surfaces reads `proven` in the same row. **No status moved**, in either direction, which is what the
+ruling predicted: the roll-up takes the weakest obligation and every one of these rows already had an owed half.
+The edition stays at 4 `proven`, 65 `owed`.
+
+**One row was found to be understating itself** while its obligations were being written (E-19). SEC-5's note
+said the CI secret-scan gate "is not built"; `.github/workflows/ci.yml` runs `tools/secret-scan.mjs --self-test`
+and then the scan as a required job, and has since the E-16 repair a few hours after the note was written. The
+obligation is written as `proven` with the mechanism named and the stale clause is removed. The row still rolls
+up to `owed` on the vault port, so nothing moved; the finding is recorded because a row understating its own
+edition by a whole mechanism is a status the record could not honestly carry, which is the register's own bar.
+
+| Guard (`tools/conformance.mjs`, ruling 3) | Injected violation | Result |
+|-------------------------------------------|--------------------|--------|
+| an obligations array of fewer than two entries | one obligation left on TEN-1 | red, naming the row |
+| obligations that are not a list | the array replaced by a string | red |
+| an obligation with no name | name emptied | red, naming the position |
+| two obligations with the same name | second name copied from the first | red |
+| an obligation status outside the vocabulary | `partial` | red, listing the four words |
+| an obligation with no text | text emptied | red |
+| an owed obligation naming no trigger | trigger removed from the text | red |
+| a row stronger than its weakest obligation | TEN-1 set to `proven` over its owed half | red, naming the weakest obligation |
+| a non-owed obligation on a row naming no mechanism | mechanism emptied | red |
+| the generated table not regenerated after an obligation edit | obligation text changed only in the JSON | red |
+| non-vacuity | the record restored | green in both editions, byte-reverted |
+
+| Guard (`tools/docs-lint.mjs`, ruling 10) | Injected violation | Result |
+|------------------------------------------|--------------------|--------|
+| a qualified locus back in prose | `centralized (model-level assertion)` on TEN-3 | red, naming the file |
+| a locus outside the enum | `hybrid` | red |
+| no locus at all | the line removed | red |
+| an empty `locus_note` | the key with nothing after it | red |
+| a claim file with no front matter | the block removed | red |
+| non-vacuity | the file restored | green in both editions, byte-reverted |
+| the seeded shape | this edition copied to a tree with no catalog above it | green, with `note: the claims catalog is not present, so claim locus values were NOT checked` |
+
+Three checks now skip for the same reason in a seeded tree, and all three say so separately rather than sharing
+a flag: catalog completeness, the finding-id check, and the locus enum. Each names the artifact it could not
+read, because a reader of a green run has to be able to tell which tree they are looking at.
+
+The empty-`locus_note` probe found a hole nobody predicted: the shared front-matter parser requires at least one
+character after the colon, so a key with an empty value parses as absent. Harmless for a mandatory key, exactly
+key-sized for an optional one, and the check reads the raw front-matter block because of it.
+
+**The dependency half.** `postcss` moves from 8.5.15 to 8.5.18 in the shared tier under ruling 9a (a live
+advisory outranks the window above the 7-day floor), recomposed here, with the first row of a new advisory-rule
+section in `VERSIONS.md`. Measured: `npm audit` reports **0 vulnerabilities** in this edition's composed client
+tree, down from 1 high. The lockfile diff touches nothing but that package; the server tree is untouched and
+`npm run verify` passes on it unchanged.

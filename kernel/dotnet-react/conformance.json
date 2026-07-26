@@ -4,15 +4,59 @@
   "claims": {
     "TEN-1": {
       "title": "Tenant comes from the credential only",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`TenantScopeMiddleware` reads `tenant_id` from the JWT only; `EndpointSpineTests` bans tenant route and query parameter names by whole-string case-insensitive equality, and bans DECLARED tenant/PII headers via the framework's own `IFromHeaderMetadata` with vendor-prefix and separator normalization; `HostSecurityTests` proves at run time that a forged tenant header in five spellings does not move a request into another tenant; `ContractShapeTests` bans `TenantId` on requests",
-      "note": "TEN-1 names four surfaces and this edition now reaches all four, unevenly. ROUTE is total, because the pattern loop reads parameter names without consulting a type. HEADER is covered from both sides as of 2026-07-26 (A-2): a declared binding is a scan violation, and a header arriving undeclared is proven not to influence tenant resolution, which is the half no scan can reach. QUERY remains type-dependent: parameter enumeration filters on `BindsFromUrl`, a hand-written enumeration of types, so an `IParsable` value object or a `TimeSpan` binds from the query string and yields nothing to the scan (E-2, not repaired: one predicate cannot serve SEC-2 and SEC-3/TEN-1 at once). Matching is equality against a registry, so a novel spelling walks past (E-9). Findings: A-2 (repaired), E-2 (open), E-9."
+      "note": "TEN-1 names four surfaces and this edition now reaches all four, unevenly. ROUTE is total, because the pattern loop reads parameter names without consulting a type. HEADER is covered from both sides as of 2026-07-26 (A-2): a declared binding is a scan violation, and a header arriving undeclared is proven not to influence tenant resolution, which is the half no scan can reach. QUERY remains type-dependent: parameter enumeration filters on `BindsFromUrl`, a hand-written enumeration of types, so an `IParsable` value object or a `TimeSpan` binds from the query string and yields nothing to the scan (E-2, not repaired: one predicate cannot serve SEC-2 and SEC-3/TEN-1 at once). Matching is equality against a registry, so a novel spelling walks past (E-9). Findings: A-2 (repaired), E-2 (open), E-9. **Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (rulings 5 and 6), through ruling 3's per-obligation structure.** Ruling 5 predicted the header surface would be the falsifying half; it is not, because the flow-back pass built the header mechanism after that section of the digest was drafted, and it reads `proven` above. What falsifies the row is the query enumeration (E-2) and the comparison (E-9), both measured before the ruling and both left open by name.",
+      "obligations": [
+        {
+          "name": "the tenant is resolved solely from the validated credential",
+          "status": "proven",
+          "text": "`TenantScopeMiddleware` reads `tenant_id` from the token and from nothing else, which is the half of this claim the second edition cannot reach at all because it can mint no credential."
+        },
+        {
+          "name": "the route surface is enumerated completely",
+          "status": "proven",
+          "text": "the pattern loop reads parameter names without consulting a type, so no route parameter is invisible to it; what the predicate then does with the name is the comparison obligation below."
+        },
+        {
+          "name": "the query surface is enumerated completely",
+          "status": "owed",
+          "text": "parameter enumeration filters on `BindsFromUrl`, a hand-written list of types, so a value object implementing the framework's parse interface, or a `TimeSpan`, binds from the query string and yields nothing to the scan (E-2) (trigger: the next edition build pass)."
+        },
+        {
+          "name": "the header surface has a mechanism of its own",
+          "status": "proven",
+          "text": "a header surface cannot be enumerated, so this is the non-scan mechanism ruling 5 requires, and it is covered from both sides as of 2026-07-26: a DECLARED header binding is a scan violation through the framework's own `IFromHeaderMetadata`, with vendor-prefix and separator normalization, and a header arriving UNDECLARED is proven at run time not to move a request into another tenant, in five spellings (A-2)."
+        },
+        {
+          "name": "the request-contract surface is enumerated completely",
+          "status": "owed",
+          "text": "the contract half rests on `ContractShapeTests`, which is flat and enumerates only `*Request`-suffixed types, so a tenant id nested inside a posted object, or carried by a type whose name it does not recognize, is not reached (E-6) (trigger: MOD-2's delta pass)."
+        },
+        {
+          "name": "the comparison resolves compounds, concatenations and decompositions of a listed word",
+          "status": "owed",
+          "text": "matching is whole-string case-insensitive equality against a registry; the flow-back pass widened that registry with `workspace` and `account` and their compounds, which is a longer list and not a comparison (E-9) (trigger: the next edition build pass)."
+        }
+      ]
     },
     "TEN-2": {
       "title": "Ambient scope, fail-closed",
       "status": "patterned",
       "mechanism": "`AmbientTenantScope` (AsyncLocal, throws on unset); `AmbientTenantScopeTests`",
-      "note": "the non-HTTP job base class is owed (trigger: first background job)"
+      "note": "the non-HTTP job base class is owed (trigger: first background job)",
+      "obligations": [
+        {
+          "name": "scope established at every entry",
+          "status": "patterned",
+          "text": "`TenantScopeMiddleware` stamps the scope at HTTP ingress and the middleware test proves it; each non-HTTP entry owes its own `Begin`, and the job base class is owed (trigger: first background job)."
+        },
+        {
+          "name": "unset scope fails before I/O",
+          "status": "proven",
+          "text": "`AmbientTenantScope` throws when read unset, so an unstamped path is an error rather than an unfiltered query; `AmbientTenantScopeTests` asserts the throw rather than the accessor's presence."
+        }
+      ]
     },
     "TEN-3": {
       "title": "Tenant-leading composite keys",
@@ -24,7 +68,19 @@
       "title": "Save-time guard and write provenance",
       "status": "proven",
       "mechanism": "`KernelDbContext.GuardTenancy` on both SaveChanges variants; `TenantGuardTests`; integration cross-tenant modify; `BulkWriteBanTests` bans the write paths that bypass the save pipeline (EF set-based, raw SQL, raw ADO)",
-      "note": "the write-provenance stamps are owed (trigger: next edition build pass); the tenancy guard is what is proven here"
+      "note": "the write-provenance stamps are owed (trigger: next edition build pass); the tenancy guard is what is proven here",
+      "obligations": [
+        {
+          "name": "foreign-tenant writes are refused at save",
+          "status": "proven",
+          "text": "`KernelDbContext.GuardTenancy` runs on both SaveChanges variants; `TenantGuardTests` covers stamp-on-create, throw-on-foreign-row and throw-on-unset-scope, with an integration cross-tenant modify behind it."
+        },
+        {
+          "name": "no write path bypasses the save pipeline",
+          "status": "proven",
+          "text": "`BulkWriteBanTests` bans the EF set-based, raw SQL and raw ADO operators, which is what makes the guard above total rather than typical."
+        }
+      ]
     },
     "TEN-5": {
       "title": "Sanctioned-bypass ledger",
@@ -46,33 +102,103 @@
     },
     "SEC-2": {
       "title": "Anti mass-assignment",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`ContractShapeTests` forbidden-field registry over the Contracts assembly, filtered to types whose name ends in `Request` (FLAT); `EndpointSpineTests` walks every body-bound DTO RECURSIVELY, through public properties, constructor parameters, arrays and generic arguments, with cycle protection and no depth cap, against the same registry; App/Api declare no request/response types",
-      "note": "The two guards are no longer equivalent and the difference is the point. The HOST scan recurses as of 2026-07-26 (E-6), so a server-controlled field at any depth of any body-bound type on a real route is caught, proven both ways against a nested `AuthorDto` carrying `CreatedBy`. `ContractShapeTests` is STILL FLAT and still enumerates only `*Request` types, so as a second net it reaches one level; repairing it belongs to MOD-2, which has not had its delta pass. A reader taking `proven` to mean both guards reach every depth would be wrong. `IsBodyDto` also excludes types with a null namespace, so a public DTO declared in `Program.cs` is skipped by the host scan entirely (E-6), and `BindsFromUrl` over-excludes the body set (E-2). Findings: E-2 (open), E-6 (host half repaired, contracts half blocked on MOD-2)."
+      "note": "The two guards are no longer equivalent and the difference is the point. The HOST scan recurses as of 2026-07-26 (E-6), so a server-controlled field at any depth of any body-bound type on a real route is caught, proven both ways against a nested `AuthorDto` carrying `CreatedBy`. `ContractShapeTests` is STILL FLAT and still enumerates only `*Request` types, so as a second net it reaches one level; repairing it belongs to MOD-2, which has not had its delta pass. A reader taking `proven` to mean both guards reach every depth would be wrong. `IsBodyDto` also excludes types with a null namespace, so a public DTO declared in `Program.cs` is skipped by the host scan entirely (E-6), and `BindsFromUrl` over-excludes the body set (E-2). Findings: E-2 (open), E-6 (host half repaired, contracts half blocked on MOD-2). **Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (rulings 2 and 6), through ruling 3's per-obligation structure rather than by collapsing to one word.** No mechanism named above changed and nothing new was discovered: the guards are exactly as measured, and what changed is that the claim now states a completeness obligation and a comparison obligation, and this edition meets neither. The recursive host scan is a real half and reads `proven` above.",
+      "obligations": [
+        {
+          "name": "the predicate rejects a registry member at any depth of an enumerated type",
+          "status": "proven",
+          "text": "`EndpointSpineTests` walks every body-bound DTO recursively through public properties, constructor parameters, arrays and generic arguments, with cycle protection and no depth cap, proven both ways against a nested `AuthorDto` carrying `CreatedBy` (E-6)."
+        },
+        {
+          "name": "the enumeration reaches every body-bound type",
+          "status": "owed",
+          "text": "`IsBodyDto` excludes types with a null namespace, so a public DTO declared in the entry-point file is outside the host scan, and `BindsFromUrl` over-excludes the body set (E-2, E-6). The second net, `ContractShapeTests`, is flat and enumerates only `*Request`-suffixed types, so it reaches one level of the types whose name it recognizes (trigger: MOD-2's delta pass, which owns the placement rule that flat net rests on)."
+        },
+        {
+          "name": "the comparison resolves compounds, concatenations and decompositions of a listed word",
+          "status": "owed",
+          "text": "matching is a lowercased hash-set lookup, which is equality: a registry entry `status` does not cover `noteStatus`, and widening the list with more spellings is enumeration standing in for a comparison (E-9) (trigger: the next edition build pass, where E-2's split of the one predicate now serving SEC-2 and SEC-3/TEN-1 is the same work)."
+        }
+      ]
     },
     "SEC-3": {
       "title": "No PII in URLs",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`EndpointSpineTests` route + query scan ([AsParameters] wrappers, collections, DateTime/TimeOnly)",
-      "note": ""
+      "note": "**Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (ruling 6), through ruling 3's per-obligation structure.** The scan is unchanged; the claim now requires the comparison to resolve morphology, and case-insensitive equality does not. The sibling edition's SEC-3 survives because it built the three morphological classes explicitly, which is the asymmetry the evidence says exists.",
+      "obligations": [
+        {
+          "name": "the predicate rejects a registry match on a parameter it can see",
+          "status": "proven",
+          "text": "`EndpointSpineTests` scans route and query parameters, covering `[AsParameters]` wrappers, collections and date parameter types that a naive scan misses."
+        },
+        {
+          "name": "the enumeration reaches every route and query parameter",
+          "status": "owed",
+          "text": "query-parameter enumeration filters on `BindsFromUrl`, a hand-written list of types, so a value object implementing the framework's own parse interface binds from the query string and yields nothing to the scan (E-2) (trigger: the next edition build pass)."
+        },
+        {
+          "name": "the comparison resolves compounds, concatenations, decompositions and plurals of a listed word",
+          "status": "owed",
+          "text": "matching is case-insensitive equality, so `emailAddress` walks past an entry `email` and five further spellings of the same value walk past with it (E-9) (trigger: the next edition build pass, with E-2's predicate split)."
+        }
+      ]
     },
     "SEC-4": {
       "title": "JWT hardening and revocation",
       "status": "proven",
       "mechanism": "pinned HS256, `RequireSignedTokens`, `SessionVersionMiddleware`; `HostSecurityTests` rejects a wrong-algorithm token and a missing-sv token",
-      "note": "EF-backed session store owed (trigger: first identity slice)"
+      "note": "EF-backed session store owed (trigger: first identity slice)",
+      "obligations": [
+        {
+          "name": "the signing algorithm is pinned and tokens must be signed",
+          "status": "proven",
+          "text": "pinned HS256 plus `RequireSignedTokens`; `HostSecurityTests` rejects a wrong-algorithm token rather than asserting the option is set."
+        },
+        {
+          "name": "revocation is immediate through a server-side session version",
+          "status": "proven",
+          "text": "`SessionVersionMiddleware` plus the missing-`sv` rejection test. The v1 version store is process-local, so an EF-backed store is this mechanism's named upgrade and not a second obligation: the claim asks that revocation be immediate, which it is."
+        }
+      ]
     },
     "SEC-5": {
       "title": "No secrets in config",
       "status": "proven",
       "mechanism": "`UserSecretsId` + `SecretConfigShapeTests` over every committed JSON config under `src/`, matching secret-shaped keys by TOKEN (camel/Pascal/snake/kebab split) rather than by containment, with a `[Theory]` asserting the predicate's extent + `tools/secret-scan.mjs`, a composed shared-tier scan over every tracked text surface with a `--self-test` mode CI runs before the scan",
-      "note": "Both mechanisms were blind to the edition's own `Jwt:Key` until 2026-07-26 and both are repaired (E-11). The arch test matched `leafKey.Contains(term)`, which could never fire on a leaf shorter than the term describing it; the CI half was a grep in YAML that was additionally blind to every QUOTED key, meaning every key in every JSON file in the edition (E-16). Four justified exceptions are declared in `secret-scan.allow.json`, each a (file, key) pair with a written reason and a staleness check; one of them is a committed test signing key the repaired scan found on its first run (E-17). Token matching costs a false positive on `TokenCount`, asserted as a passing case rather than hidden (E-9). Still open: `.env` lives inside the repository tree while the claim's statement says development secrets live outside it (E-12), which the scan's tracked-file reading does NOT address. Vault-port interface owed (trigger: first runtime credential)."
+      "note": "Both mechanisms were blind to the edition's own `Jwt:Key` until 2026-07-26 and both are repaired (E-11). The arch test matched `leafKey.Contains(term)`, which could never fire on a leaf shorter than the term describing it; the CI half was a grep in YAML that was additionally blind to every QUOTED key, meaning every key in every JSON file in the edition (E-16). Four justified exceptions are declared in `secret-scan.allow.json`, each a (file, key) pair with a written reason and a staleness check; one of them is a committed test signing key the repaired scan found on its first run (E-17). Token matching costs a false positive on `TokenCount`, asserted as a passing case rather than hidden (E-9). Still open: `.env` lives inside the repository tree while the claim's statement says development secrets live outside it (E-12), which the scan's tracked-file reading does NOT address. Vault-port interface owed (trigger: first runtime credential).",
+      "obligations": [
+        {
+          "name": "no secret-shaped value in committed configuration",
+          "status": "proven",
+          "text": "`SecretConfigShapeTests` over every committed JSON config under `src/`, matching secret-shaped keys by token split rather than by containment, with a `[Theory]` asserting the predicate's extent."
+        },
+        {
+          "name": "no secret-shaped literal on any tracked text surface",
+          "status": "proven",
+          "text": "`tools/secret-scan.mjs`, whose `--self-test` asserts eleven positive and thirteen negative controls before the scan runs; four justified exceptions are declared as (file, key) pairs with reasons and a staleness check."
+        }
+      ]
     },
     "SEC-6": {
       "title": "Log safety",
       "status": "patterned",
       "mechanism": "`redact.ts` scrubs Authorization and JWT-shaped strings; `redact.test.ts`",
-      "note": "v1 surfaces tested; hub log-safety owed (trigger: realtime)"
+      "note": "v1 surfaces tested; hub log-safety owed (trigger: realtime)",
+      "obligations": [
+        {
+          "name": "secret-shaped values are scrubbed by one redactor",
+          "status": "proven",
+          "text": "`redact.ts` scrubs Authorization headers and JWT-shaped strings; `redact.test.ts` proves the scrub on both."
+        },
+        {
+          "name": "each logging surface asserts its own redaction",
+          "status": "patterned",
+          "text": "the v1 surfaces carry their tests; every new logging surface owes one, and the hub is the next (trigger: realtime)."
+        }
+      ]
     },
     "SEC-7": {
       "title": "Opaque public identifiers",
@@ -106,9 +232,26 @@
     },
     "TIME-1": {
       "title": "UTC, offset-aware, and nothing else",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`TimeTypeTests` over Contracts, App, Persistence (recurses Nullable, arrays, generics)",
-      "note": "DB UTC column defaults not used: the service sets the value"
+      "note": "DB UTC column defaults not used: the service sets the value **Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (rulings 2 and 3).** E-15 measured the omitted layer with a control and the flow-back pass deliberately did not repair it, on the grounds that lowering the row belonged to the owner; this is where that landed. The monotonic-durations half has never had a realization here and now says so in its own status rather than in prose.",
+      "obligations": [
+        {
+          "name": "the predicate rejects a naive instant in the layers it reaches",
+          "status": "proven",
+          "text": "`TimeTypeTests` recurses Nullable, arrays and generics over the layers it is given, and rejects naive `DateTime` in all of them."
+        },
+        {
+          "name": "the enumeration reaches every layer that declares a time value",
+          "status": "owed",
+          "text": "the layer set is a hand-written list of three and the API layer is not in it, measured with a control: a naive `DateTime` on a public type there leaves the whole suite green, while the identical type one layer over turns it red (E-15). The repair is one line and was held deliberately for this ruling rather than for difficulty (trigger: the next edition build pass)."
+        },
+        {
+          "name": "durations come from the monotonic source through one clock seam",
+          "status": "owed",
+          "text": "the wall-clock-delta lint the 2026-07-24 extension adds has no realization here, and nothing confines a now-reading to a seam (trigger: the next edition build pass)."
+        }
+      ]
     },
     "DATA-1": {
       "title": "Stores, records, downward deps",
@@ -336,7 +479,19 @@
       "title": "Fidelity ledger",
       "status": "patterned",
       "mechanism": "`NotesScreen.fidelity.test.tsx` exhaustiveness + de-fabrication; ledgers live in `design/ledger/` (INV-01)",
-      "note": "each screen owes its suite; per-atom resolved-style assertions not included; the prototype-to-ledger exporter owed"
+      "note": "each screen owes its suite; per-atom resolved-style assertions not included; the prototype-to-ledger exporter owed",
+      "obligations": [
+        {
+          "name": "every ledger atom renders",
+          "status": "patterned",
+          "text": "`NotesScreen.fidelity.test.tsx` asserts exhaustiveness against the ledger; each new screen owes its own suite."
+        },
+        {
+          "name": "nothing renders beyond the ledger",
+          "status": "patterned",
+          "text": "the same suite asserts de-fabrication, which is the direction a generated UI fails in without anyone noticing."
+        }
+      ]
     },
     "UI-5": {
       "title": "Thin UI over tested services, composed entrypoint exercised",
@@ -348,13 +503,25 @@
       "title": "Dependency quarantine",
       "status": "proven",
       "mechanism": "CPM exact pins + lockfiles + locked-mode restore (`--locked-mode` / `npm ci`) + `VERSIONS.md` (30-day window header, container-images section, kernel-provenance section) + docs-lint ledger, image, and kernel-provenance checks; the SQL Server image is one tag@digest value across runbook, CI, and the Testcontainers fixture",
-      "note": "publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin; the CI toolchain itself is unpinned and carries no ledger rows (E-1, not repaired). The shared client tier was re-planned against the 30-day window on 2026-07-26 (E-3): 14 advisories to 1 root, 0 critical, verified by `npm ci` and `npm run verify` in both editions. The one survivor is `postcss` GHSA-r28c-9q8g-f849, which has NO release satisfying both the window and the advisory; it is pinned to the newest in-window release through an overrides entry and named in VERSIONS.md rather than resolved silently (E-18). DEP-1 still states no resolution order for that case."
+      "note": "publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin; the CI toolchain itself is unpinned and carries no ledger rows (E-1, not repaired). The shared client tier was re-planned against the 30-day window on 2026-07-26 (E-3): 14 advisories to 1 root, 0 critical, verified by `npm ci` and `npm run verify` in both editions. `postcss` GHSA-r28c-9q8g-f849 had no release satisfying both the window and the advisory, and DEP-1 gained the resolution order at adjudication ruling 9a on 2026-07-26: the advisory outranks the window above the 7-day floor, by explicit decision, with a ledger row for the pin whether it is direct or transitive. The override moved to 8.5.18 in the shared tier and `npm audit` over that tier now reports 0 vulnerabilities, down from 1 high. The pin is the first row of VERSIONS.md's advisory-rule section and leaves it on 2026-08-11 (E-18).",
+      "obligations": [
+        {
+          "name": "every direct dependency is pinned exactly, dated, and restored in locked mode",
+          "status": "proven",
+          "text": "CPM exact pins plus committed lockfiles plus `--locked-mode` and `npm ci`, with the docs-lint ledger check keyed on name AND version so a row for one version vouches for no other."
+        },
+        {
+          "name": "every container image is pinned tag-plus-digest and ledgered",
+          "status": "proven",
+          "text": "the SQL Server image is one tag@digest value across runbook, CI and the Testcontainers fixture; docs-lint fails a reference that floats or that has no ledger row (INV-05)."
+        }
+      ]
     },
     "DEP-2": {
       "title": "Standing advisory sweep with a remediation clock",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: the first armed CI loop (TEST-3 at instantiation); the publish-date check DEP-1 names as its upgrade path rides the same job"
+      "note": "trigger: the next edition build pass, moved there from the first armed CI loop by adjudication ruling 9c on 2026-07-26. The mechanism is an advisory sweep over the pinned set, which is buildable in the shared tier today with no instantiation and no third-party action, and the old trigger deferred the only mechanism that would report an advisory the kernel already ships with. The publish-date check DEP-1 names as its upgrade path rides the same job"
     },
     "TEST-1": {
       "title": "Tier strategy",
@@ -396,7 +563,19 @@
       "title": "Untrusted content, no authority",
       "status": "patterned",
       "mechanism": "`ListNotesTool` read-only + `ListNotesToolReadOnlyTests`; `docs/decisions/ai-trust-tiers.md`",
-      "note": "the v1 tool has its guard test, each new tool owes its own; full taint tracking and the SSRF egress guard are owed (trigger: outbound agentic requests)"
+      "note": "the v1 tool has its guard test, each new tool owes its own; full taint tracking and the SSRF egress guard are owed (trigger: outbound agentic requests)",
+      "obligations": [
+        {
+          "name": "capability derives from server configuration and the principal, never from content",
+          "status": "patterned",
+          "text": "the trust tiers are named in `docs/decisions/ai-trust-tiers.md` and AI-1's chokepoint is where the derivation actually happens; full taint tracking is out of v1 by the claim's own phasing, not deferred by this edition."
+        },
+        {
+          "name": "a tool declared read-only is proven read-only by test",
+          "status": "patterned",
+          "text": "`ListNotesToolReadOnlyTests` covers the v1 tool; each new tool owes its own guard test."
+        }
+      ]
     },
     "AI-3": {
       "title": "Prompt architecture",
