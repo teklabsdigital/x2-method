@@ -1087,3 +1087,97 @@ run untracked because this engine has no change tracker to disable.
 Server 238, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok. Harness 7 of 7 against the composed
 server booted with a real signing key and a migrated database, both of which existed only for the measurement and
 were deleted after it.
+
+## 2026-07-27, E-80 and E-91: the runner, and four things found by using what it uses
+
+Measured at `494e323`. Server suite 238 before, 241 after. **The e2e run is green from a single command for the
+first time: `node scripts/e2e.ts`, 7 of 7, exit 0.**
+
+E-80 recorded that this edition shipped an e2e harness and a composed-entrypoint smoke as npm scripts and that
+nothing started either of them. E-84 corrected its trigger, which had named an artifact that could exist rather
+than a run that could be green, and put it downstream of the credential mint and of the store. Both are now
+behind it, so this is the last item of that group rather than the first.
+
+### The orchestrator, and why it is JavaScript
+
+`scripts/e2e.ts` migrates a throwaway database, boots the real entrypoint through `npm start`, drives the real
+client services against it, boots the composed entrypoint against the same server, and tears the process group
+down. The sibling's `scripts/e2e.sh` does the same in bash and has to read the issuer and the audience back out of
+`appsettings.json` with two `node -e` one-liners, because a shell cannot import the host's own modules.
+
+Here they can be imported, and that is the whole repair for **E-91**. The permission strings are read from
+`POLICIES`, the session version from `INITIAL_SESSION_VERSION`, and the issuer, audience, host and port from the
+same `resolveSettings` the server calls, over the same environment the children inherit. Nothing is copied,
+compared or re-derived. The signing key runs the other way: the orchestrator generates one and installs it through
+the declared override channel, so both consumers read one variable and there is no second copy to drift from,
+which is strictly better than the sibling having to go and FETCH its key out of user-secrets.
+
+### Plants
+
+| plant | outcome |
+|---|---|
+| the sibling's dot-form `['notes.read', 'notes.write']` in place of the derived permissions | red-correct: 1 of 7, exit 1, 403 on every gated route, which is E-91 reproduced exactly |
+| `HARN_BASE_URL` deleted from the harness's environment, first attempt | **GREEN, 7 of 7, exit 0.** A finding, not a proof: E-96 |
+| the same deletion, after the port repair | red-correct: 0 of 7, exit 1, and the readback names the cause |
+| the `scripts` surface removed from `SURFACES` | red-correct, one test, naming `scripts/e2e.ts`, while the green scan went on reporting ok |
+| `refuseUndeclaredEnvironment` deleted from the resolver | red-correct, one test, naming the variable |
+
+### E-96, and why the second plant matters more than the first
+
+The orchestrator carries a non-vacuity control: after the harness reports, it reads `/notes` back with tenant A's
+token and fails on an empty list, because seven green scenarios mean nothing unless they happened on the server
+this script booted. It is a SUCCESS assertion by construction, which is E-90's rule.
+
+It did not bind, and the run said so: with the harness's base URL deleted, the tools fell back onto their
+hardcoded `http://localhost:5080` (E-78), which is the COMMITTED port, reached the very server the orchestrator
+had booted, and passed. **A default equal to the configured value cannot be distinguished from configuration
+arriving**, because the two paths are observationally identical and no assertion downstream can separate them.
+Repaired by serving on a port the operating system assigns, through the same declared channel, so the fallback now
+points where nothing listens.
+
+### Two surfaces the change had to widen, and both were found the same way
+
+**CFG-1's scan did not walk `scripts/`.** The orchestrator is a shipped script by the claim's own words: it
+resolves four operational values and hands them to two processes. A check that exists, is correct, and cannot see
+a directory added after the list it enumerates from is E-92 and E-95's shape, so `scripts/` was added in the same
+change that created the first file in it. On the scan's first run it reported that file duplicating the committed
+`http.host`, by name. That duplication was mine, written an hour earlier, and it was removed rather than exempted.
+
+The scan's own reach is now asserted rather than assumed. `scannedFiles()` is a second view over the same walk and
+a test names one real file per declared surface, because `scanConfigurationSurface()` returning an empty array is
+the same output whether the walk reached five surfaces or none. Removing the `scripts` surface fails that test
+alone; the green scan does not notice, which is precisely the point.
+
+**E-97: the environment channel was closed at one end.** `settings.ts` argues that the ambient environment is
+legitimate once brought inside the config system, and states the rule as "an env var may only override a key this
+spec already declares, under a name derived from the key". The derivation was built and the other half was not.
+Measured: `KERNEL_HTTP_PORTX=9999 KERNEL_NONSENSE=1` resolved with no complaint. Nothing looked at what the
+environment carried; it only computed what a declared key would be called. The same file refuses exactly this in a
+committed layer with a written argument, and the harm is worse here, where there is no schema, no committed file
+and no diff. It survived because the closure was written as a traversal of a parsed object, and the environment is
+a flat namespace that cannot be traversed the same way, so it needed a different shape of check and got none.
+
+### E-98, recorded and not repaired
+
+Reading TEST-2 before building against it turned up an obligation neither edition's row carries: the gated harness
+profile, which the claim defines and its weakening note tells the kernel it owes as the gate plus its refusal
+tests. The sibling SHIPS it, in `Program.cs` and `HarnessProfileTests.cs`, and its row is silent. This edition
+ships neither, and its row is silent in the other direction, so an absence reads identically to the presence next
+to it. A fifth obligation is now on this edition's row, `owed`, with an outcome-shaped trigger. The sibling's is
+recorded as owed to its next pass, because saying which realized status it opens at needs a plant there.
+
+### Statuses
+
+TEST-2's first obligation lifts from `latent` to `proven` and its third from `owed` to `patterned`. **The row
+stays `owed`**, on the completeness obligation this pass did not touch and on the new fifth one. That is the
+roll-up rule working: an orchestrator does not make an audit that reads one class's prototype read two.
+
+TEST-3's first obligation keeps `patterned` and loses the reason its text gave. It no longer says the e2e tier has
+no job, because it has two; it now says nothing compares the mechanisms this edition ships against the jobs that
+invoke them, which is the property, and which E-80 and E-95 are both instances of missing.
+
+### Gates
+
+Server 241, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, docs-lint self-test 33/32, gate-check
+self-test 6/7, secret-scan ok, `node scripts/e2e.ts` green. Every plant restored from a copy and its backup
+deleted in the same round (E-59), each restoration confirmed against the baseline count before the next plant.

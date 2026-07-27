@@ -28,6 +28,13 @@ const SURFACES: readonly Surface[] = Object.freeze([
   Object.freeze({ label: 'tools', root: path.join(EDITION_ROOT, 'tools'), extensions: ['.mjs', '.js', '.ts'], kind: 'script' as const }),
   Object.freeze({ label: '.github/workflows', root: path.join(EDITION_ROOT, '.github', 'workflows'), extensions: ['.yml', '.yaml'], kind: 'script' as const }),
   Object.freeze({ label: 'client-web/tools', root: path.join(EDITION_ROOT, 'client-web', 'tools'), extensions: ['.ts', '.mjs', '.js'], kind: 'script' as const }),
+  // Added with the e2e orchestrator, and it is the reason that change touched this file. `scripts/e2e.ts` is a
+  // shipped script by CFG-1's own words: it resolves the issuer, the audience, the host and the port and hands
+  // them to two processes. A shipped script in a directory nothing walks is the shape E-92 and E-95 both have,
+  // where a check exists, is correct, and is blind to a surface that was added after the list it enumerates from.
+  // The extension list is deliberately wider than what the directory holds today, including `.sh`, so that the
+  // sibling's kind of orchestrator would be reached here rather than silently skipped.
+  Object.freeze({ label: 'scripts', root: path.join(EDITION_ROOT, 'scripts'), extensions: ['.ts', '.mts', '.mjs', '.js', '.sh'], kind: 'script' as const }),
 ]);
 
 // The exemption list, in the discipline SEC-1's allowlist and the endpoint spine's carve-outs already use: named
@@ -165,21 +172,18 @@ export function scanConfigurationSurface(
   }
   const committedValues = committedNonSecretValues(committed);
 
-  for (const surface of surfaces) {
-    for (const file of walk(surface.root, surface.extensions)) {
-      const relative = path.relative(EDITION_ROOT, file).split(path.sep).join('/');
-      const source = parse(file, readFileSync(file, 'utf8'));
+  for (const { relative, file, kind } of enumerate(surfaces)) {
+    const source = parse(file, readFileSync(file, 'utf8'));
 
-      if (!MECHANISM_FILES.has(relative)) {
-        checkOperationalLiterals(relative, source, exemptions, used, violations);
-        checkSecretLiterals(relative, source, exemptions, used, violations);
-      }
+    if (!MECHANISM_FILES.has(relative)) {
+      checkOperationalLiterals(relative, source, exemptions, used, violations);
+      checkSecretLiterals(relative, source, exemptions, used, violations);
+    }
 
-      if (surface.kind === 'script') {
-        checkScriptDuplication(relative, source, committedValues, violations);
-      } else {
-        checkEnvironmentConfinement(relative, source, violations);
-      }
+    if (kind === 'script') {
+      checkScriptDuplication(relative, source, committedValues, violations);
+    } else {
+      checkEnvironmentConfinement(relative, source, violations);
     }
   }
 
@@ -194,6 +198,34 @@ export function scanConfigurationSurface(
   }
 
   return Object.freeze(violations);
+}
+
+type ScannedFile = Readonly<{ relative: string; file: string; kind: 'source' | 'script' }>;
+
+function enumerate(surfaces: readonly Surface[]): readonly ScannedFile[] {
+  const found: ScannedFile[] = [];
+  for (const surface of surfaces) {
+    for (const file of walk(surface.root, surface.extensions)) {
+      found.push(
+        Object.freeze({
+          relative: path.relative(EDITION_ROOT, file).split(path.sep).join('/'),
+          file,
+          kind: surface.kind,
+        }),
+      );
+    }
+  }
+  return Object.freeze(found);
+}
+
+// The walk, exposed, and it exists because of what this file's own header admits: the enumeration rests on a list
+// declared here and nothing reconciles that list against a second view. A green scan is the same output whether
+// the walk reached five surfaces or none, which is E-11's shape and E-92's lesson stated exactly: a self-test
+// cannot say whether the walk reaches the files. So the reach is asserted separately, against real paths, and a
+// surface whose root is renamed or whose extension list stops matching turns a test red instead of turning the
+// scan quiet.
+export function scannedFiles(surfaces: readonly Surface[] = SURFACES): readonly string[] {
+  return Object.freeze(enumerate(surfaces).map((entry) => entry.relative));
 }
 
 export function assertConfigurationSurface(): void {
@@ -252,20 +284,24 @@ function checkCommittedConfig(file: string, violations: Violation[]): void {
 // to be recognized where forms live. So the source is parsed and the checks run over nodes. The parser is the
 // `typescript` package this edition already pins as a devDependency, so nothing is added under DEP-1.
 //
-// YAML has no parser here and is scanned as text, which is honest for what it is used for: the workflow surface
-// is checked only for duplicated committed values, and a YAML comment carrying a committed value verbatim is a
-// duplication worth reporting anyway.
+// A file this parser cannot read is scanned as TEXT rather than skipped, which is honest for what those surfaces
+// are used for: they are checked only for duplicated committed values, and a comment carrying a committed value
+// verbatim is a duplication worth reporting anyway. YAML was the only such file when this was written and the
+// test was `extension === '.yml'`; the set is now stated the other way round, as the extensions this parser DOES
+// read, so a surface holding a shell script or any other unparsed form gets the text check instead of falling
+// through the walk with an empty literal list and reporting nothing.
+const PARSEABLE: readonly string[] = Object.freeze(['.ts', '.tsx', '.mts', '.cts', '.js', '.mjs', '.cjs']);
+
 type ParsedSource = Readonly<{
-  isYaml: boolean;
+  parseable: boolean;
   text: string;
   literals: readonly Readonly<{ value: string; name: string | undefined }>[];
   environmentReads: number;
 }>;
 
 function parse(file: string, text: string): ParsedSource {
-  const extension = path.extname(file);
-  if (extension === '.yml' || extension === '.yaml') {
-    return Object.freeze({ isYaml: true, text, literals: Object.freeze([]), environmentReads: 0 });
+  if (!PARSEABLE.includes(path.extname(file))) {
+    return Object.freeze({ parseable: false, text, literals: Object.freeze([]), environmentReads: 0 });
   }
 
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
@@ -292,7 +328,7 @@ function parse(file: string, text: string): ParsedSource {
   };
   walk(source);
 
-  return Object.freeze({ isYaml: false, text, literals: Object.freeze(literals), environmentReads });
+  return Object.freeze({ parseable: true, text, literals: Object.freeze(literals), environmentReads });
 }
 
 // The identifier a literal is bound to, which is what the secret registry matches against. A variable
@@ -331,7 +367,7 @@ function checkScriptDuplication(
   violations: Violation[],
 ): void {
   for (const [value, key] of committedValues) {
-    if (source.isYaml ? source.text.includes(value) : source.literals.some((literal) => literal.value === value)) {
+    if (source.parseable ? source.literals.some((literal) => literal.value === value) : source.text.includes(value)) {
       violations.push({
         claim: 'CFG-1',
         at: relative,

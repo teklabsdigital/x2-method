@@ -89,6 +89,34 @@ jobs:
       # which is what keeps the enumeration every future claim scan stands on from quietly becoming partial.
       - run: npm run verify
 
+  node-e2e:
+    name: node-react e2e tier (TEST-2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.1'
+          cache: npm
+          cache-dependency-path: |
+            kernel/node-react/server/package-lock.json
+            kernel/node-react/client-web/package-lock.json
+      - run: npm ci
+        working-directory: kernel/node-react/server
+      - run: npm ci
+        working-directory: kernel/node-react/client-web
+      # E-80: this edition shipped the harness and the composed-entrypoint smoke as npm scripts and nothing ever
+      # started either of them, so a whole assurance tier was built, wired, and had never executed against a
+      # running server. E-84 then corrected the trigger: the artifact was buildable long before the run could be
+      # GREEN, and adding this job while it was red on every run would have produced a job somebody skips, then
+      # disables, then deletes. It is added now because the run passes, and it stays honest because the orchestrator
+      # boots a real server, migrates a real schema and drives the real client services against it.
+      #
+      # No engine service container: the store is `node:sqlite`, which is the runtime, so the tier needs nothing
+      # this runner does not already have. That is the difference from the sibling's integration tier and it is a
+      # property of DB2's engine choice rather than of this job.
+      - run: node kernel/node-react/scripts/e2e.ts
+
   dotnet-server:
     name: dotnet-react server tier (engine-free)
     runs-on: ubuntu-latest

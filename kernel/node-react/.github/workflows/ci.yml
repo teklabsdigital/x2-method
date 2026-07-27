@@ -1,10 +1,15 @@
 # TEST-3: the enforcement loop runs on every push. This is a TEMPLATE: at instantiation it moves to the repo root
-# and every path here is relative to the edition root (server/, client-web/, tools/). Branch protection must
-# require all four jobs (server, client, docs-lint, secret-scan) before merge.
+# and every path here is relative to the edition root (server/, client-web/, tools/, scripts/). Branch protection
+# must require every job below before merge, which `tools/gate-check.mjs` reads back by DERIVING the job names
+# from this file. The enumeration that used to sit in this sentence is gone with the job it was about to omit: a
+# hand-maintained list of jobs beside a workflow that already declares them is the drift the readback exists to
+# catch, restated where nothing checks it.
 #
-# What is NOT here yet, stated so a green run is not read as more coverage than it has: there is no e2e job,
-# because this edition has no store, no auth, and no composed product surface to drive end to end. The sibling
-# edition's e2e job is the shape this one takes when those arrive, and TEST-2 and TEST-4 stay `owed` until then.
+# The e2e job below arrived last, and the two sentences it replaced are worth keeping in view. They said there was
+# no e2e job "because this edition has no store, no auth, and no composed product surface to drive end to end",
+# which was true when written and stopped being true one claim at a time. Nothing re-read them. That is E-39's
+# shape as prose rather than as a CI exclusion: an argument for an absence outlives the condition it rests on,
+# because the absence is what people see and the argument is what they skip.
 name: ci
 
 on:
@@ -42,6 +47,27 @@ jobs:
           cache-dependency-path: client-web/package-lock.json
       - run: npm ci
       - run: npm run verify
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.1'
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            client-web/package-lock.json
+      - run: npm ci
+        working-directory: server
+      - run: npm ci
+        working-directory: client-web
+      # TEST-2's deterministic tier. `scripts/e2e.ts` migrates a throwaway database, boots the real entrypoint on a
+      # port nobody wrote down, drives the real client services against it with real bearer tokens, and boots the
+      # composed entrypoint (UI-5) against the same server. It needs no engine service container, because the
+      # store is `node:sqlite` and that is the runtime this job already has.
+      - run: node scripts/e2e.ts
 
   docs-lint:
     runs-on: ubuntu-latest

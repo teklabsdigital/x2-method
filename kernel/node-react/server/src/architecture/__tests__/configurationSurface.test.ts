@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { declaredKeys, scanConfigurationSurface } from '../configurationSurface.ts';
+import { declaredKeys, scanConfigurationSurface, scannedFiles } from '../configurationSurface.ts';
 import { EDITION_ROOT } from '../../platform/settings.ts';
 
 // CFG-1 and SEC-5 over the real tree, plus a red proof for every branch. The green assertion alone would be the
@@ -28,6 +28,22 @@ const scriptSurface = (root: string) =>
 describe('CFG-1 and SEC-5 hold over the shipped tree', () => {
   it('finds no violation in the edition as it stands', () => {
     expect(scanConfigurationSurface()).toEqual([]);
+  });
+
+  // Non-vacuity for the scan above, and the assertion it cannot make about itself. `scanConfigurationSurface()`
+  // returning an empty array is the same output whether the walk reached every shipped file or none of them, so
+  // one real file per declared surface is named here. The list is deliberately concrete: a surface whose root
+  // moves, whose extension list stops matching, or that is dropped from `SURFACES` fails HERE, whereas the green
+  // scan above would go on reporting ok while covering less. E-92 is where this obligation comes from, and E-95
+  // is what it costs when nobody carries it.
+  it('walks a real file in every declared surface, which the green scan cannot say it did', () => {
+    const walked = scannedFiles();
+
+    expect(walked).toContain('server/src/compose.ts');
+    expect(walked).toContain('tools/docs-lint.mjs');
+    expect(walked).toContain('.github/workflows/ci.yml');
+    expect(walked).toContain('client-web/tools/harness/main.ts');
+    expect(walked).toContain('scripts/e2e.ts');
   });
 
   it('declares every key the committed base carries, and no more', () => {

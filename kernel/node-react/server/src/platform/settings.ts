@@ -126,6 +126,7 @@ export function resolveSettings(sources: SettingsSources = defaultSources()): Se
     refuseUndeclared(layer.label, layer.values, [], problems);
   }
   refuseUndeclared('the secret store', sources.secrets, [], problems);
+  refuseUndeclaredEnvironment(sources.environment, problems);
 
   for (const [group, leaves] of Object.entries(SETTINGS_SPEC)) {
     resolved[group] = {};
@@ -163,10 +164,53 @@ export function resolveSettings(sources: SettingsSources = defaultSources()): Se
   ) as Settings;
 }
 
+// The prefix, named once. It is exported because the closure check below has to recognize a variable that was
+// MEANT for this channel, and a second copy of the letters would be the duplication this whole file is about.
+export const ENVIRONMENT_PREFIX = 'KERNEL_';
+
 // The environment variable name a key may be overridden by. Derived, never invented, so the env channel cannot
 // carry a key the spec does not declare.
 export function environmentNameFor(key: string): string {
-  return `KERNEL_${key.replace(/\./g, '_').replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase()}`;
+  return `${ENVIRONMENT_PREFIX}${key.replace(/\./g, '_').replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase()}`;
+}
+
+// Closure over the fourth home, and it was missing until the e2e orchestrator became the first thing to actually
+// USE this channel.
+//
+// The header above argues that the ambient environment is legitimate once it is brought INSIDE the config system:
+// "an env var may only override a key this spec already declares, under a name derived from the key". Only half of
+// that was enforced. Deriving the name means no undeclared key can be READ through the channel, which is true and
+// is not the same sentence: `KERNEL_HTTP_PORTX=9999` was accepted in silence, because nothing ever looked at what
+// the environment carried, only at what a declared key would be called if it were there. Measured before the fix,
+// with two undeclared variables set: resolution completed and reported the committed port.
+//
+// That is the exact harm this file already argues for the committed layers, in the channel where it is most
+// likely: there is no schema, no file to review and no diff, so a typo in a deploy variable or a CI secret name
+// looks identical to a value that worked. Same obligation, same remedy, and the reason it was missed is that the
+// closure check was written against the two SOURCES that are objects and the environment is a flat namespace
+// shared with the whole machine, which is why it is matched by prefix rather than walked.
+function refuseUndeclaredEnvironment(
+  environment: Readonly<Record<string, string | undefined>>,
+  problems: string[],
+): void {
+  const declared = new Set(declaredEnvironmentNames());
+  for (const name of Object.keys(environment)) {
+    if (name.startsWith(ENVIRONMENT_PREFIX) && !declared.has(name)) {
+      problems.push(
+        `the environment sets '${name}', and no key in SETTINGS_SPEC derives that name. A variable in this channel that nothing reads is an operator who believes they configured something; declare the key or correct the name.`,
+      );
+    }
+  }
+}
+
+function declaredEnvironmentNames(): readonly string[] {
+  const names: string[] = [];
+  for (const [group, leaves] of Object.entries(SETTINGS_SPEC)) {
+    for (const name of Object.keys(leaves)) {
+      names.push(environmentNameFor(`${group}.${name}`));
+    }
+  }
+  return Object.freeze(names);
 }
 
 function locate(

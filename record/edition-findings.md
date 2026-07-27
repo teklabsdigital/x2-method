@@ -4555,6 +4555,107 @@ blind the scan to every real connection string in the tree.
 because the same question has now been answered wrong twice: **when a mechanism is added to an edition, the pass
 owes an answer to whether anything in THIS repository runs it, and `kernel.yml` is the register of that answer.**
 
+### E-96. A fallback equal to the configured value is indistinguishable from configuration arriving
+
+**Claims:** TEST-2, CFG-1. **Found:** 2026-07-27, by planting against a control written the same hour.
+**Measured at 494e323.** **Repaired here.**
+
+Node's new e2e orchestrator carries a non-vacuity control: after the harness reports its scenarios, the
+orchestrator reads `/notes` back with tenant A's token and fails if the list is empty, on the argument that seven
+green scenarios mean nothing unless they happened on the server this script booted. The control was written as a
+SUCCESS assertion deliberately, which is E-90's rule.
+
+It did not bind. Deleting `HARN_BASE_URL` from the harness's environment left the whole run **green, exit 0, 7 of
+7**, because both shipped tools default their base URL to a hardcoded `http://localhost:5080` (E-78) and that is
+the COMMITTED port. The harness fell back onto the default, reached the very server the orchestrator had booted,
+and every scenario passed while proving nothing about the wiring between them.
+
+**A default that equals the configured value cannot be distinguished from configuration arriving.** The two paths
+produce identical observable behaviour, so no assertion downstream of them can tell which one ran, however
+carefully it is phrased. This is a sharper form of E-78, which recorded the duplicated default as a CFG-1
+duplication: the cost is not only that the copies can drift, it is that while they AGREE the fallback is
+untestable, and the day they stop agreeing is the day it starts mattering.
+
+Repaired by making the two values differ on purpose. The orchestrator now overrides `http.port` through the same
+declared channel it already used for the database file and the signing key, with a port the operating system
+assigns, so the fallback points where nothing listens. Re-measured with the same deletion: **0 of 7, exit 1**, and
+the control names the cause. The general rule: **a control over a value that has a default is vacuous until the
+configured value and the default are known to differ, and the cheapest way to know that is to choose the
+configured value at random.**
+
+### E-97. The environment was brought inside the config system at one end only
+
+**Claim:** CFG-1, DATA-5. **Found:** 2026-07-27, by being the first caller of the channel.
+**Measured at 494e323.** **Repaired here.**
+
+`settings.ts` carries a long argument, correct as far as it goes, that the ambient process environment is a fourth
+home CFG-1 does not name, and that the repair is not to ban it but to bring it inside: "an env var may only
+override a key this spec already declares, under a name derived from the key". The derivation was built.
+`environmentNameFor` turns `auth.signingKey` into `KERNEL_AUTH_SIGNING_KEY`, a lint confines `process.env` to the
+seam, and an architecture test confines it a second way over the parsed AST.
+
+Only one half of the sentence was enforced. Deriving the name means no UNDECLARED key can be read through the
+channel, which is true and is a different statement from the one the file makes. Measured, with two undeclared
+variables set:
+
+    KERNEL_HTTP_PORTX=9999 KERNEL_NONSENSE=1  ->  resolved with no complaint, port 5080
+
+Nothing ever looks at what the environment CARRIES. It only computes what a declared key would be called and
+looks that up, so a variable aimed squarely at this channel that hits nothing is silence.
+
+This is the same harm the same file already refuses two lines earlier for committed layers, where an undeclared
+key is a hard error with a written argument: "the author is an operator who believes the key did something, and a
+setting that is set and never read is a deploy that thinks it is configured". It is worse in this channel, not
+better, because there is no schema, no committed file to review and no diff: a typo in a deploy variable or in a
+CI secret name is indistinguishable from a value that worked.
+
+**Why it survived: the closure check was written against the two sources that are OBJECTS.** `refuseUndeclared`
+walks a parsed JSON tree, which is what a committed layer and the secret store both are. The environment is a flat
+namespace shared with the whole machine and cannot be walked the same way, so it needed a different shape of check
+and got none. The general form: **a rule implemented as a traversal covers exactly the sources that can be
+traversed, and a source with a different shape is not an exception anyone decided on.**
+
+Repaired: a variable whose name starts with the derived prefix and matches no declared key is a startup error
+naming the variable. Matched by prefix rather than by anything broader, because the environment belongs to the
+whole machine, and a check that refused a developer's `PATH` would be deleted the same day. Two tests, one red
+proof, and one non-vacuity test asserting `PATH`, `HOME` and `KERNELISH` are ignored.
+
+### E-98. A claim sentence with a shipped mechanism, a named test file, and no obligation in either edition's row
+
+**Claim:** TEST-2. **Found:** 2026-07-27, by reading the claim before building against it.
+**Measured at 494e323.** **Recorded, not repaired.**
+
+TEST-2 asks for a gated harness profile in its own words, and its weakening note tells the kernel exactly what it
+owes: "The kernel's gated harness profile ships as the gate plus its refusal tests with no re-bindings". The claim
+defines the gate too: a non-production server profile that re-binds provider ports only, refuses to boot outside
+Development or Testing, and changes no production code path. A further sentence extends the same gate to probe
+and test-only surfaces, with a production-shaped boot tested to prove those routes absent (PC-17).
+
+Both editions' TEST-2 rows carry four obligations, and none of them is this one:
+
+    an out-of-process harness drives the real, unmodified client service layer
+    the floor is complete: every public method of every client data service has a scenario
+    the deterministic tier runs in CI
+    harness output redacts secrets
+
+The state on the ground differs by edition and neither state is recorded. `dotnet-react` SHIPS the gate,
+`Program.cs` refuses `Harness:Enabled` outside Development and Testing by name, and carries
+`HarnessProfileTests.cs`, which is the refusal test the note asks for; its row is silent about all of it, so a
+mechanism that exists and works appears nowhere in the ledger. `node-react` ships neither the gate nor the tests,
+and its row is silent in the other direction, so an absence reads the same as the presence next to it.
+
+**This is E-87's shape and it is the half E-87 did not name.** E-87 recorded that a status-level audit cannot see
+a FALSE reason under a correct status. This is one step further out: a status-level audit cannot see a MISSING
+OBLIGATION at all, because there is no status to be wrong. Every pass that reads a row reads what the row lists,
+and the only way to find this is to read the claim and enumerate its obligations without looking at the row first,
+which is exactly what the planting protocol says to do and what nobody had done for TEST-2 since the row was
+written.
+
+Not repaired here because the repair belongs to both editions at once and each needs its own measurement: the
+sibling's obligation would open at a realized status and needs a plant against `HarnessProfileTests` to say which,
+and node's opens `owed` with a trigger. **Trigger: the next pass in either edition, which owes its row a fifth
+obligation before it touches anything else in TEST-2.**
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

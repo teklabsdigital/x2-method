@@ -99,6 +99,30 @@ describe('CFG-1: the environment is a declared channel, not a fourth home', () =
     expect(settings.http.port).toBe(9191);
   });
 
+  // The other half of "an env var may only override a key this spec already declares", and it was missing until
+  // the e2e orchestrator became the first thing to use this channel for real. Deriving the NAME keeps an
+  // undeclared key from being read; it says nothing about a variable that was aimed at this channel and hit
+  // nothing. `KERNEL_HTTP_PORTX=9999` resolved in silence, which is the same "a deploy that thinks it is
+  // configured" this file already refuses in a committed layer, in the channel that has no schema and no diff.
+  it('refuses a variable aimed at this channel that no declared key derives', () => {
+    expect(() =>
+      resolveSettings(sources({ environment: { NODE_ENV: 'production', KERNEL_HTTP_PORTX: '9999' } })),
+    ).toThrow(/KERNEL_HTTP_PORTX/);
+  });
+
+  // Non-vacuity, and it is the half that decides whether the check is usable at all. The environment is a flat
+  // namespace shared with the whole machine, so a check matching anything broader than the prefix would refuse a
+  // developer's PATH and be deleted within the day.
+  it('ignores every variable that was not aimed at this channel', () => {
+    const settings = resolveSettings(
+      sources({
+        environment: { NODE_ENV: 'production', PATH: '/usr/bin', HOME: '/somewhere', KERNELISH: 'no' },
+      }),
+    );
+
+    expect(settings.http.port).toBe(5080);
+  });
+
   it('coerces an override strictly, so a typo fails the start rather than becoming NaN', () => {
     expect(() =>
       resolveSettings(sources({ environment: { NODE_ENV: 'production', KERNEL_HTTP_PORT: '91 91' } })),
