@@ -809,8 +809,8 @@
         },
         {
           "name": "the composed entrypoint is exercised against a running server",
-          "status": "latent",
-          "text": "`composedApp.smoke.ts` imports the real `src/main.tsx`, wraps `globalThis.fetch` to record what leaves, and waits for a real GET and a real POST per primary flow. It needs the server up, which needs the engine, so it was read and not run here. Per-seam by the claim's own note: each new primary flow owes its smoke line. trigger: a run with the stack up."
+          "status": "patterned",
+          "text": "Lifted from `latent` on 2026-07-28, when it ran. `scripts/e2e.sh` brought the engine up, migrated, booted the API and drove `npm run smoke` against it: GREEN, the composed `src/main.tsx` making a real GET and a real POST through the composed repo to a real SQL Server. It had never executed here (E-70), and the two things blocking it were a container runtime and two defects in the script itself (E-110, E-111). Non-vacuity measured in THIS edition rather than inherited from the sibling, at 3c938e8 with the stack torn down: with no server and `VITE_API_BASE_URL` unset the smoke fails after its named 15s wait, so a green line requires a server that answered. `patterned` and not `proven` by the claim's own weakening note, which makes the smoke per-seam at one line per primary flow: two flows are covered, the list load and the create-then-refresh."
         },
         {
           "name": "the smoke asserts the BUILT form, not the source form",
@@ -900,7 +900,7 @@
       "title": "E2E harness",
       "status": "owed",
       "mechanism": "`tools/harness/main.ts` drives the real client services out of process (NDJSON + redaction, fails loudly not vacuously); a completeness self-audit wraps the enumerated methods and diffs them against what ran",
-      "note": "the harness is real and the audit's shape is right; its reach is one class, prototype members only (E-67)",
+      "note": "the harness is real and the audit's shape is right; its reach is one class, prototype members only (E-67). Re-measured 2026-07-28: the row carried four obligations and this edition ships six things, so the gated harness profile and PC-17's test-only surface rule are stated rather than left to be inferred from a silence (E-98). The profile is proven by plant; PC-17 is owed with no subject. Neither changes the roll-up, which the completeness audit still holds at owed.",
       "obligations": [
         {
           "name": "an out-of-process harness drives the real, unmodified client service layer",
@@ -915,12 +915,22 @@
         {
           "name": "the deterministic tier runs in CI",
           "status": "latent",
-          "text": "The edition's `ci.yml` carries the `e2e-wire` job which starts the API and runs the harness. It has never executed: the workflow is a template until instantiation (E-24). This repository's own CI now runs the edition's engine-free tiers (E-39 repaired) and deliberately does not run `e2e-wire`, which needs a live engine and a booted server. Locally it needs the stack up, which needs a container runtime. trigger: the first instantiation, or a local run with the engine available."
+          "text": "**The tier has now executed, and it still does not run in CI, which is the whole of what this obligation asks.** Measured 2026-07-28 at 3c938e8: `scripts/e2e.sh` ran end to end for the first time in this edition, 7 of 7 harness scenarios plus the UI-5 smoke, against a real engine, with the completeness self-audit reporting all 4 `NotesRepo` methods driven. Getting there cost two defects in the script (E-110, E-111), both of which had made it unrunnable on a developer machine since it was written. What has NOT changed: the edition's `ci.yml` is a template that executes nowhere until instantiation (E-24), this repository's `kernel.yml` deliberately does not run it because it needs an engine and a booted server, and the `e2e-wire` job does not call this script at all, it re-implements the orchestration inline (E-104). So the artifact is proven and the LOOP is not, which is exactly the distinction `latent` carries. trigger: the first instantiation, or a job here that runs the script rather than a copy of it."
         },
         {
           "name": "harness output redacts secrets",
           "status": "patterned",
           "text": "`redact.ts` scrubs Authorization headers and JWT-shaped strings and every emitted line goes through it; `redact.test.ts` proves the true positives. It asserts nothing about what survives, and its JWT pattern matches any dotted identifier (E-58). trigger: anchor the pattern and add a passing case for an identifier that must survive."
+        },
+        {
+          "name": "the gated harness profile ships as the gate plus its refusal tests",
+          "status": "proven",
+          "text": "Unrecorded until 2026-07-28, and the row carried four obligations while this edition shipped the whole thing (E-98). `Program.cs` refuses to boot when `Harness:Enabled` is true outside Development or Testing, DATA-5 style, naming itself; `HarnessProfileTests.cs` asserts the refusal for Production and for Staging and asserts that the boot SUCCEEDS in Testing with the flag on, which is the non-vacuity partner: without it a guard that refused every boot would read identical. Planted 2026-07-28 at 3c938e8 by widening the condition to never fire: exactly the two refusal cases go red by name and the allowed-environment case stays green, then reverted byte for byte to 208 of 208. `proven` and not `patterned` because the gate is one boot-time condition covering the whole profile rather than a per-seam rule, which is what the claim asks of a KERNEL: its weakening note rules that the kernel ships the gate and its refusal tests with NO re-bindings, because no product-owned external effect exists yet, and `harnessEnabled` is read exactly once in the tree. The first product provider port is the first re-binding and owes its own binding-swap assertions here, which is per-seam and belongs to that project rather than to this row."
+        },
+        {
+          "name": "the same environment gate governs probe and test-only surfaces",
+          "status": "owed",
+          "text": "unbuilt, and with no subject: PC-17 asks that an endpoint existing for tests or tenancy probes register only in the harness profile's allowed environments, and that a production-shaped boot be TESTED to prove those routes absent. This edition maps five endpoints, `/health` and four notes routes, and not one of them is a probe or a test-only surface, so there is nothing for the gate to govern and a test would assert the absence of a route nobody wrote. Recorded rather than left implicit because the absence reads exactly like the presence, which is the shape E-98 was minted for. trigger: the first probe or test-only endpoint, and the guard arrives with it in the same change rather than after, since the point is that such a route can never be born ungated."
         }
       ]
     },

@@ -20,7 +20,12 @@ APPSETTINGS="$REPO/server/src/Kernel.Api/appsettings.json"
 ISSUER="$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).Jwt.Issuer)" "$APPSETTINGS")"
 AUDIENCE="$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).Jwt.Audience)" "$APPSETTINGS")"
 
-SERVER_LOG="$(mktemp "${TMPDIR:-/tmp}/kernel-e2e-server.XXXXXX.log")"
+# The template ENDS in the X's, and E-110 is why. BSD mktemp only substitutes a trailing run of X's, so
+# `kernel-e2e-server.XXXXXX.log` created a file of that literal name on the first run and then failed every later
+# run with "File exists" under `set -e`, before the database, the server or the harness. Two runs at once shared
+# one log file for the same reason. GNU mktemp needs --suffix for this and BSD has no equivalent, so the suffix
+# is dropped rather than made conditional: the path is printed, and nothing reads it by extension.
+SERVER_LOG="$(mktemp "${TMPDIR:-/tmp}/kernel-e2e-server.XXXXXX")"
 SERVER_PID=""
 
 cleanup() {

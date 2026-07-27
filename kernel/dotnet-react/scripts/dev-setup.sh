@@ -23,10 +23,21 @@ if ! printf '%s' "$secrets" | grep -q '^Jwt:Key = '; then
   echo "Set Jwt:Key user-secret."
 fi
 
-if ! printf '%s' "$secrets" | grep -q '^ConnectionStrings:Kernel = '; then
-  (cd "$API_PROJECT" && dotnet user-secrets set "ConnectionStrings:Kernel" \
-    "Server=localhost,1433;Database=Kernel;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True" >/dev/null)
-  echo "Set ConnectionStrings:Kernel user-secret."
+# RECONCILED, not filled-if-absent, and E-111 is why. The SA password lives in two places that are written
+# independently: `.env`, which `db-up.sh` uses to CREATE the container, and the connection string in user-secrets,
+# which the server uses to reach it. Both scripts used to write theirs only when absent, so once the two diverged
+# nothing brought them back, every request failed SQL login 18456, and the failure reached a developer as
+# `GET /notes 500` three layers from the cause. `.env` is the declared value because it is the one the container
+# is built from; this line makes the secret follow it rather than asking a human to notice.
+existing_connection="$(printf '%s' "$secrets" | sed -n 's/^ConnectionStrings:Kernel = //p')"
+wanted_connection="Server=localhost,1433;Database=Kernel;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+if [ "$existing_connection" != "$wanted_connection" ]; then
+  (cd "$API_PROJECT" && dotnet user-secrets set "ConnectionStrings:Kernel" "$wanted_connection" >/dev/null)
+  if [ -z "$existing_connection" ]; then
+    echo "Set ConnectionStrings:Kernel user-secret."
+  else
+    echo "ConnectionStrings:Kernel disagreed with .env and was rewritten from it (E-111)."
+  fi
 fi
 
 echo "Dev secrets ready. Next: scripts/db-up.sh && scripts/db-migrate.sh, then dotnet run --project server/src/Kernel.Api."

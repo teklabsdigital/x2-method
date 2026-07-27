@@ -4988,6 +4988,59 @@ Two controls catch, four ignore. One of the ignores is the parser's own trap: th
 `node_modules/` and `server/src/main.ts`, and in the sibling it names `scripts/e2e.sh`, so a check that read the
 whole section would have called the forgotten directory named and reported nothing.
 
+### E-110. The sibling's e2e script could not run twice on a Mac, and had never run once
+
+**Claim:** TEST-2, UI-5. **Found:** 2026-07-28, running `scripts/e2e.sh` for the first time.
+**Measured at 3c938e8.** **Repaired.**
+
+Line 23 of `scripts/e2e.sh`:
+
+    SERVER_LOG="$(mktemp "${TMPDIR:-/tmp}/kernel-e2e-server.XXXXXX.log")"
+
+**BSD `mktemp` only substitutes a TRAILING run of X's.** With `.log` after them it creates a file of that literal
+name, `kernel-e2e-server.XXXXXX.log`, and under `set -euo pipefail` the next run dies at line 23 with
+`mkstemp failed: File exists`, before the database, the server, the mint or the harness. Two runs at once share
+one log for the same reason. GNU `mktemp` needs `--suffix` for this and BSD has no equivalent, so the suffix is
+dropped rather than made conditional.
+
+**The literal file was already on this machine, dated two days earlier and zero bytes**, which is the finding
+underneath the finding: somebody had started this script before, it had died at line 23, and nothing recorded
+that. E-104 is why nothing did. The edition's `e2e-wire` job re-implements the orchestration inline instead of
+calling the script, so the only thing that ever ran this line was a person, once, silently.
+
+### E-111. One secret, two registers, each filled only when absent
+
+**Claim:** SEC-5, DATA-5, and INV-03's dev bootstrap. **Found:** 2026-07-28, one layer past E-110.
+**Measured at 3c938e8.** **Repaired.**
+
+With the log line fixed, the run reached the server and every request answered **500**. The harness reported
+`list notes: expected status 200, got 500`; the server log said `Error Number:18456`, SQL Server login failed
+for `sa`.
+
+The SA password lives in two places, written independently:
+
+- `.env`, gitignored, which `db-up.sh` uses to CREATE the container
+- `ConnectionStrings:Kernel` in dotnet user-secrets, which the server uses to REACH it
+
+`dev-setup.sh` wrote each **only when absent**. So the two could be filled in different runs, from different
+generated values, and once they diverged nothing brought them back: the container is built from one and the
+server dials with the other, forever. Verified directly rather than inferred, by comparing the two strings: they
+disagreed.
+
+**The distance between the cause and the symptom is the point.** A developer sees `GET /notes 500`. Three layers
+down is an auth failure against the engine, and under that is a bootstrap script that filled two registers of one
+value and compared them never. `db-up.sh`'s readiness probe dials with the `.env` password, so a STALE container
+is caught (as a 60-second timeout with a message about readiness, which is the wrong sentence for an auth
+failure); the divergence that is not caught is the one in the direction that matters.
+
+Repaired by reconciling instead of filling: `.env` is the declared value, because it is what the container is
+built from, and the connection-string secret is rewritten from it whenever it disagrees, saying so. Idempotent,
+verified by running twice: the first run reported the rewrite, the second said nothing.
+
+**Then the script went green, first time in this edition's life**: 7 of 7 harness scenarios, the completeness
+self-audit reporting all four `NotesRepo` methods driven through the real transport, and the UI-5 composed-
+entrypoint smoke passing against the same server.
+
 ### E-109. A test asserted against the placeholder the manifest tells you to change, so it failed when the rename was done right
 
 **Claim:** CFG-1, and through it the manifest. **Found:** 2026-07-27, executing node-react's acceptance test.

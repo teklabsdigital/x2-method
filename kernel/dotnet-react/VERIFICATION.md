@@ -1887,3 +1887,56 @@ from the import-graph machinery already here and needs a different instrument he
 
 docs-lint ok and 35/36 in both editions, conformance ok at 69 rows in both, loop-check ok, compose ok at 39
 shared files, node server 283, e2e green.
+
+## 2026-07-28, the e2e tier ran: two defects that had kept it from ever executing, and TEST-2's own answer
+
+Measured at 3c938e8, on macOS with Colima up. `scripts/e2e.sh` had never run to completion in this edition's
+life. Two defects were in the way and neither was in the server.
+
+**E-110, line 23.** `mktemp "${TMPDIR:-/tmp}/kernel-e2e-server.XXXXXX.log"`. BSD mktemp substitutes only a
+TRAILING run of X's, so this created a file of that literal name and every later run died there under `set -e`,
+before the database, the mint or the harness. The literal file was already on this machine, dated two days
+earlier, zero bytes: somebody had started this script before and it had died at the same line, and nothing
+recorded that, because `e2e-wire` re-implements the orchestration inline rather than calling the script (E-104).
+
+**E-111, one layer past it.** Every request answered 500. `Error Number:18456`, SQL login failed. The SA password
+lives in `.env`, which builds the container, and in the `ConnectionStrings:Kernel` user-secret, which the server
+dials with, and `dev-setup.sh` wrote each only when absent. Verified by comparing the two strings: they
+disagreed. Repaired by reconciling from `.env` rather than filling gaps, idempotent, verified by running twice.
+
+### Then it was green
+
+    health                    ok
+    create-note               ok
+    list-notes-paged          ok  keyset paging returned a bounded page and a cursor
+    cross-tenant-404          ok
+    get-note                  ok
+    delete-note               ok
+    service-method-coverage   ok  all 4 NotesRepo methods driven through the real transport
+    composed-entrypoint smoke ok
+
+Against a real SQL Server, through the real composed client services, with real bearer tokens minted from the
+same key the server verifies with.
+
+### What moved, and what did not
+
+**UI-5's third obligation, `latent` to `patterned`.** The composed entrypoint has now been exercised against a
+running server. Non-vacuity measured in THIS edition rather than inherited: with the stack torn down and
+`VITE_API_BASE_URL` unset, the smoke fails after its named 15s wait. `patterned` by the claim's own note, one
+line per primary flow, two flows covered.
+
+**TEST-2's CI obligation stays `latent`, and the reason is now sharper.** The artifact is proven and the LOOP is
+not. `ci.yml` is a template that executes nowhere until instantiation, `kernel.yml` deliberately does not run a
+tier needing an engine and a booted server, and `e2e-wire` does not call this script at all. trigger: the first
+instantiation, or a job here that runs the script rather than a copy of it.
+
+**E-98 closed.** TEST-2 carried four obligations while this edition shipped six things. The gated harness profile
+is now stated and `proven`: planted at 3c938e8 by widening `Program.cs`'s environment condition to never fire,
+which turned exactly the two refusal cases red by name and left the allowed-environment case green, then
+reverted byte for byte to 208 of 208. PC-17's test-only surface rule is stated and `owed` with no subject: five
+endpoints ship and not one is a probe.
+
+### Gates
+
+Architecture 208, unit 58, integration 4, e2e green. Both editions: docs-lint ok at 37/40, conformance ok at 69
+rows, compose ok at 39 shared files, loop-check ok, node server 283, node e2e green, dash scan 0 with a control.
