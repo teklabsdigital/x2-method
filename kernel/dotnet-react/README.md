@@ -93,14 +93,18 @@ seeding is a finding for the invariants pass, logged as a turn.
 
 **A. The file set** (copy into the new repo root): `server/`, `client-web/`, `docs/`, `tools/`, `scripts/`,
 `design/`, `.github/` (workflow AND CODEOWNERS), `.vscode/`, `.claude/` (the prompt-submit hook, PC-10),
-`.gitignore`, `.gitattributes`, `VERSIONS.md`, `conformance.json`, `edition.json`, `secret-scan.allow.json`.
+`.gitignore`, `.gitattributes`, `.nvmrc`, `VERSIONS.md`, `conformance.json`, `edition.json`,
+`secret-scan.allow.json`.
 
 This enumeration IS the file set. It is not a straight copy of the edition directory, and the difference runs
 both ways (E-25). A copy takes what is gitignored: `.env`, which holds a live development SA password, plus
 `node_modules/`, every `bin/` and `obj/`, and any scratch project left under `server/src/`. The enumeration used
 to drop two tracked files the edition needs: `.claude/settings.json`, which `skills/seed/SKILL.md` already
 asserted was part of this set, and `secret-scan.allow.json`, without which the `secret-scan` job that step 4
-tells you to arm cannot pass on day one. The edition tree is already composed, so seeding never reaches into
+tells you to arm cannot pass on day one. It dropped a third, `.nvmrc`, until 2026-07-27: the runtime pin DEP-1
+spreads across six surfaces travelled as five, so a seeded project's developers got whichever Node they happened
+to have while `VERSIONS.md` said otherwise. All three were the same defect and only the third was found by a
+mechanism, which is E-108. The edition tree is already composed, so seeding never reaches into
 `kernel/shared/`. BUILD-BRIEF.md and VERIFICATION.md stay behind (kernel provenance,
 not project material), and so does THIS README: the seeded project writes its own.
 

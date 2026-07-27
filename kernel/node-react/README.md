@@ -109,16 +109,20 @@ x2:seed runs it and does not restate it. This edition shipped without one until 
 reached step 2 of that skill and found no definition to run (E-65).
 
 **A. The file set** (copy into the new repo root): `server/`, `client-web/`, `docs/`, `tools/`, `design/`,
-`.github/` (workflow AND CODEOWNERS), `.gitignore`, `.gitattributes`, `VERSIONS.md`, `conformance.json`,
-`edition.json`, `secret-scan.allow.json`.
+`scripts/`, `.github/` (workflow AND CODEOWNERS), `.gitignore`, `.gitattributes`, `.nvmrc`, `VERSIONS.md`,
+`conformance.json`, `edition.json`, `secret-scan.allow.json`.
 
 This enumeration IS the file set, not a straight copy of the edition directory: a copy takes `node_modules/` and
 `dist/`. BUILD-BRIEF.md and VERIFICATION.md stay behind (kernel provenance, not project material), and so does
-THIS README, because the seeded project writes its own. Two things the sibling ships that this edition does not,
-listed here so their absence is a decision rather than an oversight: there is no `scripts/` and no `.vscode/`,
-and there is no `.claude/` prompt-submit hook, which the sibling carries as the mechanical defence against
-standing constraints decaying under a long session. If any of the three is added it joins this list in the same
-commit.
+THIS README, because the seeded project writes its own. `scripts/` and `.nvmrc` joined this list on 2026-07-27 and both
+were overdue. `scripts/e2e.ts` landed four commits earlier and `ci.yml`'s `e2e` job runs it by that path, so a
+seed run in between would have produced a repository whose third CI job fails with ENOENT on its first push.
+`.nvmrc` had never been named by either edition's manifest, so the runtime pin DEP-1 spreads across six surfaces
+travelled as five and a seeded project's developers got whichever Node they happened to have. Both were found by
+the check this paragraph is now compared against, on its first run, which is E-108. Two things the sibling ships that this edition does not, listed here so their absence is a
+decision rather than an oversight: there is no `.vscode/`, and there is no `.claude/` prompt-submit hook, which
+the sibling carries as the mechanical defence against standing constraints decaying under a long session. If
+either is added it joins this list in the same commit, and so does any other directory a job learns to name.
 
 **B. Setup steps, in order:**
 
@@ -141,7 +145,8 @@ commit.
    step, which is how both claims word it; what the kernel owes is the readback, so finish with
    `node tools/gate-check.mjs` and do not treat this step as done until it exits ok. It derives the required job
    names from the workflow rather than listing them, which is why this step says "every job it declares" and not
-   a number: this edition's workflow declares four jobs and the sibling's declares five.
+   a number. Both editions' workflows declare five jobs today; this one declared four when the step was written,
+   which is exactly why the step carries no number and the aside naming one went stale instead (E-108).
 5. **Dev environment.** `cd server && npm ci`, then `cd client-web && npm ci`. Node 24 or newer, because the
    server and the harness run TypeScript directly through native type stripping and there is no build step. The
    port and host are declared configuration, not a default and not an environment read: `server/config/settings.json`
@@ -159,13 +164,17 @@ commit.
 - `node tools/conformance.mjs --check`
 - `node tools/secret-scan.mjs --self-test`, then `node tools/secret-scan.mjs`
 - `node tools/gate-check.mjs --self-test`, then `node tools/gate-check.mjs`
+- `node scripts/e2e.ts`, which migrates a throwaway database, boots the real entrypoint on a port nobody wrote
+  down, drives the real client services against it and then the composed entrypoint. It needs no engine service
+  container and no developer setup, because the store is `node:sqlite` and that is the runtime, so it belongs in
+  a set verified on a fresh machine where the sibling's `scripts/e2e.sh` does not.
 - The dash check standalone, with the literal-byte pattern (BSD grep false-negatives on a BRE class):
   `grep -rn "$(printf '\342\200\224')" <authored paths>` and `grep -rn "$(printf '\342\200\223')" <authored paths>`
 
-Two gaps this list does not paper over. There is no e2e bullet, because this edition ships `client-web/tools/harness/`
-and `client-web/tools/smoke/` with no runner binding them to a running server, where the sibling has `scripts/e2e.sh`.
-And step 5 points at no runbook, because `docs/runbooks/` here holds only `_template.md`. Both belong to this
-edition's next build pass, and both are named rather than left for a seeder to discover.
+One gap this list does not paper over: step 5 points at no runbook, because `docs/runbooks/` here holds only
+`_template.md`. It belongs to this edition's next build pass and is named rather than left for a seeder to
+discover. The e2e bullet above was the second gap until 2026-07-27, and it was closed by the orchestrator four
+commits before this list said so (E-108).
 
 ## Conformance
 

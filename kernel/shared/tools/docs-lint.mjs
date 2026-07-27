@@ -528,7 +528,82 @@ export function mechanismReferenceFindings(claims, editionFiles) {
   return out;
 }
 
+// The instantiation manifest's file set, checked against the tree it describes.
+//
+// `skills/seed/SKILL.md` says the manifest IS the definition and that the skill runs it without restating it, so
+// this paragraph alone decides what a seeded project receives. It was prose that nothing compared against
+// anything until E-108: `scripts/e2e.ts` landed, `ci.yml` learned to run it by that path, and the file set went
+// on not naming `scripts/` for four commits. A seed in that window produces a repository whose e2e job fails
+// with ENOENT on its first push, and whose manifest states the absence as a decision.
+//
+// Both directions are findings, for the reason every register in this kernel carries both: a tracked entry the
+// set does not name is a hole in the seeded project, and a named entry the tree does not have is a set that has
+// stopped describing the edition.
+//
+// STAYS_BEHIND is a closed registry in the TOOL, not a list in the edition, on the rule E-81 settled for HUM-1's
+// surfaces: an edition free to write its own exclusions can exclude anything by writing it down. These three are
+// kernel provenance and the seeded project writes its own README, which is what both manifests already say.
+const STAYS_BEHIND = new Set(['README.md', 'BUILD-BRIEF.md', 'VERIFICATION.md']);
+const FILE_SET_HEADING = '**A. The file set**';
+// A file-set entry is a bare name with at most a trailing slash. `server/config/settings.json` and
+// `scripts/e2e.ts` are prose naming a file inside the set, not members of it, and the following paragraphs are
+// full of both.
+const FILE_SET_ENTRY = /^[.A-Za-z0-9_-]+\/?$/;
+
+export function manifestFileSetFindings(readmeText, entries) {
+  const start = readmeText.indexOf(FILE_SET_HEADING);
+  if (start < 0) {
+    return null;
+  }
+  const paragraph = readmeText.slice(start).split('\n\n')[0] ?? '';
+  const named = new Set(
+    [...paragraph.matchAll(/`([^`]+)`/g)]
+      .map((match) => match[1])
+      .filter((token) => FILE_SET_ENTRY.test(token))
+      .map((token) => (token.endsWith('/') ? token.slice(0, -1) : token)),
+  );
+
+  const out = [];
+  for (const entry of entries) {
+    if (named.has(entry) || STAYS_BEHIND.has(entry)) {
+      continue;
+    }
+    out.push(
+      `README.md: the edition tracks \`${entry}\` at its root and the instantiation manifest's file set does not name it, so a seeded project does not receive it. Either add it to part A or add it to the tool's stays-behind registry with the reason (E-108).`,
+    );
+  }
+  for (const entry of named) {
+    if (!entries.includes(entry)) {
+      out.push(
+        `README.md: the instantiation manifest's file set names \`${entry}\` and this edition does not track it at its root, so the seed would copy nothing (E-108).`,
+      );
+    }
+  }
+  return out;
+}
+
+// What the seed would actually copy: everything at the edition root except what this edition's own `.gitignore`
+// excludes. Read from the ignore file rather than from git, because docs-lint runs in trees that may not have a
+// repository, and the ignore file travels with the edition anyway. Only root-anchored patterns matter here,
+// which is what the two shipped ignore files hold: a name, or one `*.ext` form.
+export function trackedRootEntries(entries, gitignoreText) {
+  const patterns = gitignoreText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#'))
+    .map((line) => (line.endsWith('/') ? line.slice(0, -1) : line));
+  const ignored = (entry) =>
+    patterns.some((pattern) =>
+      pattern.startsWith('*.') ? entry.endsWith(pattern.slice(1)) : pattern === entry,
+    );
+  return entries.filter((entry) => entry !== '.git' && !ignored(entry));
+}
+
 const CATCH = [
+  ['a tracked root entry the manifest file set does not name (E-108)',
+    () => manifestFileSetFindings('**A. The file set** (copy in): `server/`, `docs/`.\n\nProse.\n', ['server', 'docs', 'scripts'])],
+  ['a file set naming something the edition does not have',
+    () => manifestFileSetFindings('**A. The file set** (copy in): `server/`, `.vscode/`.\n\nProse.\n', ['server'])],
   ['a mechanism naming a file that is not in the edition',
     () => mechanismReferenceFindings({ 'SEC-1': { mechanism: '`platform/gone.ts` scans the table' } }, ['platform/authorization.ts'])],
   ['a mechanism naming a real file that lives outside the edition, which a seeded project would not have',
@@ -611,6 +686,22 @@ const CATCH = [
     () => runtimeRangeFindings('client-web/package.json', '{"engines":{"node":"^24.13.1"}}')],
 ];
 const IGNORE = [
+  // The set matches the tree, which is the state both editions are supposed to be in.
+  ['a file set that names every tracked root entry',
+    () => manifestFileSetFindings('**A. The file set** (copy in): `server/`, `docs/`, `.gitignore`.\n\nProse.\n', ['server', 'docs', '.gitignore', 'README.md'])],
+  // The paragraphs after the set name files INSIDE it, and one of them names the very directory the set forgot.
+  // A parser that read the whole section would call that naming and E-108 would have reported nothing.
+  ['prose after the set naming a file inside it',
+    () => manifestFileSetFindings('**A. The file set** (copy in): `server/`.\n\nA copy takes `node_modules/`, and `server/src/main.ts` is the entrypoint.\n', ['server'])],
+  // A seeded project's README is the product's own and carries no manifest. Returning null rather than an empty
+  // array is what lets the caller announce the skip, on the rule the conformance table check already follows: a
+  // green run must not be readable as coverage it does not have.
+  ['a README with no instantiation manifest, which is every seeded project',
+    () => manifestFileSetFindings('# Ledgerly\n\nA product.\n', ['server', 'docs']) ?? []],
+  // The ignore file decides what travels, so a gitignored root entry is not a hole. `.env` holds a live
+  // development password in one edition and must never reach a seeded tree.
+  ['a gitignored root entry, which the seed must not copy',
+    () => manifestFileSetFindings('**A. The file set** (copy in): `server/`.\n\nProse.\n', trackedRootEntries(['server', '.env', 'node_modules', 'app.user'], 'node_modules/\n# secrets\n.env\n*.user\n'))],
   // The reference resolves by suffix, because a mechanism names a file the way a reader would say it rather than
   // from the edition root every time.
   ['a mechanism naming a file that exists deeper in the tree',
@@ -1205,6 +1296,26 @@ if (conformance.record && conformance.errors.length === 0) {
   }
   if (table.skipped) {
     notes.push(`README conformance table NOT checked: ${table.skipped}`);
+  }
+}
+
+// E-108. The file set decides what a seeded project receives and nothing compared it against the edition until
+// a directory the CI job depends on had been missing from it for four commits.
+const readmePath = join(editionRoot, 'README.md');
+const ignorePath = join(editionRoot, '.gitignore');
+if (!existsSync(readmePath)) {
+  notes.push('no README.md, so the instantiation manifest file set was NOT checked');
+} else {
+  const rootEntries = existsSync(ignorePath)
+    ? trackedRootEntries(readdirSync(editionRoot), readFileSync(ignorePath, 'utf8'))
+    : readdirSync(editionRoot).filter((entry) => entry !== '.git');
+  const fileSet = manifestFileSetFindings(readFileSync(readmePath, 'utf8'), rootEntries);
+  if (fileSet === null) {
+    notes.push('README.md carries no instantiation manifest, so the file set was NOT checked (expected in a seeded project)');
+  } else {
+    for (const message of fileSet) {
+      fail(message);
+    }
   }
 }
 

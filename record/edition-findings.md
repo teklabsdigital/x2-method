@@ -4943,6 +4943,51 @@ Not repaired here because it changes both editions' e2e orchestrators, and the s
 without a developer's machine (E-104). Recording it costs a row and closes the honesty gap; repairing it is a
 slice.
 
+### E-108. The instantiation manifest's file set is prose, and it had stopped describing either edition
+
+**Claim:** TEST-3, DEP-1, DOC-1. **Found:** 2026-07-27, on the first step of node-react's acceptance test.
+**Measured at 743480e.** **Repaired and mechanised.**
+
+Node's acceptance test had never been executed. Executing its first step, part A of the instantiation manifest,
+was enough: **the file set did not name `scripts/`.**
+
+`scripts/e2e.ts` landed four commits earlier and `ci.yml`'s `e2e` job runs it by exactly that path. A seed run in
+that window produces a repository whose third CI job fails with ENOENT on its first push, and whose manifest
+states the absence deliberately: "Two things the sibling ships that this edition does not, listed here so their
+absence is a decision rather than an oversight: there is no `scripts/`". The sentence was written when it was
+true and nothing re-read it, which is E-106, one register along and with a worse consequence. **A stale reason
+misinforms a reader; a stale manifest misbuilds a project.** The seeded repository would carry a harness and a
+smoke that nothing runs, which is the exact state E-80 recorded and this edition spent a commit repairing.
+
+Two more in the same paragraph, both from the same commit: part C said "There is no e2e bullet, because this
+edition ships `client-web/tools/harness/` and `client-web/tools/smoke/` with no runner binding them to a running
+server", and step 4's aside said this edition's workflow declares four jobs. It declares five. The step itself is
+robust and says "every job the workflow declares" rather than a number, for the stated reason that a number would
+go stale; the aside explaining that decision is what went stale.
+
+**Mechanised, because the manifest is the one artifact the seed skill delegates to entirely.**
+`skills/seed/SKILL.md` says the manifest IS the definition and that the skill runs it without restating it, so
+this paragraph alone decides what a project receives, and nothing had ever compared it against the tree it
+describes. `manifestFileSetFindings` in the shared docs-lint now does, in both directions: a tracked root entry
+the set does not name is a hole in the seeded project, and a named entry the tree does not have is a set that has
+stopped describing the edition. What counts as tracked is read from the edition's own `.gitignore` rather than
+from git, because docs-lint runs in trees that may not be repositories, and `.env` holds a live development
+password in one edition and must never travel.
+
+The stays-behind registry lives in the TOOL rather than in the edition, on the rule E-81 settled for HUM-1's
+surfaces: an edition free to write its own exclusions can exclude anything by writing it down.
+
+**On its first run it found a live defect in BOTH editions, which neither manifest had ever named: `.nvmrc`.**
+The runtime pin that VERSIONS.md describes as spread across six surfaces travelled as five, so a seeded
+project's developers got whichever Node they happened to have while the ledger said 24.13.1. That is the third
+time a check in this repository has caught a real defect on its first execution rather than passing over a clean
+tree (E-76 the cooling-off window, E-103 the loop check), and it is the argument for building the check rather
+than fixing the sentence: the sentence was one instance and the register was three.
+
+Two controls catch, four ignore. One of the ignores is the parser's own trap: the paragraph AFTER the set names
+`node_modules/` and `server/src/main.ts`, and in the sibling it names `scripts/e2e.sh`, so a check that read the
+whole section would have called the forgotten directory named and reported nothing.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
