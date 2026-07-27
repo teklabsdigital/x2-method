@@ -42,9 +42,9 @@
     },
     "TEN-2": {
       "title": "Ambient scope, fail-closed",
-      "status": "owed",
+      "status": "patterned",
       "mechanism": "`AmbientTenantScope` (AsyncLocal, throws on unset); `AmbientTenantScopeTests`",
-      "note": "the non-HTTP job base class is owed (trigger: first background job); cross-tenant probes cover GET only (E-50)",
+      "note": "the non-HTTP job base class is owed (trigger: first background job)",
       "obligations": [
         {
           "name": "scope established at every entry",
@@ -58,8 +58,8 @@
         },
         {
           "name": "cross-tenant probes assert uniform not-found",
-          "status": "owed",
-          "text": "Only `One_tenant_cannot_read_another_tenants_note` exists and it is a GET; delete and list have no cross-tenant probe. With the tenant filter removed from `EfNoteStore.DeleteAsync` both runnable suites stay green, and driving that path over HTTP returns 500 rather than 404, so a forgotten filter is an existence oracle rather than a uniform not-found (E-50). trigger: a cross-tenant probe per mutating verb, asserting the same status the read path returns."
+          "status": "patterned",
+          "text": "`One_tenant_cannot_read_another_tenants_note`, `One_tenant_cannot_delete_another_tenants_note` and `Another_tenants_note_is_absent_from_the_list` cover the read, mutating and list verbs, each asserting the same absent answer. Before E-50 only the GET existed, and removing the tenant filter from `EfNoteStore.DeleteAsync` left every runnable test green while the path answered 500 rather than 404, which is an existence oracle. The delete probe now turns red on exactly that plant. trigger: each new mutating endpoint owes its own cross-tenant probe."
         }
       ]
     },
@@ -309,24 +309,24 @@
     },
     "DATA-1": {
       "title": "Stores, records, downward deps",
-      "status": "owed",
-      "mechanism": "`DependencyDirectionTests`: four NetArchTest assertions over the App, Contracts, Persistence and Api assemblies",
-      "note": "the endpoint ban binds but stops at one namespace; two members of the mechanism class have no assertion (E-40, E-41, E-42)",
+      "status": "proven",
+      "mechanism": "`DependencyDirectionTests`: seven assertions over the App, Contracts, Persistence and Api assemblies, with the service and store registries discovered by reflection and every selection asserted non-empty",
+      "note": "",
       "obligations": [
         {
           "name": "no endpoint or host type references a store implementation or DbContext",
-          "status": "patterned",
-          "text": "`Endpoints_do_not_depend_on_Persistence` binds inside `Kernel.Api.Endpoints` and names DATA-1. It is scoped by namespace string, so the same violation in `Kernel.Api.Platform`, where the middleware lives, passes (E-40), and NetArchTest reports success on an empty selection, so a namespace rename silently empties the guard (E-42). trigger: widen the ban to all of `Kernel.Api` bar the composition root, and assert the selected type set is non-empty."
+          "status": "proven",
+          "text": "`No_host_type_outside_the_composition_root_depends_on_Persistence` covers all of `Kernel.Api.*`, not just the endpoints namespace, and `Program` is excluded by construction because top-level statements put the composition root in the global namespace. Planted in both namespaces: red in each, naming DATA-1 (E-40 repaired)."
         },
         {
           "name": "no persistence type references application services",
-          "status": "owed",
-          "text": "The only upward assertion bans `Kernel.Api`; a persistence type taking `NoteService` as a dependency passes all 113 tests (E-41). trigger: add the assertion, App services excluded from Persistence."
+          "status": "proven",
+          "text": "`Persistence_does_not_depend_on_an_application_service` bans a registry of `Kernel.App` public classes named `*Service`, discovered by reflection and asserted non-empty. A persistence type taking `NoteService` turns it red (E-41 repaired)."
         },
         {
           "name": "store implementations are reachable only via their interfaces",
-          "status": "owed",
-          "text": "No assertion of its own; covered incidentally where `App_does_not_depend_on_Persistence_or_Api` reaches, and not at all in `Kernel.Api.Platform` (E-41). trigger: add the assertion."
+          "status": "proven",
+          "text": "`Store_implementations_are_named_only_by_the_composition_root` bans a registry of persistence classes realizing a `Kernel.App` `*Store` interface, discovered by reflection and asserted non-empty. A host type taking `EfNoteStore` rather than `INoteStore` turns it red (E-41 repaired). The App half of that assertion is unfalsifiable by project-reference direction and is carried as defense in depth, not as the proof."
         }
       ]
     },
@@ -429,7 +429,7 @@
       "title": "One wire dialect",
       "status": "owed",
       "mechanism": "one host configuration point (`AddProblemDetails`, `UseStatusCodePages`, a single camelCase `JsonStringEnumConverter`); `WireConventionTests` asserts naming, a round-trip of a test-local enum, and problem+json on two routes",
-      "note": "the single configuration point is proven; three statement clauses are not (E-45, E-46, E-47)",
+      "note": "the single configuration point and the closed enum set are proven; two statement clauses are not (E-46, E-47)",
       "obligations": [
         {
           "name": "one host-level serialization and error configuration point",
@@ -443,8 +443,8 @@
         },
         {
           "name": "enums cross the wire as closed string sets",
-          "status": "owed",
-          "text": "The host converter is constructed without `allowIntegerValues: false`, so the JSON document `7` deserializes to an undeclared enum value through the host's own options: the set is not closed, and this is a code defect, not only a missing guard (E-45). No enum exists in `src/`; the only one the suite exercises is private to `WireConventionTests`. trigger: pass `allowIntegerValues: false`, plant the integer, and re-test at the first real contract enum."
+          "status": "proven",
+          "text": "The host converter is constructed with `allowIntegerValues: false`, so the wire set is closed on the read side, and `WireConventionTests` plants both shapes through the host's own options: an undeclared string and the documents `7`, `0` and `-1`. Before E-45 the string case was rejected and every integer was accepted into an undeclared value, which is why the gap read as fine. Control: restoring the old registration with these tests in place turns all three integer cases red (E-45 repaired)."
         },
         {
           "name": "identifiers are opaque strings",

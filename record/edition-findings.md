@@ -2735,6 +2735,29 @@ the guard covers the namespace where the harm is least likely and leaves the one
 
 The row read `proven`.
 
+**Repaired, 2026-07-27, with four controls.** `DependencyDirectionTests` was rewritten. The host ban now
+covers all of `Kernel.Api.*` rather than `Kernel.Api.Endpoints`, and the composition root is excluded by
+construction rather than by an allowlist: top-level statements put `Program` in the global namespace, which
+`ResideInNamespace("Kernel.Api")` does not match, so no name has to be maintained. Two assertions were added for
+the mechanism-class members that had none, and every selection is now asserted non-empty. Four assertions became
+seven; the suite moved from 113 to 122.
+
+| control | before | after |
+|---------|--------|-------|
+| host type in `Kernel.Api.Platform` takes `KernelDbContext` | **green** | red, names DATA-1 |
+| persistence type takes `NoteService` | **green** | red, names DATA-1 |
+| host type takes `EfNoteStore` rather than `INoteStore` | untested | red, two assertions |
+| selection pointed at an empty namespace, real violation present | **green** | red, "matched no types" |
+| none, shipped tree | green | 7 passed |
+
+The registries the two new assertions ban against are discovered by reflection, `Kernel.App` public classes named
+`*Service` and persistence classes realizing a `Kernel.App` `*Store` interface, and both are asserted non-empty,
+so the repair does not reintroduce E-29's hand-written-list shape while fixing E-41.
+
+One narrowing was caught by re-reading rather than by a control, and is recorded because the control would not
+have caught it: the first cut routed the assembly-wide assertions through the same namespace-prefix helper as the
+host one, which would have rebuilt E-40 inside the repair for E-40. Assembly-wide assertions now stay
+assembly-wide and only gain the non-emptiness check.
 ### E-41. DATA-1 bans one upward dependency and its mechanism class names another
 
 **Claim:** DATA-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
@@ -2747,6 +2770,9 @@ Nothing tests the third member either: "store implementations are reachable only
 assertion of its own. It is covered incidentally where `App_does_not_depend_on_Persistence_or_Api` reaches, and
 not at all in `Kernel.Api.Platform`, per E-40.
 
+**Repaired, 2026-07-27.** See E-40's table: `Persistence_does_not_depend_on_an_application_service` and
+`Store_implementations_are_named_only_by_the_composition_root` are the two new assertions, each over a
+reflection-discovered registry asserted non-empty.
 ### E-42. NetArchTest reports success on an empty type set, and DATA-1 never checks the set is non-empty
 
 **Claim:** DATA-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
@@ -2758,6 +2784,10 @@ treats "no types matched" as "no types failed", and nothing asserts the selected
 This is reachable through an ordinary rename: `Kernel.Api.Endpoints` is a namespace string repeated in a test file
 that a namespace refactor has no reason to visit. The neutering edit and the refactor are the same edit.
 
+**Repaired, 2026-07-27.** Every selection in `DependencyDirectionTests` is asserted non-empty before it is
+asserted clean, with a message that names the selection and E-42. The control is the fourth row of E-40's table:
+the same neutering that was green now fails two assertions with "The DATA-1 selection 'Kernel.Api.*' matched no
+types, so the assertion below it would pass without looking at anything".
 ### E-43. TEN-3's tenant-column registry is a four-name list with no extent assertion
 
 **Claim:** TEN-3. **Found:** 2026-07-27. **Measured at 1e52bfa.**
@@ -2802,6 +2832,21 @@ No enum exists anywhere in `src/`. The only enum the suite exercises is `SampleE
 `WireConventionTests`, so the round-trip test proves the converter is in the options bag and nothing about any
 shipped contract.
 
+**Repaired, 2026-07-27, with the pre-repair control.** `Program.cs` now constructs
+`new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false)`, and `WireConventionTests`
+plants both shapes through the host's own options: an undeclared string, and the documents `7`, `0` and `-1` as a
+Theory. `0` is in the list deliberately; it is a valid member's numeric value, so it is the case a reader is most
+likely to think harmless, and CON-1's wire set is strings whatever the number means.
+
+| control | before | after |
+|---------|--------|-------|
+| undeclared string `"notAMember"` | rejected | rejected |
+| document `7` | **accepted, yields `7`** | rejected |
+| document `0` | **accepted, yields `FirstValue`** | rejected |
+| document `-1` | **accepted** | rejected |
+
+Restoring the pre-repair registration with the new tests in place turns all three integer cases red and leaves
+the string case green, which reproduces the hole exactly and shows why the string case hid it.
 ### E-46. CON-1's "no endpoint invents its own error shape" is unguarded
 
 **Claim:** CON-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
@@ -3143,6 +3188,13 @@ or is the pass's own shared tooling. `ContractShapeTests` was NOT opened; E-6's 
 recorded as blocked on MOD-2's delta pass, which is the one place this pass declined a repair it could otherwise
 have made.
 
+**Repaired, 2026-07-27, with the pre-repair control.** `HostSecurityTests` gained
+`One_tenant_cannot_delete_another_tenants_note` and `Another_tenants_note_is_absent_from_the_list`, so the read,
+mutating and list verbs now each assert the same absent answer. Re-planting the tenant filter removal in
+`EfNoteStore.DeleteAsync` turns the delete probe red and nothing else, where before it left all 113 tests green.
+
+The probe reads a status code rather than asserting which layer refused, so it holds whether the store filter or
+the `SaveChanges` guard does the work. What it will not accept is the two answers differing.
 ### Repaired
 
 | Finding | Claim | What changed | Proof |

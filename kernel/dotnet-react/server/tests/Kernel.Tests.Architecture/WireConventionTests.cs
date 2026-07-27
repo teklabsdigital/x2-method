@@ -73,6 +73,27 @@ public sealed class WireConventionTests(KernelApiFactory factory) : IClassFixtur
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
 
+    // CON-1 says "closed string sets", and closed is a property of the read side. Until E-45 the converter took
+    // JsonStringEnumConverter's default of allowIntegerValues:true, so the undeclared-string case was rejected
+    // (which is why the gap read as fine) and an integer sailed through into an undeclared value. Both directions
+    // are asserted here, through the host's own options rather than a locally built set, so a change to the host
+    // registration is what turns them red.
+    [Fact]
+    public void An_undeclared_enum_string_is_rejected() =>
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<SampleEnum>("\"notAMember\"", HostJsonOptions()));
+
+    [Theory]
+    [InlineData("7")]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void An_integer_off_the_wire_is_not_an_enum_member(string document)
+    {
+        var options = HostJsonOptions();
+        var thrown = Record.Exception(() => JsonSerializer.Deserialize<SampleEnum>(document, options));
+        Assert.True(thrown is JsonException,
+            $"CON-1: the document {document} deserialized instead of being rejected, so the wire enum set is not closed (E-45).");
+    }
+
     private enum SampleEnum
     {
         FirstValue,

@@ -90,8 +90,10 @@ builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProv
 
 // CON-1: one wire dialect. Problem details for errors, a single enum converter, camelCase (the web default).
 builder.Services.AddProblemDetails();
+// allowIntegerValues:false is the "closed" in CON-1's "closed string sets". The default is true, so without it
+// the document `7` deserializes to an undeclared enum value and the wire set is open on the read side (E-45).
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false)));
 
 var app = builder.Build();
 

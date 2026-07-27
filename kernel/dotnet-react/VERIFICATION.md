@@ -831,3 +831,89 @@ RequireAuthenticatedUser); SEC-2 (ContractShapeTests, EndpointSpineTests, NameCo
 (SecretConfigShapeTests, UserSecretsId); TEN-1 (ContractShapeTests, EndpointSpineTests, HostSecurityTests,
 IFromHeaderMetadata, NameComparison, TenantScopeMiddleware); TEN-4 (KernelDbContext); TEST-1
 (NamingPlacementTests); TIME-1 (TimeTypeTests).
+
+## Round: batch 2's plants land as tests, and three of the five rows come back (2026-07-27)
+
+Batch 2's planting round ended the way batch 1's did, with prose and lowered rows, which is the thing the plan
+for this batch said would change: plants land as executable tests as they go. This round is that work, taken at
+`4bcbdf4`. Nine assertions added, the architecture suite 113 to 122, and every one of them controlled by
+re-planting the violation it exists to catch.
+
+### DATA-1, four holes, one file rewritten
+
+`DependencyDirectionTests` had four assertions covering one of its mechanism class's three members, scoped by a
+namespace string, with nothing checking that the string matched anything. It now has seven.
+
+| control | before | after |
+|---------|--------|-------|
+| host type in `Kernel.Api.Platform` takes `KernelDbContext` | **green** | red, names DATA-1 |
+| persistence type takes `NoteService` | **green** | red, names DATA-1 |
+| host type takes `EfNoteStore` rather than `INoteStore` | untested | red, two assertions |
+| selection pointed at an empty namespace, real violation present | **green** | red, "matched no types" |
+| type in `Kernel.Api.Endpoints` takes `KernelDbContext` | red | red |
+| none, shipped tree | green | 7 passed |
+
+Two design choices are worth stating because the obvious version of each is wrong.
+
+The composition root is excluded by construction, not by an allowlist. `Program.cs` legitimately names
+`KernelDbContext` and `EfNoteStore`, because registering them is its job. Top-level statements put it in the
+global namespace, so `ResideInNamespace("Kernel.Api")` does not reach it and no name has to be maintained. An
+allowlist entry would be one more hand-written string to go stale, which is the defect class this round is
+repairing.
+
+The two new registries are discovered by reflection and asserted non-empty. Writing "ban `NoteService`" by hand
+would have fixed E-41 by rebuilding E-29.
+
+One narrowing was caught by re-reading rather than by a control, and it is worth recording because no control
+here would have caught it: the first cut routed the assembly-wide assertions through the same namespace-prefix
+helper as the host one, which would have rebuilt E-40 inside the repair for E-40. Assembly-wide assertions now
+stay assembly-wide and gain only the non-emptiness check.
+
+### CON-1, the one code defect of the batch
+
+`allowIntegerValues: false`, one argument, plus four planted assertions through the host's own options.
+
+| control | before | after |
+|---------|--------|-------|
+| undeclared string `"notAMember"` | rejected | rejected |
+| document `7` | **accepted, yields `7`** | rejected |
+| document `0` | **accepted, yields `FirstValue`** | rejected |
+| document `-1` | **accepted** | rejected |
+
+The pre-repair control is the row that matters: restoring the old registration with the new tests in place turns
+all three integer cases red and leaves the string case green. That is the hole reproduced, and it also explains
+why it survived four rounds of review. The spelling a human tries is the one that was already closed.
+
+### TEN-2, uniformity across verbs rather than on one
+
+Two probes added, so read, delete and list each assert the same absent answer. Re-planting the tenant filter
+removal in `EfNoteStore.DeleteAsync` turns the delete probe red and nothing else, where before it left all 113
+tests green and the path answered 500. The probes read a status code rather than naming which layer refused, so
+they hold whether the store filter or TEN-4's `SaveChanges` guard does the work; what they will not accept is the
+two answers differing.
+
+### Tally movement, and what is still down
+
+| | before batch 2 | after planting | after this round |
+|---|---|---|---|
+| proven | 16 | 13 | 14 |
+| patterned | 7 | 5 | 6 |
+| latent | 2 | 2 | 2 |
+| owed | 44 | 49 | 47 |
+| non-owed rows | 25 | 20 | 22 |
+
+DATA-1 recovers all the way to `proven`, on three obligations each planted against separately. TEN-2 recovers to
+`patterned`, its ceiling by the claim's own weakening note. CON-1's closed-enum obligation is `proven` and its row
+stays `owed` on two clauses that are not repaired, E-46 and E-47.
+
+TEN-3 and DATA-2 are unrepaired and stay `owed`. TEN-3 needs an extent assertion over its column registry and a
+home for a sanctioned key-shape exception. DATA-2 needs an assertion that observes the change tracker across the
+store's read paths, and its keyset half stays `latent` until the integration suite can run somewhere, which is
+E-49 and ultimately E-39.
+
+### Gates
+
+Architecture 122, unit 19, node server 154, both client-webs 65. `compose --check` ok, 38 shared files in 2
+editions. Both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok at 14 caught and 11
+ignored. Integration 4 failures, environment-blocked on Docker, recorded rather than counted as a pass. Literal
+em dash and en dash scans, 0 and 0.

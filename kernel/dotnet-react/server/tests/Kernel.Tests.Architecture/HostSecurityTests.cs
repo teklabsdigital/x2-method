@@ -137,4 +137,42 @@ public sealed class HostSecurityTests(KernelApiFactory factory) : IClassFixture<
         var response = await attacker.GetAsync($"/notes/{note!.Id}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    /// <summary>
+    /// TEN-2's mechanism class ends "cross-tenant e2e probes assert uniform not-found behavior", and uniform is
+    /// the load-bearing word. Until E-50 the only such probe was a GET, so the read verb was covered and the
+    /// mutating one was not. Removing the tenant filter from EfNoteStore.DeleteAsync left every runnable test
+    /// green, and the path then answered 500 rather than 404, because TEN-4's SaveChanges guard stops the write
+    /// but announces itself. Nothing leaked and the answers still differed, which is an existence oracle: a
+    /// caller learns that a note exists in some other tenant. This test reads the status, so it holds whichever
+    /// layer does the refusing.
+    /// </summary>
+    [Fact]
+    public async Task One_tenant_cannot_delete_another_tenants_note()
+    {
+        var created = await ClientWith(TestTokens.Mint(Guid.NewGuid(), permissions: "notes.write"))
+            .PostAsJsonAsync("/notes", new CreateNoteRequest("A tenant-A note", "body"));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var note = await created.Content.ReadFromJsonAsync<NoteResponse>();
+
+        var response = await ClientWith(TestTokens.Mint(Guid.NewGuid(), permissions: "notes.write"))
+            .DeleteAsync($"/notes/{note!.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    /// <summary>TEN-2 uniformity, the list verb: another tenant's note is absent, not merely unreadable.</summary>
+    [Fact]
+    public async Task Another_tenants_note_is_absent_from_the_list()
+    {
+        var created = await ClientWith(TestTokens.Mint(Guid.NewGuid(), permissions: "notes.write"))
+            .PostAsJsonAsync("/notes", new CreateNoteRequest("A tenant-A note", "body"));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var note = await created.Content.ReadFromJsonAsync<NoteResponse>();
+
+        var list = await ClientWith(TestTokens.Mint(Guid.NewGuid(), permissions: "notes.read"))
+            .GetFromJsonAsync<NoteListResponse>("/notes");
+
+        Assert.DoesNotContain(list!.Items, item => item.Id == note!.Id);
+    }
 }
