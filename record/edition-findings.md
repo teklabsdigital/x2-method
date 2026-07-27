@@ -4517,6 +4517,44 @@ method carries no body; it is refused if a body schema is also present, and refu
 say nothing. Forgetting is still indistinguishable from nothing, which is what the obligation is for; deciding is
 now greppable.
 
+### E-95. A scan this repository ships, tells its readers to rely on, and has never once run
+
+**Claim:** SEC-5, TEST-3. **Found:** 2026-07-27, at compaction, by running a gate I had not run all session.
+**Measured at 38fc7a8.** **Live failure. Repaired here.**
+
+`node tools/secret-scan.mjs` in `kernel/dotnet-react/` fails:
+
+    edition.json:11  'connectionStringKey': a secret-shaped key holds a real value (SEC-5)
+        "connectionStringKey": "ConnectionStrings:Kernel"
+
+It has been failing since **7921bf1**, the DB2 pass that introduced the engine block, which is eight commits and
+one compaction ago. Nothing noticed, and the reason is structural rather than inattention:
+
+- Each edition's `.github/workflows/ci.yml` runs the scan, in four steps. Each `ci.yml` is a **template** that
+  moves to the repository root when a project is seeded, so nothing in THIS repository ever executes it.
+- This repository's own `.github/workflows/kernel.yml` ran the shared-tier compose check, both editions'
+  conformance and docs-lint, both server tiers, the shared client tier and the dash scan. **It did not run
+  secret-scan.**
+
+So the edition that ships a secret scanner, and whose conformance record cites it, had a failing scan for eight
+commits, and the only thing that could have said so was a workflow that by construction never runs.
+
+**This is E-39 in the same file E-39 was about.** E-39 recorded that no continuous process ran the .NET
+architecture suite, and named that as why E-29 and E-30 survived. The repair added the server tiers to
+`kernel.yml`. It did not ask what ELSE the editions ship that nothing runs, and the answer was sitting in the
+next job along.
+
+The finding is not the false positive. `ConnectionStrings:Kernel` is the NAME of a configuration key, and the
+connection string itself resolves from user-secrets or the environment; the scan is right to fire on a leaf called
+`connectionStringKey`, because such a leaf usually does hold one. That is closed with an allowlist entry carrying
+the reason, which is the reviewed exception SEC-5 asks for, rather than by widening the registry, which would
+blind the scan to every real connection string in the tree.
+
+**The finding is that a red gate stayed red and green stayed the reported state.** Repaired by adding a
+`secret-scan` job to `kernel.yml` over both editions, controls first. Recorded with a general obligation attached,
+because the same question has now been answered wrong twice: **when a mechanism is added to an edition, the pass
+owes an answer to whether anything in THIS repository runs it, and `kernel.yml` is the register of that answer.**
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

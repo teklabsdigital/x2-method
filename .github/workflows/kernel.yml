@@ -112,6 +112,34 @@ jobs:
       - name: Unit tier
         run: dotnet test tests/Kernel.Tests.Unit --no-build
 
+  secret-scan:
+    name: no committed secrets in either edition (SEC-5)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [dotnet-react, node-react]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.1'
+      # Added 2026-07-27 because it was missing, and its absence had already cost something. Each edition's own
+      # `ci.yml` runs this scan, and each `ci.yml` is a TEMPLATE that runs only after a project is seeded, so
+      # nothing in this repository had ever executed it. DB2 then introduced a secret-shaped leaf into
+      # `dotnet-react/edition.json` and the scan has been failing, unobserved, ever since (E-95).
+      #
+      # This is E-39's shape a second time, in the same workflow that E-39 was about: a mechanism this repository
+      # ships, and tells its readers to rely on, running only when someone remembers. The detector's own controls
+      # run first for the reason E-11 established, because a scan over a clean tree reports ok whether it reaches
+      # everything or nothing.
+      - name: Assert what the secret scan catches (SEC-5)
+        run: node tools/secret-scan.mjs --self-test
+        working-directory: kernel/${{ matrix.edition }}
+      - name: Scan committed source and config for secrets (SEC-5)
+        run: node tools/secret-scan.mjs
+        working-directory: kernel/${{ matrix.edition }}
+
   client:
     name: shared client tier
     runs-on: ubuntu-latest
