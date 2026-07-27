@@ -2402,6 +2402,44 @@ forge API, needing an owner token) and it is a decision about which forge the ke
 the portability question class B exists for. Recorded, with the acceptance test's own measurement behind it,
 rather than improvised.
 
+**Repaired 2026-07-27 at 670fb01+, the verification half, by the owner's ruling (option c).**
+
+The decision was which forge the kernel presumes and whether it writes the gate or only reads it. Reading the two
+claims settled the second half: TEST-3's weakening note asks that "the kernel acceptance test must verify that
+instantiation actually arms the gate", and HUM-1's says "the manifest carries the arming step and the kernel
+acceptance test verifies instantiation arms it". Both assign arming to the human and verification to the kernel.
+This finding's own repair note proposed "a ruleset writer plus a readback assertion", which over-scoped what
+either claim requires; the writer is a convenience and the readback is the obligation.
+
+`kernel/shared/tools/gate-check.mjs`, composed into both editions:
+
+- The required check names are DERIVED from the workflow file, never listed. A hand-written job list is a second
+  copy of the workflow that agrees with itself while the workflow changes, which is the defect this edition has
+  now measured five times (E-51, E-53, E-60, E-61, E-64).
+- It reads rulesets AND classic branch protection, because a repository gated the other way would otherwise be
+  reported ungated.
+- It catches a ruleset in `evaluate` mode, which reports every rule and blocks nothing. That is TEST-3's own
+  defect one level down, and it is the case a writer would have been most likely to create silently.
+- It requires a pull request, not only status checks: every required check is bypassable by pushing to the
+  default branch, and a gate that only names checks is armed against nobody.
+- It FAILS, never passes, when there is no remote, no token, no readable workflow, or no job in the workflow.
+  This is the policy call inside the ruling: an unread gate is not an armed gate, and a check that cannot reach
+  the thing it checks reporting ok is the entire finding it was built to close.
+- `--self-test` drives the predicate against six violations and seven controls, isolated from the network, so it
+  is exercisable without a forge and runs in both editions' CI.
+
+Measured: self-test green in both editions; the kernel-context path names the workflow's 5 jobs (dotnet) and 4
+(node) rather than passing silently; and in a seeded-shape tree the no-remote, no-token and no-jobs paths each
+exit 1 with a distinct message.
+
+TEST-3 and HUM-1 move from `owed` to `latent`, which is the honest status: built, never run against a real forge,
+because that needs a token this repository does not have. The manifest's unrunnable verification line, "a test PR
+touching `Migrations/` must show the required code-owner review", is replaced by the command.
+
+Still not done, and deliberately: nothing arms the gate, the node edition has no manifest to cite the command
+from (E-65), and the live path has never executed. The forge question is answered only as far as the readback
+needed: GitHub, in the edition, which ruling 7 already sanctioned for the edition layer.
+
 ### E-25. The instantiation file set is incomplete and part A contradicts itself
 
 **Claim:** the manifest, and through it TEST-3 and SEC-5. **Found:** 2026-07-27, executing part A.
@@ -3352,6 +3390,31 @@ parallel shell-docker path", as what rots into "which one is true". The four-cop
 
 A shell script cannot read a markdown table, so the honest repair is one committed machine-readable pin the
 script, the fixture and the workflow all read, with `VERSIONS.md` generated from it or checked against it.
+
+### E-65. The node-react edition ships no instantiation manifest at all
+
+**Claims:** TEST-3, HUM-1, and every claim whose enforcement is conditional on arming. **Found:** 2026-07-27
+while scoping E-24's repair. **Measured at 670fb01.**
+
+`kernel/dotnet-react/README.md` carries the instantiation manifest: part A the file set, part B the ordered setup
+steps, part C the verify-as-a-set list. `kernel/node-react/README.md` has five sections and none of them is a
+manifest. No file set, no setup steps, no verify list, and no arming step.
+
+`skills/seed/SKILL.md` step 2 says "The edition README's 'Instantiation manifest' section is the definition" and
+"The manifest's contents are the kernel's to define; this skill runs it and does not restate it." For the node
+edition there is nothing to run. The skill would reach step 2 and find no definition.
+
+This was invisible because the dotnet edition is the one the acceptance test was executed against, and because
+the manifest is prose in a README rather than an artifact anything checks. Both editions' READMEs pass docs-lint.
+
+**Partly repaired 2026-07-27.** `tools/gate-check.mjs` composes into both editions and both run it, so the node
+edition has the readback even though it has nowhere to cite it from. The manifest itself is not written: it is a
+statement about what that edition ships and how it is set up, which is edition work rather than a repair inside
+this pass. Trigger: node Phase B, which is where that edition's shipped surface gets settled.
+
+The general shape is worth keeping separately from the instance. Two editions of one kernel, and the check that
+both are complete is that a human reads both READMEs. `conformance.json` is machine-checked in both, 69 rows in
+each, because it is a data file with a tool. The manifest is the same kind of obligation with no tool.
 
 ## Acceptance test, first execution (2026-07-27)
 

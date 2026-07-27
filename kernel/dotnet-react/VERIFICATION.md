@@ -1232,3 +1232,41 @@ no second module to constrain" described a mechanism that does not exist.
 
 Architecture 157, unit 58, conformance ok at 69 rows, docs-lint ok, dash scans 0 and 0. Integration not run: no
 Docker daemon (E-49).
+
+## 2026-07-27, the gate readback (E-24, owner ruling option c)
+
+Measured at 670fb01 plus the tool. The owner's decision was to build the readback and not the writer, which is
+what both claims actually ask for: TEST-3 says the acceptance test must verify that instantiation arms the gate,
+HUM-1 says the manifest carries the arming step and the acceptance test verifies it. Arming stays a human step.
+
+`kernel/shared/tools/gate-check.mjs`, composed into both editions.
+
+| control | result |
+|---------|--------|
+| `--self-test`, both editions | ok, 6 caught, 7 ignored |
+| kernel context, dotnet | note, names the workflow's 5 jobs, exit 0 |
+| kernel context, node | note, names the workflow's 4 jobs, exit 0 |
+| seeded shape, no git remote | exit 1, names the decision it is refusing to make silently |
+| seeded shape, remote but no token | exit 1, "an unread gate is not an armed gate" |
+| seeded shape, workflow with no jobs | exit 1, before the network |
+
+The six violations the predicate catches: nothing armed; a job added to CI and never added to the gate; code-owner
+review not required; every check required but no pull request required, so the checks are bypassable by pushing;
+a ruleset in `evaluate` mode, which reports every rule and blocks nothing; and a workflow this parser found no
+jobs in, which would otherwise pass against any gate at all.
+
+The evaluate-mode case is worth naming separately. It is TEST-3's own defect one level down: a configuration that
+reports every rule and enforces none. A ruleset writer, which was the repair originally proposed for E-24, is
+exactly the thing most likely to create it silently.
+
+TEST-3 and HUM-1 move from `owed` to `latent`. Built, never run against a real forge, which needs a token this
+repository does not have. Non-owed rows 18 to 20.
+
+Two things this did not close. Nothing arms the gate; that stays the human step both claims describe. And the
+node edition has no instantiation manifest to cite the command from, which is E-65, found while scoping this.
+
+### Gates
+
+Architecture 157, unit 58, compose 39 shared files in 2 editions, both conformance records ok at 69 rows, both
+docs-lints ok, both docs-lint self-tests ok at 14 caught and 11 ignored, both gate-check self-tests ok at 6
+caught and 7 ignored, dash scans 0 and 0.

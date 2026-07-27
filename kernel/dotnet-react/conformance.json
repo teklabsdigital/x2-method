@@ -833,9 +833,9 @@
     },
     "TEST-3": {
       "title": "CI loop",
-      "status": "owed",
-      "mechanism": "`ci.yml`: server, client, docs-lint, secret-scan, e2e-wire",
-      "note": "Lowered from `proven` to `owed` (the weakest of 2 obligations) on 2026-07-27 by the acceptance test. The loop exists and its five jobs are real; what has never existed is the arming step the whole conditional rests on. TEST-3`s own weakening note predicts this defect verbatim, that the acceptance test must verify instantiation actually arms the gate rather than that the workflow file exists. It ran, and instantiation ships nothing to verify (E-24). Two further measurements from the same run: the `secret-scan` job cannot go green in a seeded project because the manifest`s file set omits `secret-scan.allow.json`, and part C never runs that job, so a red required gate is invisible to the set that exists to catch it (E-25). The roll-up is the weakest obligation, so a built loop that gates nothing reads `owed`, which is the conservative direction the ruling names. Findings: E-24, E-25.",
+      "status": "latent",
+      "mechanism": "`ci.yml`: server, client, docs-lint, secret-scan, e2e-wire; `tools/gate-check.mjs` reads the armed state back off the forge and `--self-test` drives its predicate against six violations and seven controls",
+      "note": "the loop runs everything; arming stays a human step, and skipping it is now loud rather than invisible",
       "obligations": [
         {
           "name": "every mechanism the catalog names executes automatically in CI on every push and pull request",
@@ -844,8 +844,8 @@
         },
         {
           "name": "the loop gates merges, armed at instantiation, with the arming step carried and verified",
-          "status": "owed",
-          "text": "no arming artifact exists, and part C`s verification item names no command, needs a second identity, and leaves nothing in the seeded repo recording that it passed (E-24). Trigger: the same ruleset writer and readback HUM-1 names."
+          "status": "latent",
+          "text": "Arming is an instantiation step and both TEST-3 and HUM-1 word it that way: the manifest carries the step and the kernel acceptance test verifies it. Until 2026-07-27 the kernel shipped the step as one imperative sentence and nothing that could see whether it had been done, so an armed instantiation and an unarmed one were indistinguishable by every means the kernel shipped (E-24). `tools/gate-check.mjs` closes the verification half: it derives the required check names from the workflow rather than listing them, requires a pull request and code-owner review, catches a ruleset in evaluate mode, and fails rather than passes when there is no remote, no token, or no readable workflow. Red-green against its own controls, and the three unreachable paths each exit non-zero, measured in a seeded-shape tree. `latent` because it has never been run against a real forge: that needs a token this repository does not have. trigger: the first instantiation, which is also E-24's own trigger."
         }
       ]
     },
@@ -857,9 +857,9 @@
     },
     "HUM-1": {
       "title": "Irreversible surfaces get a human turn, unconditionally",
-      "status": "owed",
-      "mechanism": "`.github/CODEOWNERS` covers migrations, contracts and `docs/contracts/`, reconciled against `edition.json``s `irreversibleSurfaces` so renaming one and forgetting the other is loud; docs-lint fails if any of the three loses its owned entry, and fails outside the kernel repo if an entry names only the `@OWNER` placeholder; branch protection requires code-owner review",
-      "note": "Lowered from `proven` to `owed` (the weakest of 2 obligations) on 2026-07-27 by the first execution of the instantiation acceptance test, which measured both halves rather than reading them. The declaration half was a FALSE GREEN and is now genuinely proven: docs-lint asked only whether an owner-shaped token covered each surface, and `@OWNER` is owner-shaped, so a seeded project with all four placeholders unreplaced passed with every irreversible surface owned by nobody (E-23). Repaired by separating covered from owned, reusing DEP-1`s kernel-context detection in the same file so the placeholder stays legal in the kernel and is refused downstream; red-green proven in a seeded tree with the control that reproduces the hole. The arming half has no artifact at all: instantiation ships one sentence of prose, no script, no ruleset, no readback, and part C`s verification item names no command and leaves no trace (E-24). The roll-up is the weakest obligation, so the row reads `owed` even though its declaration half is now genuinely proven; `proven` beside `mechanism built, not yet armed` was the mismatch all along. Findings: E-23 (repaired), E-24 (recorded, not repaired).",
+      "status": "latent",
+      "mechanism": "`.github/CODEOWNERS` covers migrations, contracts and `docs/contracts/`, reconciled against `edition.json``s `irreversibleSurfaces` so renaming one and forgetting the other is loud; docs-lint fails if any of the three loses its owned entry, and fails outside the kernel repo if an entry names only the `@OWNER` placeholder; branch protection requires code-owner review; `tools/gate-check.mjs` reads back whether code-owner review is actually required",
+      "note": "the declaration half is proven; the merge-gate half is now readable and has not yet been read against a real forge",
       "obligations": [
         {
           "name": "every irreversible surface is enumerated and declared to require a named human review",
@@ -868,8 +868,8 @@
         },
         {
           "name": "the merge gate requires that review, armed at instantiation",
-          "status": "owed",
-          "text": "measured absent 2026-07-27: the repository contains no forge API call, no ruleset, no token and no readback, and every hit for branch protection is prose. The acceptance test can verify only what instantiation ships, and instantiation ships an imperative sentence a human executes by hand in a web interface (E-24). Trigger: a ruleset writer plus an armed-state readback, which is also a decision about which forge the kernel presumes."
+          "status": "latent",
+          "text": "Measured absent 2026-07-27: no forge call, no ruleset, no token, no readback, and every hit for branch protection was prose (E-24). `tools/gate-check.mjs` now reads whether code-owner review is required on the default branch, across both the ruleset and classic branch-protection shapes, because reading only one would report a gated repository as ungated. The self-test carries this as its own violation case, separate from TEST-3's, so a change that stopped checking code-owner review would be caught without the status checks changing. `latent`: never run against a real forge, which needs a token this repository does not have. trigger: the first instantiation."
         }
       ]
     },

@@ -56,6 +56,11 @@ jobs:
       - name: Assert what docs-lint catches (DOC-1, TEN-5, DEP-1)
         run: node tools/docs-lint.mjs --self-test
       - run: node tools/docs-lint.mjs
+      # The gate readback's own controls. The live read is an instantiation step (it needs a token with
+      # repository administration read), so what runs here is the predicate against its controls: this job
+      # is the one place that would notice the readback rotting before a seeded project depends on it.
+      - name: Assert what gate-check catches (TEST-3, HUM-1)
+        run: node tools/gate-check.mjs --self-test
 
   secret-scan:
     runs-on: ubuntu-latest

@@ -36,6 +36,7 @@ const MANIFEST = [
   'docs/work/_template.md',
   'tools/conformance.mjs',
   'tools/docs-lint.mjs',
+  'tools/gate-check.mjs',
   'tools/secret-scan.mjs',
 ];
 
