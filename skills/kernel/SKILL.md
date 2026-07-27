@@ -87,11 +87,32 @@ Every gate, then every derived fact. Changes nothing, fails loudly.
 4. **Every suite green**, at its exact expected count.
 5. **Every mechanism the editions ship is run by something.** A file that exists, is named in a row,
    and that nothing executes is a guard nobody is protected by.
-6. **Every derived fact re-derived** (see Derived facts below), including any count, tally or scope
-   statement in a live document.
-7. **The standing constraints**: no banned punctuation, no machine-local path in any repo file. Check
-   punctuation with literal bytes built by `printf`, because bracket expressions false-negative on
-   these characters in some greps, and prove the check works by scoring a known-positive control.
+6. **The catalog against its own index.** These are the checks nothing else runs, and they are listed
+   individually because "check the index" is the instruction that gets skipped:
+   - every claim file has an index entry, and every index entry has a claim file, both directions
+   - the index heading's count equals the number of claim files
+   - each family intro names every claim in that family
+   - each index entry's restated statement and harm match the claim file's, normalized for whitespace
+   - the stated locus split equals the frontmatter tally
+   - every claim id cited anywhere in the catalog resolves to a claim file
+   - every pass date in any `provenance` appears in the index changelog
+7. **Every derived fact re-derived** (see Derived facts below), including any count, tally or scope
+   statement in a live document, and any list that enumerates a set the tree defines.
+8. **The skills themselves**: every skill directory has its instruction file, its front matter parses,
+   its declared name matches its directory, it appears in every index that exists to list it, and it
+   contains no product or project name and no machine-local path. That last is a standing constraint,
+   and a standing constraint with no check is a rule addressed to whoever remembers.
+9. **The standing constraints** across the tree: no banned punctuation, no machine-local path in any
+   repo file. Check punctuation with literal bytes built by `printf`, because bracket expressions
+   false-negative on these characters in some greps, and prove the check works by scoring a
+   known-positive control.
+
+**A check over these documents fails toward false alarms, so give it controls before believing it.**
+Three scans written while auditing this surface were themselves the bug rather than the tree: one
+matched case-sensitively where the tool it was checking matches case-insensitively, one relied on
+shell word splitting that the shell in use does not perform, and one assumed a single date format
+where the changelog uses three. Each reported a defect that did not exist. **A scan's first output is
+a claim about the scan.**
 
 A gate that cannot reach what it checks must FAIL, never pass quietly. A check that reports ok
 because it found nothing to look at is the failure mode this whole method exists to refuse.
@@ -133,6 +154,40 @@ change, and its findings stay in the register as history.
 
 **Cutting a catalog pass.** The pass date is what every record pins to. Move it only when the catalog
 actually changed, and re-pin every edition's record in the same change.
+
+### What a claim change touches, and which of it is guarded
+
+Audited surface. **The tooling enumerates the catalog by reading the claim FILES**, so every check that exists
+reaches the files and none reaches the index. Work this table top to bottom on any `claim` run and report each
+line, because the unguarded rows are unguarded in both directions: nothing tells you they moved, and nothing
+tells you they did not.
+
+| surface | what changes | guarded by |
+|---|---|---|
+| the claim file | the claim itself | the locus enum only |
+| the index heading `## Claims (N)` | the count | **nothing** |
+| the family section | a new entry, in the right family | **nothing** |
+| the family intro sentence | it names every claim in that family | **nothing** |
+| the index entry | it RESTATES the statement, harm, enforcement and weakening | **nothing** |
+| the locus split sentence | the centralized versus per-seam tally | **nothing** |
+| the dated pass paragraph | the changelog, and the catalog's VERSION is its latest pass date | **nothing** |
+| `provenance` | the minting refs, and each in-place extension with its pass date | **nothing** |
+| claims citing this claim | a retired or renamed id leaves them dangling | **nothing** |
+| every edition's record | one row per claim, `owed` with a trigger until measured | the completeness check |
+| every edition's pinned pass date | the version the record's statements refer to | partially |
+| every edition's generated table | regenerated from the record | regenerate it |
+| prose stating the claim count | goes stale on the next mint | **nothing** |
+
+**The index restates every claim in full.** That is two copies of the catalog's own content, one per claim, kept
+in agreement by hand. An amendment that edits the file and not the index leaves the index describing a claim in
+words the file no longer uses, and every gate stays green. **Amending a claim is therefore two edits, always,
+and confirming the second one is part of the verb.**
+
+**Claim identity is append-only.** A statement may strengthen additively, but its meaning never changes: a change
+of meaning MINTS A NEW ID, and the old one is deprecated in place with a pointer to its successor, never reused
+and never silently repurposed. Seeded projects cite claims in their own decision records, so an id whose meaning
+shifts invalidates provenance chains in repositories this one cannot see. If an amendment changes what the claim
+MEANS rather than how strongly it says it, the answer is a new id.
 
 ## `edition`
 

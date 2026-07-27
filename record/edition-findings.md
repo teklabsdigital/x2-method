@@ -2351,6 +2351,57 @@ documents and records and is right everywhere. Each is falsified by the next cla
 added, in a pass that has no reason to open any of those files. **A number that is right is indistinguishable
 from a number that is checked**, until the change that separates them.
 
+### S-14. The catalog index restates every claim in full, and nothing compares the two copies
+
+**Claim:** none directly. **Found:** 2026-07-28, auditing what a claim change touches before writing the
+maintenance skill's checks. **Measured at f46e587.** **Recorded, not repaired**, and the measurement is the
+point: everything below is currently CORRECT.
+
+`kernel/claims/README.md` is not only an index. Under `## Claims (N)` it restates, for every claim, the title,
+the **Statement**, the **Harm**, the **Enforcement** line with its locus, and the **Weakening** notes. Those four
+already live in the claim file, which is the schema's authority. **So the catalog carries two copies of its own
+content, one per claim, and nothing in this repository compares them.**
+
+`conformance.mjs` enumerates the catalog with `readdirSync` over the claim FILES, which is the right choice and
+means every check that exists reaches the files and none reaches the index. An edition is refused a missing row;
+the index may silently omit a claim, or describe one in words the file no longer uses, and every gate stays
+green.
+
+**Measured, and this is the part worth recording.** Nine checks were invented and run against the catalog:
+
+| check | result |
+|---|---|
+| claim files versus index entries, both directions | 69 and 69, no difference either way |
+| the `## Claims (N)` heading against the file count | agrees |
+| each family intro naming every claim in that family | complete, in all families that carry one |
+| the Statement in each file against the Statement in the index | **zero drift across 69** |
+| the Harm in each file against the Harm in the index | **zero drift across 69** |
+| the stated locus split against the frontmatter | agrees |
+| claim ids cited anywhere in the catalog resolving to a file | all resolve |
+| every `provenance` pass date appearing in the index changelog | all resolve |
+| the v1 status tally | **the one failure, S-13** |
+
+**Eight of nine pass, and that is the finding rather than a reassurance.** Sixty-nine claims times four restated
+sections have been kept in exact agreement by hand across at least seven catalog passes. The discipline is real
+and it is also the entire mechanism. The one check that fails is the one nobody could have kept by hand, because
+a status tally is falsified by an edition changing rather than by the catalog changing.
+
+**The catalog names one of the missing checks itself**, at the end of its versioning section: this governance is
+"enforced by review at each pass, and this repository carries no lint to back it. A minimal check (every pass
+date cited in a claim's `provenance` appears in a pass paragraph here) is the named upgrade if editing hands
+multiply." **Editing hands have multiplied.** That check was run for this finding and passes today.
+
+**A note for whoever mechanizes it, because it cost three wrong answers here.** The pass paragraphs do not use
+one date format: `pass (2026-07-24)`, `pass (2026-07-21, record/candidates.md)`, and `invariants pass,
+2026-07-11` all appear, so a pattern written for the first form silently reports the others as missing. Two
+other scans written during this same audit were also the bug rather than the tree, once by matching
+case-sensitively where the tool matches case-insensitively, and once by relying on shell word splitting that the
+shell in use does not perform. **A check over a document this dense fails toward false alarms, so the check owes
+its own controls before its output is believed** (E-11).
+
+**Trigger: the first claim minted, amended or retired after this date.** That change touches both copies, and
+whether the second copy moved with the first is exactly what nothing currently asks.
+
 ### E-21. The build brief still describes the mechanisms four rounds of repairs replaced
 
 **Claim:** SEC-1, SEC-2, SEC-3, TEN-1, TIME-1, structurally all of them. **Found:** the raise pass of 2026-07-27,
