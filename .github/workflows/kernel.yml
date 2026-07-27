@@ -97,6 +97,14 @@ jobs:
       - name: Assert what the loop check catches (TEST-3)
         run: node kernel/tools/loop-check.mjs --self-test
       - run: node kernel/tools/loop-check.mjs
+      # The catalog's own gate. `conformance.mjs` reads the claim FILES, which is right and which means nothing
+      # reached the catalog's index, its governance prose, or the skills: three findings came out of that gap in
+      # one day (S-13, S-14, and a standing constraint on skills that nothing enforced). Controls first, the same
+      # ordering as every other check here, and with one addition S-14 paid for: this tool prints what it
+      # COMPARED, because the measurement that started S-14 matched nothing and reported clean.
+      - name: Assert what the catalog check catches (S-13, S-14)
+        run: node kernel/tools/catalog-check.mjs --self-test
+      - run: node kernel/tools/catalog-check.mjs
 
   node-server:
     name: node-react server tier

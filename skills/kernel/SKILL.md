@@ -87,25 +87,23 @@ Every gate, then every derived fact. Changes nothing, fails loudly.
 4. **Every suite green**, at its exact expected count.
 5. **Every mechanism the editions ship is run by something.** A file that exists, is named in a row,
    and that nothing executes is a guard nobody is protected by.
-6. **The catalog against its own index.** These are the checks nothing else runs, and they are listed
-   individually because "check the index" is the instruction that gets skipped:
-   - every claim file has an index entry, and every index entry has a claim file, both directions
-   - the index heading's count equals the number of claim files
-   - each family intro names every claim in that family
-   - each index entry's restated statement and harm match the claim file's, normalized for whitespace
-   - the stated locus split equals the frontmatter tally
-   - every claim id cited anywhere in the catalog resolves to a claim file
-   - every pass date in any `provenance` appears in the index changelog
-7. **Every derived fact re-derived** (see Derived facts below), including any count, tally or scope
-   statement in a live document, and any list that enumerates a set the tree defines.
-8. **The skills themselves**: every skill directory has its instruction file, its front matter parses,
-   its declared name matches its directory, it appears in every index that exists to list it, and it
-   contains no product or project name and no machine-local path. That last is a standing constraint,
-   and a standing constraint with no check is a rule addressed to whoever remembers.
-9. **The standing constraints** across the tree: no banned punctuation, no machine-local path in any
+6. **The catalog, the skills and every stated count**, which is one tool because it is one question:
+   does the prose still describe the tree? Run its controls first, then the live check. It covers the
+   index against the claim files, the heading count, the family intros, the locus split, the
+   resolution of every cited claim id, every `provenance` pass date against the changelog, the skills
+   (an instruction file per directory, parsing front matter, name matching directory, listed in every
+   index that exists to list it, and no product name or machine-local path), and every count stated in
+   a live document. **Read the comparison counts it prints, not only its exit code.**
+7. **The standing constraints** across the tree: no banned punctuation, no machine-local path in any
    repo file. Check punctuation with literal bytes built by `printf`, because bracket expressions
    false-negative on these characters in some greps, and prove the check works by scoring a
    known-positive control.
+
+**The index is generated, so an amendment reaches it or fails the build.** The catalog's per-claim
+tables are rewritten from the claim files; each marker names the families its table covers, so a family
+no marker names is a claim listed nowhere, and a marker naming no family is a table about nothing. The
+family intro paragraphs stay hand-written, because they are synthesis rather than restatement, and what
+they NAME is checked instead. Regenerate rather than hand-edit, the same rule as any composed file.
 
 **A check over these documents fails toward false alarms, so give it controls before believing it.**
 Three scans written while auditing this surface were themselves the bug rather than the tree: one

@@ -2442,6 +2442,55 @@ lesson. **The non-vacuity assertion is not an ornament on a scan. A comparison t
 its comparison COUNT in the same breath**, and every table in this register that says "zero" without saying "of
 how many" is now suspect on its face.
 
+### S-13 and S-14 RESOLVED, 2026-07-28, by owner ruling: the index is generated and the catalog has a gate
+
+**Measured at 1204808.** The owner ruled that the catalog index keeps its hand-written family synthesis and
+replaces its per-claim restatements with a generated table. Applied here, with the tool that makes it hold.
+
+**The index went from 645 lines to 439**, and the 488-line restated section became seventeen generated tables of
+one row per claim: id, title, locus, link. **69 rows for 69 claim files, nothing lost and nothing gained**,
+verified against a copy of the file taken before the edit. Titles now come from each claim file's own heading
+rather than from a condensation, so the index states what the claim states. The seventeen family intro
+paragraphs are preserved verbatim: they are synthesis that exists nowhere else, and what they NAME is checked
+rather than generated.
+
+**A marker declares the families its table covers**, which is why the tool holds no family-to-heading map. The
+index groups families under editorial headings that do not match the frontmatter one for one, and a map beside
+the thing it describes is the registry that goes stale (E-92). Declaring the grouping in the document makes it a
+visible diff and lets the check run both ways: a family in no marker is a claim listed nowhere, and a marker
+naming no family is a table about nothing. Both are controls in the self-test.
+
+**S-13's tally is gone**, replaced by a sentence saying tallies are an edition's fact and naming where they live,
+which is the fourth bucket rather than a correction. Correcting it would have produced a number with the same
+absence of a guard.
+
+**`kernel/tools/catalog-check.mjs`** ships with thirteen controls and seven false-positive cases, wired into this
+repository's own workflow, and `loop-check` moved from 11 of 16 to 12 of 17 the moment it landed, which is the
+loop noticing a new mechanism without being told. Its live run prints what each predicate COMPARED, and that is
+S-14's correction made structural: index against files 69, family intros 53, locus split 69, claim citations 256,
+provenance dates 41, skills 13.
+
+**It caught a standing-constraint violation on its first live run.** `skills/help/SKILL.md` named this repository
+four times, in its description and in three reading pointers. The constraint is that no skill names a product or
+a project, tested by whether the skill works unchanged for any project, and a pointer to "the `<this repo>` repo
+root" fails that test for every other project's kernel. It had been there for as long as the file had. Repaired
+to "the method repo root", which is what it always meant.
+
+**Two things recorded rather than fixed.**
+
+One family is spelled two ways in the catalog's own frontmatter: AI-1 and AI-2 declare `ai-trust`, AI-3 declares
+`ai`. Nothing was wrong downstream, because the marker names both, but a family is an identifier and two
+spellings of one identifier is the shape every name-comparison finding in this register is about. The claim files
+are catalog content and are not edited from here. **Trigger: the next catalog pass, which owes either one
+spelling or a ruled reason for two.**
+
+The stated-count check compared exactly ONE value on its first run, because the same pass deleted every other
+stated count in the tree. That is the intended end state and it also means the check is one edit from comparing
+nothing, and a zero there is indistinguishable from a pattern that stopped matching. Unlike the other six
+predicates, a zero cannot be made an error, because a repository legitimately stating no counts is the goal.
+**Recorded as the one place in this tool where non-vacuity cannot be asserted**, which is worth knowing before
+its silence is read as coverage.
+
 ### E-21. The build brief still describes the mechanisms four rounds of repairs replaced
 
 **Claim:** SEC-1, SEC-2, SEC-3, TEN-1, TIME-1, structurally all of them. **Found:** the raise pass of 2026-07-27,
