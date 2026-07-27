@@ -3,8 +3,16 @@ import { expect, test } from 'vitest';
 // UI-5 composed-entrypoint smoke: boots the ACTUAL app entrypoint (src/main.tsx, the composition root) against a
 // running server and asserts at least one real request leaves the client per primary flow. The pilot declared
 // "all green" while the composed product never called the API; this tier is what makes that impossible. It runs
-// in the e2e context (scripts/e2e.sh exports VITE_API_BASE_URL and VITE_API_TOKEN before `npm run smoke`); TEST-2
-// driving the services directly stays necessary and is explicitly not sufficient.
+// in the e2e context, where the edition's own orchestrator exports VITE_API_BASE_URL and VITE_API_TOKEN before
+// `npm run smoke`. This file is shared by both editions and each names its orchestrator differently, so it names
+// neither (E-105 is the same rule one layer up, for the conformance record). TEST-2 driving the services directly
+// stays necessary and is explicitly not sufficient.
+//
+// **What this tier does not prove, stated here rather than left to be discovered.** `main.tsx` reads
+// `import.meta.env.VITE_API_BASE_URL`, which the BUILD replaces with a literal, and this file imports the SOURCE
+// module under the test runner, which substitutes separately from its own environment. A green line here is
+// therefore compatible with a bundle that points somewhere else entirely, and the claim rules that the smoke
+// should assert the built form (E-107, carried as an owed obligation in both editions).
 
 const baseUrl = process.env.VITE_API_BASE_URL ?? 'http://localhost:5080';
 

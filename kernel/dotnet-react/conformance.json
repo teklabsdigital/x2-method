@@ -811,6 +811,11 @@
           "name": "the composed entrypoint is exercised against a running server",
           "status": "latent",
           "text": "`composedApp.smoke.ts` imports the real `src/main.tsx`, wraps `globalThis.fetch` to record what leaves, and waits for a real GET and a real POST per primary flow. It needs the server up, which needs the engine, so it was read and not run here. Per-seam by the claim's own note: each new primary flow owes its smoke line. trigger: a run with the stack up."
+        },
+        {
+          "name": "the smoke asserts the BUILT form, not the source form",
+          "status": "owed",
+          "text": "unbuilt and unmet, and carried by neither edition until 2026-07-27 (E-107). The claim's weakening note rules on precisely this case: where the shell undergoes build-time substitution, the smoke asserts the BUILT form, never the source form, and a source-form assertion is the vacuous pass TEST-4 exists to kill. This shell undergoes it. `src/main.tsx` reads `import.meta.env.VITE_API_BASE_URL`, which the build replaces with a literal, and the smoke imports the source module under the test runner, which substitutes separately from its own environment. The two substitutions are different events, so a green smoke says nothing about the artifact that ships. Measured at 3087e57: building with the variable unset puts the literal `http://localhost:5080` into the bundle, while the same smoke driven by the orchestrator is green against a random port. trigger: a smoke that loads the built bundle, which needs the build to run before the smoke in the same job and the assertions to read the bundle rather than the module."
         }
       ]
     },

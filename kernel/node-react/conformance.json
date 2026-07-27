@@ -81,7 +81,7 @@
       "title": "Sanctioned-bypass ledger",
       "status": "owed",
       "mechanism": "`docs/claims/tenant-bypass-ledger.md` (empty, v1 by design) plus docs-lint's TEN-5 checks: the ledger must exist, every row must name a sole-reader test, that name must resolve to an identifier in the tree, and it must be the only bypass ledger",
-      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3). Lifted out of a bare `trigger:` line, which recorded no mechanism while four checks were binding in this tree. All four planted here and all four red-correct: an absent ledger, a row with an empty test cell, a row naming `NightlyNodeSweepIsSoleReader` which exists nowhere, and a second `billing-bypass-ledger.md`. The row stays `owed` on one obligation, and in this edition it is trigger-gated twice over: there is no sanctioned bypass AND there is no persistence layer for one to live in. Findings: E-34, E-35, E-77.",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3). Lifted out of a bare `trigger:` line, which recorded no mechanism while four checks were binding in this tree. All four planted here and all four red-correct: an absent ledger, a row with an empty test cell, a row naming `NightlyNodeSweepIsSoleReader` which exists nowhere, and a second `billing-bypass-ledger.md`. The row stays `owed` on one obligation, gated on the first sanctioned bypass. It read `trigger-gated twice over` until 2026-07-27, the second gate being that this edition had no persistence layer for a cross-tenant read to live in; the store landed one, and nothing re-read this row when it did (E-106). Findings: E-34, E-35, E-77, E-106.",
       "obligations": [
         {
           "name": "a committed ledger exists and is where the claim lives",
@@ -106,7 +106,7 @@
         {
           "name": "every sanctioned cross-tenant path appears in the ledger",
           "status": "owed",
-          "text": "unbuilt, and trigger-gated twice in this edition: there is no sanctioned bypass, and `server/src` has no persistence layer for a cross-tenant read to exist in. Trigger: a persistence layer, then the first sanctioned bypass."
+          "text": "unbuilt. Half of the trigger this obligation carried has fired: it read `a persistence layer, then the first sanctioned bypass`, and `server/src/persistence/` now exists. What arrived with the layer is a partial substitute rather than the mechanism. `scanStatementSurface` refuses any statement whose WHERE does not constrain `tenant_id` to a parameter, so a cross-tenant read can no longer be written into a store quietly; the only way past it is the file-level exemption list, and a stale exemption is itself reported. What is missing is the JOIN: the exemption list is a register of files permitted to hand the engine SQL outside the statement set, the ledger is a register of sanctioned cross-tenant ACCESS, and nothing relates the two, so an exemption added for a file that does read across tenants would satisfy the scan and never reach the ledger. Both shipped exemptions are argued as non-tenant-bearing (migration DDL, and one PRAGMA), and the claim rules only on the TEN-3 key-shape case belonging elsewhere, not on this one. trigger: the first sanctioned bypass, which is now one exemption away rather than one layer away."
         }
       ]
     },
@@ -129,7 +129,7 @@
         {
           "name": "entering or switching a tenant mints a new credential through the real sign-in surface",
           "status": "owed",
-          "text": "Unbuilt, and this is the clause the claim is named for. There is no sign-in surface, no tenant selector, and no membership data to validate a selection against, so nothing here mints anything: tokens are minted out of process by the shared harness minter, which is legitimate for a kernel with no identity module and is exactly the premise `mintToken.mjs` records as invalidated by the first identity slice. trigger: a membership store, which arrives with the persistence layer (G); the mint surface is then TEN-1's one sanctioned carve-out and `CARVE_OUTS` in endpointSpine.ts is the empty list waiting for it."
+          "text": "Unbuilt, and this is the clause the claim is named for. There is no sign-in surface, no tenant selector, and no membership data to validate a selection against, so nothing here mints anything: tokens are minted out of process by the shared harness minter, which is legitimate for a kernel with no identity module and is exactly the premise `mintToken.mjs` records as invalidated by the first identity slice. trigger: a membership store. This read `which arrives with the persistence layer (G)`, and the layer arrived on 2026-07-27 carrying a notes table and nothing else, so the prediction was wrong and the trigger is independent of the layer (E-106); the mint surface is then TEN-1's one sanctioned carve-out and `CARVE_OUTS` in endpointSpine.ts is the empty list waiting for it."
         },
         {
           "name": "revoking a membership bumps the session version, so credentials for that tenant die immediately",
@@ -528,7 +528,7 @@
       "title": "One wire dialect",
       "status": "owed",
       "mechanism": "none built. Route response shapes are declared per route in `src/routes/`, and nothing compares them against each other or against a dialect.",
-      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F4), and the row was NOT correctly waiting. Its trigger read `the first enum on the wire`, which names the third of the claim's four clauses; the other three do not wait for an enum, and TWO OF THEM ARE VIOLATED IN SHIPPED CODE (E-83). `src/routes/notes.ts` declares and sends a bespoke `{ error: 'not found' }` 404 rather than problem details, with no host-level error handler for a route to conform to, and mints identifiers as `String(notes.size + 1)`, a dense sequential counter. A live violation is worse than an unbuilt guard, and this record showed neither. Repair is Phase B work: an error handler and an opaque id at the store boundary, and the store is what Phase B builds. Findings: E-83.",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F4), and the row was NOT correctly waiting. Its trigger read `the first enum on the wire`, which names the third of the claim's four clauses; the other three do not wait for an enum, and TWO OF THEM WERE VIOLATED IN SHIPPED CODE (E-83): `src/routes/notes.ts` declared and sent a bespoke `{ error: 'not found' }` 404 rather than problem details, with no host-level error handler for a route to conform to, and minted identifiers as `String(notes.size + 1)`, a dense sequential counter. A live violation is worse than an unbuilt guard, and this record showed neither. One of the two is now repaired: the store mints `randomUUID()` at its boundary, and this row went on describing the counter for four commits after it was deleted (E-106). The 404 shape is still live and still unguarded, which is why the note keeps saying so. Findings: E-83, E-106.",
       "obligations": [
         {
           "name": "one host-level serialization and error configuration point",
@@ -548,7 +548,7 @@
         {
           "name": "identifiers are opaque strings",
           "status": "owed",
-          "text": "unbuilt, and VIOLATED in shipped code: `id: String(notes.size + 1)` is a dense sequential counter that satisfies the wire-type half of `opaque strings` and fails the opacity half (E-83). Adjacent to but not covered by SEC-7, which binds on anonymous surfaces and this route is gated. Trigger: an opaque id at the store boundary, then a scan over declared response shapes."
+          "text": "unbuilt, and no longer violated: `sqliteNoteStore.ts` mints `randomUUID()`, so the substance of this obligation is met in shipped code while nothing at all holds it there. It read `VIOLATED in shipped code` for four commits after the counter was deleted (E-106). Half the stated trigger fired and it was the half that does not decide the status: the opaque id at the store boundary arrived, the scan did not, so a later store returning a counter, or a second store minting its own ids, is invisible here and would be reported by nothing. Adjacent to but not covered by SEC-7, which binds on anonymous surfaces and this route is gated. trigger: a scan over the composed route table's declared response shapes, which is the same instrument the first two obligations wait on."
         }
       ]
     },
@@ -859,8 +859,13 @@
         },
         {
           "name": "the composed entrypoint is exercised against a running server",
-          "status": "latent",
-          "text": "`composedApp.smoke.ts` is built and is an npm script. It has never been executed against a running server in this edition, because there is no orchestrator to boot one and no CI job that calls it (E-80)."
+          "status": "patterned",
+          "text": "Lifted from `latent`, four commits late. The text read `there is no orchestrator to boot one and no CI job that calls it`, and `scripts/e2e.ts` had been booting one and running `npm run smoke` against it since 3ac6f25, green on every run, with a `node-e2e` job calling it (E-106). Non-vacuity measured rather than assumed, at 3087e57: with no server up and `VITE_API_BASE_URL` unset, the smoke fails ECONNREFUSED against the default after its named 15s wait, so a green line requires a server that answered. The orchestrator hands it an OS-assigned port, so a stray process on the default cannot satisfy it either, which is E-96's repair reaching this tier as well as the harness. `patterned` and not `proven` by the claim's own weakening note, which makes the smoke per-seam at one line per primary flow: two flows are covered, the list load and the create-then-refresh, against the four methods the harness completeness audit enumerates."
+        },
+        {
+          "name": "the smoke asserts the BUILT form, not the source form",
+          "status": "owed",
+          "text": "unbuilt and unmet, and carried by neither edition until 2026-07-27 (E-107). The claim's weakening note rules on precisely this case: where the shell undergoes build-time substitution, the smoke asserts the BUILT form, never the source form, and a source-form assertion is the vacuous pass TEST-4 exists to kill. This shell undergoes it. `src/main.tsx` reads `import.meta.env.VITE_API_BASE_URL`, which the build replaces with a literal, and the smoke imports the source module under the test runner, which substitutes separately from its own environment. The two substitutions are different events, so a green smoke says nothing about the artifact that ships. Measured at 3087e57: building with the variable unset puts the literal `http://localhost:5080` into the bundle, while the same smoke driven by the orchestrator is green against a random port. trigger: a smoke that loads the built bundle, which needs the build to run before the smoke in the same job and the assertions to read the bundle rather than the module."
         }
       ]
     },

@@ -4867,6 +4867,82 @@ which deliberately lets the record's prose through: mechanism strings also name 
 English, which is E-5's pattern. Two controls catch, four ignore, and the self-test moved from 33 caught / 32
 ignored to 35 / 36.
 
+### E-106. A row's reason has a shelf life its status does not
+
+**Claim:** DOC-1. **Found:** 2026-07-27. **Measured at 3087e57.** **Repaired here, not mechanised.**
+
+E-87 recorded that five passes had audited this record at STATUS level, and that a status-level audit cannot see a
+false reason. That was an inference. This is the audit itself, run against one edition, and it found **six
+statements across four rows**, every one of them falsified by work done in this repository in the same week.
+
+| row | what it said | what was true at 3087e57 |
+|-----|--------------|--------------------------|
+| TEN-5 note | "trigger-gated twice over: there is no sanctioned bypass AND there is no persistence layer for one to live in" | `server/src/persistence/` holds a database, migrations, a migrator and a store |
+| TEN-5 obligation | "`server/src` has no persistence layer for a cross-tenant read to exist in" | same |
+| TEN-6 obligation | "trigger: a membership store, which arrives with the persistence layer" | the layer arrived carrying a notes table and nothing else |
+| CON-1 note | "mints identifiers as `String(notes.size + 1)`, a dense sequential counter" | `randomUUID()`, four commits earlier |
+| CON-1 obligation | "VIOLATED in shipped code: `id: String(notes.size + 1)`" | same, and the obligation's substance is now met |
+| UI-5 obligation | "there is no orchestrator to boot one and no CI job that calls it" | `scripts/e2e.ts` and a `node-e2e` job, both green on every run |
+
+**No status was wrong.** TEN-5, TEN-6 and CON-1 are correctly `owed`; the mechanisms those obligations name are
+still unbuilt. Only UI-5's third obligation moved, from `latent` to `patterned`, and it moved because `latent`
+means built and never executed, and it had been executing for four commits.
+
+**The asymmetry is what makes this structural rather than careless.** A status is a claim about a MECHANISM, and
+the pass that changes a mechanism has the row open in front of it already. A reason is a claim about the TREE,
+and any pass can falsify one without touching the row, without citing the claim, without ever reading it. So the
+set of rows a pass owes a re-read is not the set it edits, and nothing computes the difference. Five of the six
+above were falsified by the pass that landed the store, which had no reason to open TEN-6 or UI-5 at all.
+
+**The direction is triggers as predicates, and the measurement says why it is not one.** At 3087e57, across both
+editions: **48 owed obligations, all 48 carrying a literal `trigger:`** because docs-lint requires it, **0 of 48
+naming a file path anywhere in the trigger sentence**, and 8 naming one earlier in the text, where it describes
+the current state rather than the condition. The register can therefore be asked whether every owed obligation
+states a trigger, and cannot be asked whether any trigger has fired. A trigger that read
+`trigger: { exists: "server/src/persistence" }` would have failed the build the hour the store landed, and TEN-5
+would have been re-read then rather than four commits later by an audit.
+
+That is a catalog-wide change and a real decision, not a patch: it re-shapes every owed obligation in two
+editions and the schema `conformance.mjs` validates, and it trades prose that a reader understands for a
+predicate a tool can evaluate. It is recorded here as the direction and left to the owner.
+
+An in-flight count of "31 owed obligations, 1 naming a path" does not reproduce and is superseded by the figures
+above; the query is over `obligations[].status === 'owed'`, the text from the first `trigger:` onward, and
+backticked tokens carrying a source extension.
+
+**This entry repairs the six and builds nothing**, so the next pass can reproduce the finding by making the same
+kind of change. That is the honest state and it is why the direction is recorded rather than the repair claimed.
+
+### E-107. The composed-entrypoint smoke asserts the source form of a shell the build substitutes
+
+**Claim:** UI-5, TEST-4. **Found:** 2026-07-27, while correcting UI-5's stale reason under E-106.
+**Measured at 3087e57.** **Recorded in both editions, unrepaired.**
+
+UI-5's weakening note rules on this in one sentence: "Where the shell undergoes build-time substitution, the
+smoke asserts the BUILT form, never the source form; a source-form assertion is the vacuous pass TEST-4 exists to
+kill." The shell undergoes build-time substitution. `src/main.tsx` reads `import.meta.env.VITE_API_BASE_URL`,
+which the build replaces with a literal string, and `composedApp.smoke.ts` imports the source module under the
+test runner, which substitutes separately from its own environment.
+
+Measured, rather than argued from the rule. Building `client-web` with `VITE_API_BASE_URL` unset puts the literal
+`http://localhost:5080` into the bundle, once. The same smoke, driven by the orchestrator, is green against an
+OS-assigned random port in the same tree, in the same minute. **The two substitutions are different events, so
+the smoke's green is compatible with a bundle that points somewhere else entirely.**
+
+This is E-96's shape one artifact along. There, a control could not distinguish configuration arriving from a
+default equal to it; here, a smoke cannot distinguish the shell it tests from the shell that ships, and for the
+same underlying reason: the value under test is bound twice, at two moments, and only one of them is observed.
+
+**Both editions' UI-5 rows carried three obligations and none of them was this one**, which is the part worth an
+entry. The gap read exactly like coverage: a smoke exists, it runs, it is green, and the claim's own note says
+what it therefore has to do and nothing asked whether it did. `src/main.tsx` and the smoke are both shared-tier,
+so the gap is identical in both editions and is recorded in both, at `owed`, with the trigger stated as an
+outcome: a smoke that loads the BUILT bundle, which needs the build to run before the smoke in the same job.
+
+Not repaired here because it changes both editions' e2e orchestrators, and the sibling's cannot run at all
+without a developer's machine (E-104). Recording it costs a row and closes the honesty gap; repairing it is a
+slice.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
