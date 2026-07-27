@@ -2330,6 +2330,27 @@ slowly, they are falsified instantly by the change that makes them wrong, in fil
 open. This one was predicted, then found four more times inside ten minutes of looking, which is the difference
 between a worry and a class.
 
+**Swept properly afterwards, and the sweep found two more.** The first pass had grepped for the word "twelve",
+which by construction only finds documents that COUNT. Documents that ENUMERATE were invisible to it: the
+narrative document carries an explicit skill list and omitted the new skill entirely, and the plugin marketplace
+manifest described the set by a stale number. Both repaired, the first by adding an entry because a list is
+content, the second by deleting the number because nothing needed it.
+
+**`skills/` is guarded by nothing at all, and that is the finding under the finding.** Every defect above was
+found by a person grepping. Nothing in this repository checks that a skill directory contains a `SKILL.md`, that
+its front matter parses, that its declared name matches its directory, that every skill appears in the two
+indexes that exist to list them, or that no product name and no machine-local path appears in one. **The last of
+those is a standing constraint with no check**, which is the exact shape of every finding in this register's
+TEST-3 family: a rule addressed to whoever remembers. The plugin manifests were read and do NOT enumerate
+skills, resolving them from the directory instead, so a missing index entry costs discoverability rather than
+function. That is the only reason today's omissions were cosmetic.
+
+**Still unguarded and currently CORRECT, which is the dangerous state:** the claim count appears in seven live
+documents and is right in all seven; "both editions" or "two editions" appears about twenty times across live
+documents and records and is right everywhere. Each is falsified by the next claim minted or the next edition
+added, in a pass that has no reason to open any of those files. **A number that is right is indistinguishable
+from a number that is checked**, until the change that separates them.
+
 ### E-21. The build brief still describes the mechanisms four rounds of repairs replaced
 
 **Claim:** SEC-1, SEC-2, SEC-3, TEN-1, TIME-1, structurally all of them. **Found:** the raise pass of 2026-07-27,
