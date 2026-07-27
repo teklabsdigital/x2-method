@@ -84,9 +84,14 @@ describe('UI-2 lint extent', () => {
     expect(declaredMessages.filter((message) => !covered.has(message))).toEqual([]);
   });
 
+  // Floors, not equalities, so adding a control is free and deleting one is not. Raised 2026-07-28 when twelve of
+  // E-31's fourteen holes closed: those entries MOVED from `ignore` to `catch` rather than being deleted, so the
+  // per-set floors moved in opposite directions and the total is asserted as well. Without the total, moving one
+  // entry across and deleting another would satisfy both halves.
   it('the control set has not silently shrunk', () => {
-    expect(fixtures.catch.length).toBeGreaterThanOrEqual(19);
-    expect(fixtures.ignore.length).toBeGreaterThanOrEqual(22);
+    expect(fixtures.catch.length).toBeGreaterThanOrEqual(31);
+    expect(fixtures.ignore.length).toBeGreaterThanOrEqual(10);
+    expect(fixtures.catch.length + fixtures.ignore.length).toBeGreaterThanOrEqual(41);
   });
 
   // The registries the selectors are built from, asserted two ways, because one way is not enough and this was

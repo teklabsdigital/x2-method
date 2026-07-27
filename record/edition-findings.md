@@ -2691,6 +2691,33 @@ Seven plants went red with the message naming UI-2: `color: "#ff0000"`, `color: 
 The first is a syntactic hole in a mechanism that reads as total. The second is the standing per-seam debt the
 `patterned` tag exists to name, and naming it is why the row moves there rather than staying `proven`.
 
+**Twelve of the fourteen closed, 2026-07-28, as a set.** They were carried for a day as PASSING controls in
+`ui2LintExtent.test.ts`, so closing one turns that test red and has to be argued rather than discovered, and the
+whole point of revisiting them together is that they were four families rather than fourteen problems:
+
+| family | holes | what was wrong |
+|---|---|---|
+| ungated axes | 5 | per-side border widths, per-corner radii, outline, letterSpacing, boxShadow, transform were named by no selector |
+| value forms | 2 | the string seam matched `px` and `rem` only, and borderRadius required a leading digit so `calc(8px + 2px)` passed |
+| the grandchild seam | 2 | `Property > Literal` is a DIRECT-child combinator; a negative parses as `UnaryExpression`, a ternary as `ConditionalExpression`, so both literals sat one level below reach |
+| the template seam | 3 | TemplateElement selectors existed for hex and colour functions and for nothing else, so dimensions, font values and colour NAMES in templates were all invisible |
+
+The twelve **moved** from the ignored set to the caught set rather than being deleted, so what was once a hole
+survives its own closure as a control. The extent test is 41 cases now, 31 caught and 10 ignored, and its floors
+are asserted three ways because moving entries across satisfies two per-set floors that a deletion would also
+satisfy.
+
+**The widening is bounded, and the bound is what the eight remaining ignored controls are for**: unitless ratios,
+flex factors, integer zIndex, percentages, viewport units, ch, fr, auto and literal zero must all still pass.
+They do. `ch` and the viewport units are absent from the widened unit set on purpose, which is the difference
+between a policy and a hole.
+
+**The two that remain are not selector width.** A computed key (`{ [key]: 24 }`) defeats every selector because
+esquery reads the key Identifier rather than the property it resolves to, and one level of indirection
+(`const PAD = 24`) is structurally indistinguishable from a legitimate token reference to a syntactic linter.
+Both need a type-aware rule, which is a different mechanism, and that is why the obligation stays `patterned`
+rather than becoming `proven` with a footnote.
+
 ### E-32. DOC-1's walk skips any directory named bin, obj, dist or node_modules, at any depth
 
 **Claim:** DOC-1. **Status carried:** `proven`. **Found:** 2026-07-27. **Measured.**
@@ -5120,9 +5147,36 @@ E-105 is the same shape at one hour; this is the same shape at twenty minutes, i
 the answer.
 
 Recorded rather than repaired, because the choice between deleting the four and building export-level
-reachability is a real one: deleting them is right today and leaves the next four unguarded, and export-level
-reachability needs symbol resolution rather than the specifier walk this scan is. trigger: whichever is chosen,
-and TEST-3's first obligation carries it.
+reachability is a real one: deleting them is right today and leaves the next four unguarded.
+
+**Measured 2026-07-28, and the reason first written here was wrong.** This entry said export-level reachability
+"needs symbol resolution rather than the specifier walk this scan is". It does not. Named-import bindings are
+already in the AST, and a prototype took twenty minutes. What it actually needs is SCOPE and a rule about types,
+which the prototype found by producing different numbers under three readings:
+
+| reading | reported |
+|---|---|
+| exports unimported within the server tier | **30** |
+| the same, with importers across the whole edition | 17 |
+| the same, values only (functions, classes, consts), types excluded | **13** |
+
+The first number is mostly false: `environmentNameFor` is imported by `scripts/e2e.ts`, which is outside the
+tier, so a tier-scoped check calls the edition's own orchestrator's dependency dead. The gap between the second
+and third is exported TYPES, which is a weaker and separate question: an exported type nothing imports costs
+nothing at runtime and may be the shape a seeded project reads.
+
+The honest thirteen, all real, all value exports nothing in the edition imports:
+
+    assertConfigurationSurface, assertHandlerBodies, assertImportGraph, assertReachability,
+    assertStatementSurface, decodeCursor, encodeCursor's partner in noteService.ts,
+    FIXTURE_PATH, TENANT_COLUMN, STATEMENT_SET_NAME, MIGRATIONS_DIRECTORY, migrationFiles,
+    RELAXED_ENVIRONMENTS, ENVIRONMENT_PREFIX
+
+**So the check is buildable and is not shipped, deliberately.** Thirteen red items on the day it lands is a
+permanently red gate, and E-84 records what those become: a job somebody skips, then disables, then deletes. The
+work is not the check, it is ruling on the thirteen, and that ruling is not the check's to make: a kernel's
+exported constants are part of what a seeded project extends, so deleting them is a decision about the offered
+surface rather than a cleanup. trigger: that ruling, then the check in the same change so it lands green.
 
 ### E-109. A test asserted against the placeholder the manifest tells you to change, so it failed when the rename was done right
 

@@ -103,6 +103,66 @@
       "category": "Raw border/hairline width (one category: key.name borderWidth|border at :46 and key.value border-width|border at :47 share the message; fixture drives the camelCase half)",
       "source": "export const Card = () => <div style={{ borderWidth: 1 }} />;",
       "expectedMessage": "Raw border/hairline width (UI-2). Use a design token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: a bare negative numeric",
+      "source": "export const Card = () => <div style={{ marginTop: -8 }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: the per-side border widths appear in neither DIM_CAMEL nor the ^(?:borderWidth|border)$ selector, so borderTopWidth and its siblings are unguarded while `border` is",
+      "source": "export const Card = () => <div style={{ borderTopWidth: 1 }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: same per-side hole in string form",
+      "source": "export const Card = () => <div style={{ borderLeft: '1px solid' }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: the borderRadius selectors are anchored to the exact key name, so the four per-corner radii are unguarded while borderRadius is",
+      "source": "export const Card = () => <div style={{ borderTopLeftRadius: 8 }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: the string-form dimension selectors match only \\d(?:px|rem)\\b, so em, rem-adjacent ex, pt, cm and in on a gated key all pass",
+      "source": "export const Card = () => <div style={{ padding: '1.5em', width: '20pt' }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: the named-colour selector is anchored ^(?:NAMED_COLORS)$, so a named colour embedded in a composite value escapes, while the hex selector at the same seam is deliberately unanchored and would catch '#f00'",
+      "source": "export const Card = () => <div style={{ outline: '2px solid red' }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: there are TemplateElement selectors for hex and for colour functions, but none for NAMED_COLORS, so the template-literal seam is narrower than the Literal seam by exactly one category",
+      "source": "export const Card = ({ w }: { w: number }) => <div style={{ outline: `${w}px solid red` }} />;",
+      "expectedMessage": "Named color in a template literal (UI-2). Use a design token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: the borderRadius selectors require the value to START with a digit (/^[0-9]/), so 'calc(8px + 2px)' and '",
+      "source": "export const Card = () => <div style={{ borderRadius: 'calc(8px + 2px)' }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: same direct-child hole as the negative numeric, reached by a different expression",
+      "source": "export const Card = ({ dense }: { dense: boolean }) => <div style={{ padding: dense ? 8 : 24 }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: a gated dimension key whose value is a TemplateLiteral",
+      "source": "export const Card = ({ n }: { n: number }) => <div style={{ padding: `${n}px 24px` }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: fontKeyBans require [value",
+      "source": "export const Card = ({ n }: { n: number }) => <div style={{ fontSize: `${n}px` }} />;",
+      "expectedMessage": "Inline fontSize literal (UI-2). Use a design token."
+    },
+    {
+      "category": "E-31 gap closed 2026-07-28: px on an ungated key",
+      "source": "export const Card = () => <div style={{ letterSpacing: '0.5px', boxShadow: '0 2px 8px', transform: 'translateY(8px)' }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
     }
   ],
   "ignore": [
@@ -139,60 +199,12 @@
       "source": "export const Card = () => <div style={{ margin: 0, padding: 0 }} />;"
     },
     {
-      "why": "KNOWN GAP (E-31): a bare negative numeric. The numeric dimension selectors use a direct-child combinator and a negative parses as Property > UnaryExpression > Literal, so the literal is a grandchild and unreachable. The px/rem selectors do not backstop it because they test `value`, undefined for a number. MEASURED by plant on 2026-07-27, went green. The string form '-8px' is still caught.",
-      "source": "export const Card = () => <div style={{ marginTop: -8 }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): the per-side border widths appear in neither DIM_CAMEL nor the ^(?:borderWidth|border)$ selector, so borderTopWidth and its siblings are unguarded while `border` is. MEASURED by plant on 2026-07-27, went green.",
-      "source": "export const Card = () => <div style={{ borderTopWidth: 1 }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): same per-side hole in string form. `border: '1px solid'` is red, `borderLeft: '1px solid'` is silent, and the shorthand only trips a different rule if it happens to embed a hex. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = () => <div style={{ borderLeft: '1px solid' }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): the borderRadius selectors are anchored to the exact key name, so the four per-corner radii are unguarded while borderRadius is. Same per-seam debt as the per-side widths. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = () => <div style={{ borderTopLeftRadius: 8 }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): the string-form dimension selectors match only \\d(?:px|rem)\\b, so em, rem-adjacent ex, pt, cm and in on a gated key all pass. These are not on the config's stated allowlist (which names ratios, flex, zIndex, percentages, viewport units, ch, fr, auto and 0), so this is a hole, not a policy. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = () => <div style={{ padding: '1.5em', width: '20pt' }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): the named-colour selector is anchored ^(?:NAMED_COLORS)$, so a named colour embedded in a composite value escapes, while the hex selector at the same seam is deliberately unanchored and would catch '#f00'. `outline` is also an ungated key, so the 2px escapes too. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = () => <div style={{ outline: '2px solid red' }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): there are TemplateElement selectors for hex and for colour functions, but none for NAMED_COLORS, so the template-literal seam is narrower than the Literal seam by exactly one category. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = ({ w }: { w: number }) => <div style={{ outline: `${w}px solid red` }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): the borderRadius selectors require the value to START with a digit (/^[0-9]/), so 'calc(8px + 2px)' and '.5rem' pass, and borderRadius is not in DIM_CAMEL so the px/rem seam does not backstop it. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = () => <div style={{ borderRadius: 'calc(8px + 2px)' }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): same direct-child hole as the negative numeric, reached by a different expression. A ConditionalExpression makes both literals grandchildren of the Property. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = ({ dense }: { dense: boolean }) => <div style={{ padding: dense ? 8 : 24 }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): a gated dimension key whose value is a TemplateLiteral. The dimension selectors require a Literal child, and the TemplateElement selectors cover only colour, so the raw 24px is invisible. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = ({ n }: { n: number }) => <div style={{ padding: `${n}px 24px` }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): fontKeyBans require [value.type='Literal'], so any font size, family or weight expressed as a template literal is unreachable. Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = ({ n }: { n: number }) => <div style={{ fontSize: `${n}px` }} />;"
-    },
-    {
       "why": "KNOWN GAP (E-31): a computed key. esquery reads key.name of the computed Identifier ('key'), not the property it resolves to, so every key.name and key.value selector in the file misses. Unverified by a plant; measured here by driving ESLint against the config.",
       "source": "const key = 'padding' as const;\nexport const Card = () => <div style={{ [key]: 24 }} />;"
     },
     {
       "why": "KNOWN GAP (E-31): one level of indirection through a module-local constant defeats every selector, and a local const is not a token. This is the shape a raw-value drift takes once anyone hits the rule once. Structurally indistinguishable from a legitimate token reference to a syntactic linter, which is why closing it needs a different mechanism, not a wider selector. Unverified by a plant; measured here by driving ESLint against the config.",
       "source": "const PAD = 24;\nexport const Card = () => <div style={{ padding: PAD }} />;"
-    },
-    {
-      "why": "KNOWN GAP (E-31): px on an ungated key. The px/rem seam is scoped by key, not by value, so letterSpacing, boxShadow offsets and transform translations carry raw pixels with no rule attached (boxShadow is reached only if it embeds a hex or a colour function). Unverified by a plant; measured here by driving ESLint against the config.",
-      "source": "export const Card = () => <div style={{ letterSpacing: '0.5px', boxShadow: '0 2px 8px', transform: 'translateY(8px)' }} />;"
     }
   ],
   "namedColourFloor": [
