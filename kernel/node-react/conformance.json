@@ -551,14 +551,63 @@
     "DOC-1": {
       "title": "Documentation lifecycle",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "mechanism": "`tools/docs-lint.mjs`: front matter, placement, work-slice ids, the DEC-1 provenance field, the TEN-5 and DEP-1 couplings, the archived-citation resolver and the MET-08 dash check",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F5). The row's trigger said the mechanism was composed from the shared tier and what was owed was the MEASUREMENT. Taken: three plants, all red-correct here (a wrong kind in docs/claims/, a work doc with no slice id, and markdown outside the legal roots). Two obligations differ from the sibling's for reasons that are this edition's own: this tree contains ZERO inter-document markdown links, so the archived-citation resolver has no subject and is `latent` rather than `patterned`. Findings: E-32, E-33.",
+      "obligations": [
+        {
+          "name": "every markdown declares a kind, and the kind matches the single legal root it lives in",
+          "status": "patterned",
+          "text": "Red-correct here for a `kind: notes` document in docs/claims/. Enumeration is not total: markdown under any directory named bin, obj, dist or node_modules at any depth is never walked (E-32)."
+        },
+        {
+          "name": "no markdown outside the legal roots, closure over the edition tree",
+          "status": "patterned",
+          "text": "Red-correct here for a `server/handover.md`. Same walk, same basename hole (E-32)."
+        },
+        {
+          "name": "working documents carry a slice id",
+          "status": "patterned",
+          "text": "Red-correct here for a work doc with no slice key. The value is never validated (`slice: whenever` passes) and the check keys on the folder name, so a document declaring itself working in another root owes nothing (E-33)."
+        },
+        {
+          "name": "status transitions move only forward",
+          "status": "owed",
+          "text": "unbuilt. The guard is a snapshot lint holding no prior value, so forward and backward transitions on the same file produce byte-identical clean output (E-33). Trigger: a reader comparing a declared status against its previous committed value, which makes this tool depend on git in a tree that may not have it."
+        },
+        {
+          "name": "archived documents are not cited as authority",
+          "status": "latent",
+          "text": "The resolver is built: it walks every markdown link, resolves it relative or root-anchored, and fails a LIVE document citing an ARCHIVED one. It has never run against a real citation HERE, because this tree contains no inter-document markdown link at all. Built and unexercised is `latent`, and it is a different situation from the sibling's, where the resolver has one real link to read."
+        },
+        {
+          "name": "the docs-lint gate runs in the CI loop",
+          "status": "owed",
+          "text": "The edition's own `ci.yml` has a docs-lint job, and that file is a TEMPLATE: it is not executed in this repository, so deleting its only invocation of the guard is reported by nothing. What actually runs docs-lint here is the repository's `kernel.yml`, over both editions in a matrix, which this row does not ship (E-39). Trigger: instantiation arming the loop."
+        }
+      ]
     },
     "DEC-1": {
       "title": "A module's behaviour traces to a decision",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the downward link is owed (trigger: first regeneration of a module from its decisions); the artifact-order check rides here too (trigger: next acceptance test); the upward provenance lint is built and proven."
+      "mechanism": "`docs-lint.mjs` requires a `provenance` field on every document under `docs/decisions/`, naming the story, epic or claim served",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F5). Lifted out of a single trigger line whose own text already admitted the upward lint was built and proven, while the row carried no mechanism at all. Red-correct here for a decision with no provenance field. The row stays `owed` on the downward link and the artifact-order check, both genuinely unbuilt, and both now stated as obligations so the built half is visible.",
+      "obligations": [
+        {
+          "name": "a decision traces upward to what it serves",
+          "status": "proven",
+          "text": "Red-correct here: a `docs/decisions/d-999-probe.md` with no `provenance` field fails docs-lint with a sentence naming DEC-1. Every document in the folder is walked, so the check is total over the decision set."
+        },
+        {
+          "name": "behaviour traces downward to the decision that produced it",
+          "status": "owed",
+          "text": "unbuilt. Nothing links a module or a guard back to the decision it realizes, so a decision can be superseded with the code it produced left in place. Trigger: the first regeneration of a module from its decisions, which is what gives the downward link a consumer."
+        },
+        {
+          "name": "artifacts are produced in decision order",
+          "status": "owed",
+          "text": "unbuilt. Trigger: the next acceptance test, which is where the ordering becomes observable."
+        }
+      ]
     },
     "UI-1": {
       "title": "Token source lockstep",
@@ -587,8 +636,25 @@
     "UI-3": {
       "title": "Screens compose primitives only",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "mechanism": "eslint `no-restricted-imports` bans the whole theme layer outside `src/components`, plus `namingPlacement.test.ts`'s zero-dependency source scan of the same rule",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F5). Trigger fired: red-correct here for a screen importing `../../theme/tokens.ts`, caught TWICE and by two independent mechanisms, the test naming UI-3 and the lint naming UI-3. Two mechanisms for one obligation is worth recording rather than deduplicating: the lint gates `verify` and the test gates a bare `npm test`, so neither alone covers both ways a developer runs the tree.",
+      "obligations": [
+        {
+          "name": "the primitive component layer is the sole consumer of theme tokens",
+          "status": "proven",
+          "text": "Red-correct here twice over, by a source scan and by a lint rule, both naming UI-3. The lint bans the whole theme layer including a re-export barrel, not just the tokens file, which is the hole a narrower rule would leave."
+        },
+        {
+          "name": "screens create no style sheets and use no raw platform text elements",
+          "status": "owed",
+          "text": "unbuilt. The ban is on the token IMPORT; a screen writing raw markup or its own stylesheet imports nothing and is invisible to both mechanisms. Trigger: a scan over screen markup for raw platform elements, which needs a primitive registry to compare against."
+        },
+        {
+          "name": "client business logic lives in separately testable services, hooks and reducers",
+          "status": "latent",
+          "text": "The structure exists (`src/data/notesRepo.ts` is a separately testable service with its own tests) but nothing asserts that logic STAYS there, so the arrangement is a convention the tree currently follows rather than a mechanism."
+        }
+      ]
     },
     "UI-4": {
       "title": "Fidelity ledger",
@@ -616,8 +682,25 @@
     "UI-5": {
       "title": "Thin UI over tested services, composed entrypoint exercised",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "mechanism": "eslint `no-restricted-imports` confines construction of the transport and the data services to `src/main.tsx`; `tools/smoke/composedApp.smoke.ts` boots the composed entrypoint",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F5). Trigger fired: red-correct here for a screen importing `../../api/client.ts`. Scored as a THIRD-OUTCOME result rather than a clean red, and the distinction is the finding: `npm test` stayed at 65 passed. Only the LINT caught it, so this obligation binds under `npm run verify` and in CI and does not bind for a developer running the test suite alone. That is not a defect in the rule, it is a fact about where the rule lives, and it was worth measuring rather than assuming the suite would report it.",
+      "obligations": [
+        {
+          "name": "modules outside the composition root import neither the transport nor the data services",
+          "status": "proven",
+          "text": "Red-correct here, by lint, naming UI-5 and naming `src/main.tsx` as the one permitted constructor. Caught by `npm run verify` and not by `npm test`."
+        },
+        {
+          "name": "the client UI holds no business or transport logic of its own",
+          "status": "owed",
+          "text": "unbuilt. The import ban stops a screen CONSTRUCTING a client; it does nothing about a screen that reimplements the logic inline with `fetch`, which imports nothing restricted. This is E-70's shape: an import ban cannot see transport logic that imports nothing. Trigger: a scan for transport primitives in module code."
+        },
+        {
+          "name": "the composed entrypoint is exercised against a running server",
+          "status": "latent",
+          "text": "`composedApp.smoke.ts` is built and is an npm script. It has never been executed against a running server in this edition, because there is no orchestrator to boot one and no CI job that calls it (E-80)."
+        }
+      ]
     },
     "DEP-1": {
       "title": "Dependency quarantine",

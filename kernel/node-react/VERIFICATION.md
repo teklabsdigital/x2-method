@@ -694,3 +694,53 @@ builds.
 Client 65, server 154, docs-lint ok, conformance ok at 69 rows. Non-owed unchanged at 8: DEP-1, CON-2 and CON-1
 all stay `owed` on a weakest obligation, correctly. What changed is that ten rows recording no mechanism now
 record what exists, what is missing and, in one case, what is broken.
+
+### Node Phase A, F5: the audit E-83 made necessary
+
+E-83 found a trigger that scoped a four-clause claim to its narrowest clause, so the row read `owed` while two
+clauses were violated. The honest consequence is that no other single-line trigger in this edition had been
+checked for the same defect. **49 owed rows carried a bare trigger and no obligations.** All 49 were read.
+
+Three separated out immediately, because their trigger already said what to do: *"a violation planted against this
+claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and
+composed into this edition, so what is owed is the measurement, not the build."* That is DEP-1's shape, and it is
+an honest `owed` that names its own discharge. Fired:
+
+| claim | plant | outcome |
+|-------|-------|---------|
+| DOC-1 | a `kind: notes` doc in docs/claims/, a work doc with no slice, markdown outside the legal roots | all three red-correct |
+| UI-3 | a screen importing `../../theme/tokens.ts` | red-correct TWICE, by the source scan and by the lint, both naming UI-3 |
+| UI-5 | a screen importing `../../api/client.ts` | **third outcome**: `npm test` stayed at 65 passed; only the LINT caught it |
+
+**UI-5's result is the one to keep.** The obligation binds under `npm run verify` and in CI, and does not bind for
+a developer running the test suite alone. That is not a defect in the rule, it is a fact about where the rule
+lives, and assuming the suite would report it is exactly the assumption this protocol exists to refuse.
+
+A fourth, DEC-1, was understating in a subtler way: its trigger line already admitted "the upward provenance lint
+is built and proven" while the row carried no mechanism at all. Planted here, red-correct for a decision with no
+provenance field.
+
+**The rest of the 49 are honestly gated**, and the check was to read the claim's clauses against the trigger's
+condition rather than to trust the sentence. Two categories, both legitimate:
+
+- Waiting on an artifact this edition genuinely lacks: a persistence layer (TEN-2, TEN-3, TEN-4, DATA-1 through
+  DATA-4, DATA-7 through DATA-11, TEST-1), a credential mint (SEC-4, SEC-10, TEN-6), a deployed host (SEC-8,
+  SEC-9, RES-3, RES-4, OBS-2), a tool seam (AI-1, AI-2, AI-3), a broker (DATA-8, RES-5), a second module (MOD-1,
+  checked: `client-web/src/modules/` holds exactly one).
+- Queued as "the next edition build pass", which is work scheduled rather than a condition awaited (SEC-11,
+  DATA-6, DATA-9, SRV-1, RES-6, PERF-1, PERF-4, DEP-2, TEST-4).
+
+MOD-1 is worth naming as an audit result rather than a change: its trigger reads "the second module" and there is
+exactly one, so the row is correct and needed nothing. An audit that only ever finds defects is not measuring.
+
+### Two node-specific statuses that are not the sibling's
+
+`archived documents are not cited as authority` is `latent` here rather than `patterned`, because this tree
+contains **zero inter-document markdown links**, so the resolver is built and has no subject to run against.
+
+`the composed entrypoint is exercised against a running server` is `latent` for the reason E-80 records: the smoke
+is built and is an npm script, and nothing in this edition starts it.
+
+### Gates
+
+Client 65, server 154, lint clean, docs-lint ok, conformance ok at 69 rows. All plants reverted, no source diff.
