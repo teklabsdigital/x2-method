@@ -734,3 +734,100 @@ unchanged at 16/7/2/44, non-`owed` 25.
 Baselines: .NET architecture 113 of 113, node server 154 of 154, node client-web **65 of 65**, dotnet client-web
 **65 of 65**, `compose --check` 38 shared files across 2 editions, both editions' `docs-lint`, `docs-lint
 --self-test` and `conformance --check` ok, literal em-dash and en-dash scans zero.
+
+## Round: batch 2 planting, and three rows that were proven on obligations nobody had planted (2026-07-27)
+
+Five claims, TEN-2, TEN-3, DATA-1, DATA-2 and CON-1. Every measurement in this round was taken at
+`1e52bfa`, against baselines of 113 `Kernel.Tests.Architecture` tests and 19 `Kernel.Tests.Unit` tests, with the
+tree clean before and after each plant and `git status --porcelain` empty at every revert.
+
+Three of the five read `proven` going in. All five leave the round `owed`, on the roll-up rule, and the
+per-obligation arrays carry the detail the roll-up flattens: TEN-3 is in good health with one member missing,
+DATA-1 is not.
+
+### The matrix
+
+| # | claim | plant | expected | outcome |
+|---|-------|-------|----------|---------|
+| 1 | DATA-1 | a type in `Kernel.Api.Endpoints` takes `KernelDbContext` | red | red, names DATA-1 |
+| 2 | DATA-1 | the same type in `Kernel.Api.Platform` | red | **green, 113** |
+| 3 | DATA-1 | a persistence type takes `NoteService` | red | **green, 113** |
+| 4 | DATA-1 | guard scoped to an empty namespace, real violation present | red | **green, 113** |
+| 5 | TEN-3 | `HasKey` flipped to lead with `Id` | red | red, names TEN-3 |
+| 6 | TEN-3 | `Note` stripped of `ITenantOwned` | red | red, names TEN-3 |
+| 7 | TEN-3 | column registry narrowed to nothing, entity unmarked | red | **green, 113** |
+| 8 | TEN-3 | registry narrowed, marker intact, key flipped | red | red, names TEN-3 |
+| 9 | CON-1 | the single enum converter removed | red | red, two tests |
+| 10 | CON-1 | `AddProblemDetails()` removed | red | red, names problem+json |
+| 11 | CON-1 | an endpoint returns a bespoke `{ok, why}` 400 | red | **green, 113** |
+| 12 | CON-1 | the document `7` deserialized for a two-member enum | rejected | **accepted, yields `7`** |
+| 13 | DATA-2 | `.AsNoTracking()` removed from `ListAsync` | red, DATA-2 | **red, AI-2's tool test** |
+| 14 | DATA-2 | `.AsNoTracking()` removed from `GetAsync` | red | **green, 113 and 19** |
+| 15 | DATA-2 | the store's `Math.Clamp` removed | red | **green, 113 and 19** |
+| 16 | DATA-2 | `.Take(limit)` removed, an unbounded read | red | **green, 113 and 19** |
+| 17 | TEN-2 | `Current` returns `Guid.Empty` instead of throwing | red | red, names TEN-2 |
+| 18 | TEN-2 | the ingress middleware removed from the pipeline | red | red, 7 tests |
+| 19 | TEN-2 | tenant filter removed from `EfNoteStore.DeleteAsync` | red | **green, 113 and 19** |
+
+Nine plants of nineteen did not bind. One, number 13, is the third outcome rather than the second, and it is the
+one worth reading twice.
+
+### Number 13, which is E-22 again
+
+Removing `.AsNoTracking()` from the list path does turn a test red, so the surface looks covered. The test is
+`ListNotesToolReadOnlyTests.Read_only_tool_reads_but_never_writes`, which is AI-2's guard, and its message is
+"Assert.Empty() Failure: Collection was not empty". DATA-2 is not named. The catch exists only because that tool
+happens to read through the list path, and number 14 shows the read path, which no tool touches, is green.
+
+Scoring that as coverage is the error E-22 was recorded for. It is scored as a finding.
+
+### Number 19, where the backstop is louder than the leak
+
+The cross-tenant delete leaves both suites green because no cross-tenant probe exists for any verb but GET. A
+probe written for the purpose returns `InternalServerError`, not `NotFound`: TEN-4's `SaveChanges` guard stops
+the write, so nothing leaks, but a cross-tenant read answers 404 and a cross-tenant delete answers 500, and a
+caller can tell those apart. Uniform not-found exists to deny exactly that inference. The probe passes against
+unplanted code, so the 500 is the plant's doing and the probe is sound.
+
+### The environment, which decides what several of these mean
+
+`Kernel.Tests.Integration` builds a SQL Server container through Testcontainers. With no Docker daemon it does
+not skip, it fails, four failures reading `Docker is either not running or misconfigured`. DATA-2's row cited
+`KeysetPagingTests` as proof of keyset paging; that proof runs on a developer machine with Docker up and, per
+E-39, in no CI anywhere. Recorded as E-49, and the obligation is `latent` rather than `patterned` because
+`latent` is the word for a mechanism that has not been executed against a real surface.
+
+`KernelApiFactory`, by contrast, does run the real `EfNoteStore`, against a temp-file SQLite database. So plants
+14, 15 and 16 are not green because the store sits outside the tested path. It sits inside it, and nothing
+asserts how it reads.
+
+### Tally movement
+
+| | before | after |
+|---|---|---|
+| proven | 16 | 13 |
+| patterned | 7 | 5 |
+| latent | 2 | 2 |
+| owed | 44 | 49 |
+| non-owed rows | 25 | 20 |
+
+TEN-3 proven to owed, DATA-1 proven to owed, CON-1 proven to owed, TEN-2 patterned to owed, DATA-2 patterned to
+owed. Eleven findings, E-40 through E-50. One of them, E-45, is a code defect and not only a guard gap: the host
+constructs `JsonStringEnumConverter` without `allowIntegerValues: false`, so CON-1's closed string set is open to
+integers.
+
+### Gates
+
+`compose --check` ok, 38 shared files in 2 editions. Both conformance records ok at 69 rows. Both docs-lints ok.
+Architecture 113, unit 19, client-web 65. Integration 4 failures, environment-blocked on Docker, recorded rather
+than counted as a pass. Literal em dash and en dash scans, 0 and 0.
+
+Register leak report (S-12), the dotnet edition, reports and never fails, 17 of 69 claims informed by a finding
+about another claim: AI-1 (ToolExecutor); AI-2 (ListNotesToolReadOnlyTests); CFG-1 (OperationalSettingsTests);
+CON-1 (WireConventionTests); CON-2 (ContractParityTests); DATA-2 (EfNoteStore); HUM-1 (irreversibleSurfaces);
+MOD-2 (NamingPlacementTests); SEC-1 (EndpointSpineTests, IAuthorizationPolicyProvider, PermissionPolicyProvider,
+RequireAuthenticatedUser); SEC-2 (ContractShapeTests, EndpointSpineTests, NameComparison); SEC-3
+(EndpointSpineTests, NameComparison); SEC-4 (HostSecurityTests, SessionVersionMiddleware); SEC-5
+(SecretConfigShapeTests, UserSecretsId); TEN-1 (ContractShapeTests, EndpointSpineTests, HostSecurityTests,
+IFromHeaderMetadata, NameComparison, TenantScopeMiddleware); TEN-4 (KernelDbContext); TEST-1
+(NamingPlacementTests); TIME-1 (TimeTypeTests).

@@ -2711,13 +2711,170 @@ a shell script, binds correctly and names DEP-1.
 The only occurrences of the string "dotnet" in it are a comment and the edition matrix label. The `client` job
 builds `kernel/shared/client-web`, not `kernel/dotnet-react/client-web`.
 
-So `Kernel.Tests.Architecture`, all 100 tests, and the dotnet edition's client verification chain run only when
+So `Kernel.Tests.Architecture`, all 113 tests, and the dotnet edition's client verification chain run only when
 a human runs them locally. The edition's own `ci.yml` does wire both up, and that file is a template which
 becomes real CI only at instantiation, which E-24 established ships no arming mechanism and has never been
 executed until this week.
 
 This is not an argument that the guards are wrong. It is the reason a neutered guard survives: E-29 and E-30
 both required editing a file, and no continuous process anywhere would have reported either edit.
+
+### E-40. DATA-1's endpoint ban stops at one namespace, and the host's other namespace is unguarded
+
+**Claim:** DATA-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+`DependencyDirectionTests.Endpoints_do_not_depend_on_Persistence` scopes itself with
+`ResideInNamespace("Kernel.Api.Endpoints")`. `Kernel.Api` has a second namespace, `Kernel.Api.Platform`, holding
+`TenantScopeMiddleware`, `SessionVersionMiddleware` and `PermissionPolicyProvider`. A type placed there taking
+`KernelDbContext` as a constructor dependency passes all 113 architecture tests. The same type one namespace over,
+in `Kernel.Api.Endpoints`, is caught and the message names DATA-1.
+
+The claim's own harm paragraph is this defect: B2-2 found "a controller injecting the security database context
+directly behind an anonymous surface". The middleware namespace is where an anonymous surface actually lives, so
+the guard covers the namespace where the harm is least likely and leaves the one where it was observed.
+
+The row read `proven`.
+
+### E-41. DATA-1 bans one upward dependency and its mechanism class names another
+
+**Claim:** DATA-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+The mechanism class reads "no persistence type references application services". The only upward assertion in the
+file is `Persistence_does_not_depend_on_Api`, which bans `Kernel.Api`. A persistence type taking `NoteService`, an
+application service, as a constructor dependency passes all 113 tests.
+
+Nothing tests the third member either: "store implementations are reachable only via their interfaces" has no
+assertion of its own. It is covered incidentally where `App_does_not_depend_on_Persistence_or_Api` reaches, and
+not at all in `Kernel.Api.Platform`, per E-40.
+
+### E-42. NetArchTest reports success on an empty type set, and DATA-1 never checks the set is non-empty
+
+**Claim:** DATA-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+With a real violation present in `Kernel.Api.Endpoints`, changing the guard's own filter to
+`ResideInNamespace("Kernel.Api.Handlers")`, a namespace no type lives in, leaves all 113 tests green. The library
+treats "no types matched" as "no types failed", and nothing asserts the selected set is non-empty.
+
+This is reachable through an ordinary rename: `Kernel.Api.Endpoints` is a namespace string repeated in a test file
+that a namespace refactor has no reason to visit. The neutering edit and the refactor are the same edit.
+
+### E-43. TEN-3's tenant-column registry is a four-name list with no extent assertion
+
+**Claim:** TEN-3. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+`TenantColumnNames` is `["tenantid", "orgid", "organizationid", "organisationid"]`, hand written, and nothing
+asserts what it reaches. Narrowed to a single name no column carries, with `Note` stripped of `ITenantOwned` so a
+real violation is present, all 113 tests pass: the marker test finds no tenant-shaped column to complain about and
+the key test finds no tenant-owned entity to check, so both halves go vacuous together.
+
+Unlike E-29, the two halves do not fall together from one edit. Narrowing the registry alone leaves the key
+assertion binding, because that assertion rides on the `ITenantOwned` marker rather than on the registry: with the
+registry dead and the marker intact, flipping `NoteConfiguration.HasKey` to lead with `Id` still turns
+`Every_tenant_owned_entity_leads_its_key_with_TenantId` red. TEN-3 is in better shape than CFG-1 was. What is
+unguarded is the second obligation only, "no unmarked tenant data", whose whole reach is that four-name list.
+
+### E-44. TEN-3's sanctioned-exception obligation has no mechanism
+
+**Claim:** TEN-3. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+The mechanism class requires that "a sanctioned exception carries a named justification and its own guard at the
+key assertion", and separately rules that a key-shape exemption does not belong in the TEN-5 access ledger, so it
+needs a home of its own. `TenantKeyTests` has no exemption list, no justification field and no guard for one.
+
+There are no exceptions today, so nothing is presently wrong. What is missing is the supported path: a project
+seeding from this kernel that needs one has nowhere to record it and nothing forcing the justification, and the
+row read `proven` on an obligation with no mechanism to plant against.
+
+### E-45. CON-1's enum wire set is not closed: an integer off the wire yields an undeclared value
+
+**Claim:** CON-1. **Found:** 2026-07-27. **Measured at 1e52bfa.** **Code defect, not only a guard gap.**
+
+CON-1's statement is that "enums cross the wire as closed string sets registered through a single converter
+configuration". Deserializing the JSON document `7` for a two-member enum through the host's own configured
+`JsonSerializerOptions` returns the value `7`. `JsonStringEnumConverter` allows integer values by default, and
+`Program.cs` constructs it as `new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)`, taking that default.
+
+The undeclared-string case is correctly rejected, which is why the gap survives a casual reading: the closed set
+holds on the spelling a human would try and fails on the one a broken client sends. The remedy is one argument,
+`allowIntegerValues: false`, and a test that plants the integer.
+
+No enum exists anywhere in `src/`. The only enum the suite exercises is `SampleEnum`, declared private inside
+`WireConventionTests`, so the round-trip test proves the converter is in the options bag and nothing about any
+shipped contract.
+
+### E-46. CON-1's "no endpoint invents its own error shape" is unguarded
+
+**Claim:** CON-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+Two hand-picked routes are asserted to render `application/problem+json`: a malformed cursor and an unknown route.
+Nothing enumerates endpoints. Changing `CreateAsync` to return
+`Results.Json(new { ok = false, why = ... }, statusCode: 400)` in place of `TypedResults.ValidationProblem` leaves
+all 113 tests green.
+
+Both configuration points do bind: removing the enum converter turns two tests red and removing
+`AddProblemDetails()` turns `Unknown_route_returns_problem_json` red. The single configuration point is proven.
+What is unproven is the sentence the claim spends its harm paragraph on, that no endpoint departs from it.
+
+### E-47. CON-1's opaque-identifier obligation has no mechanism
+
+**Claim:** CON-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+"Identifiers are opaque strings" is one of the four clauses of CON-1's statement. No test in any project asserts
+anything about identifier types. `ContractParityTests` reflects contract types into their camelCase wire names and
+compares the name lists against a shared fixture; it never reads a property type, so a `Guid Id` becoming a
+sequential `long Id` changes nothing it looks at.
+
+### E-48. DATA-2's store obligations are unguarded, and the one incidental catch names the wrong claim
+
+**Claim:** DATA-2. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+`KernelApiFactory` runs the real `EfNoteStore` against SQLite, so the store is inside the tested path. Nothing
+asserts anything about how it reads. Three separate plants, each run against both runnable suites:
+
+- `.AsNoTracking()` removed from `GetAsync`: green, 113 and 19.
+- `Math.Clamp(limit, 1, INoteStore.MaxPageSize)` removed from `ListAsync`: green, 113 and 19. Its own comment
+  reads "DATA-2 hard bound at the store, so a direct caller cannot read unbounded".
+- `.Take(limit)` removed from `ListAsync`, an unbounded table read, which is the harm the claim names: green,
+  113 and 19.
+
+Removing `.AsNoTracking()` from `ListAsync` is the third outcome, not the second. It turns
+`ListNotesToolReadOnlyTests.Read_only_tool_reads_but_never_writes` red, which is AI-2's guard, with the message
+"Assert.Empty() Failure: Collection was not empty". DATA-2 is not named, the message describes a tool, and the
+catch covers the list path only because that tool happens to read through it. This is E-22's shape exactly: the
+surface looks covered and DATA-2's own guard reached nothing.
+
+`NoteServiceTests.List_clamps_the_page_size` is real and runnable but drives a `FakeNoteStore`, so it proves the
+service clamp and never reaches the store's.
+
+### E-49. DATA-2's only cited proof of keyset paging cannot run
+
+**Claim:** DATA-2, and TEN-3's engine-level half. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+The row cites "integration `KeysetPagingTests` incl. a same-timestamp collision page". `Kernel.Tests.Integration`
+builds a SQL Server container through Testcontainers in `SqlServerFixture`. With no Docker daemon it does not
+skip, it fails: four failures, `Docker is either not running or misconfigured`. Combined with E-39, which
+established that this repository's CI runs no dotnet at all, the cited proof runs on a developer machine with
+Docker up and nowhere else.
+
+A suite that fails rather than skips on a missing environment is the worse of the two shapes here, because the red
+is indistinguishable at a glance from a conformance failure and teaches a reader to discount it.
+
+### E-50. TEN-2's uniform not-found is probed on one verb, and the backstop is a 500
+
+**Claim:** TEN-2. **Found:** 2026-07-27. **Measured at 1e52bfa.**
+
+The mechanism class ends "cross-tenant e2e probes assert uniform not-found behavior". One such probe exists,
+`HostSecurityTests.One_tenant_cannot_read_another_tenants_note`, and it is a GET. There is no cross-tenant probe
+for delete or for list, and the row carries no obligation for this member at all.
+
+Removing the tenant filter from `EfNoteStore.DeleteAsync` leaves all 113 architecture tests and all 19 unit tests
+green. Driving that path over HTTP with a probe written for the purpose returns `InternalServerError`. So the data
+does not leak, because TEN-4's `SaveChanges` guard throws, but the answer is not uniform: a cross-tenant read is
+404 and a cross-tenant delete with a forgotten filter is 500. A caller can tell the two apart, which is an
+existence oracle, and uniform not-found exists to deny exactly that. Uniformity is delivered today only by every
+store method separately remembering its own `Where`, and the backstop that catches a lapse announces it.
+
+The probe passes against unplanted code, so it is a valid test and the 500 is caused by the plant.
 
 ## Acceptance test, first execution (2026-07-27)
 

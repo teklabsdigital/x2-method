@@ -42,9 +42,9 @@
     },
     "TEN-2": {
       "title": "Ambient scope, fail-closed",
-      "status": "patterned",
+      "status": "owed",
       "mechanism": "`AmbientTenantScope` (AsyncLocal, throws on unset); `AmbientTenantScopeTests`",
-      "note": "the non-HTTP job base class is owed (trigger: first background job)",
+      "note": "the non-HTTP job base class is owed (trigger: first background job); cross-tenant probes cover GET only (E-50)",
       "obligations": [
         {
           "name": "scope established at every entry",
@@ -55,14 +55,36 @@
           "name": "unset scope fails before I/O",
           "status": "proven",
           "text": "`AmbientTenantScope` throws when read unset, so an unstamped path is an error rather than an unfiltered query; `AmbientTenantScopeTests` asserts the throw rather than the accessor's presence."
+        },
+        {
+          "name": "cross-tenant probes assert uniform not-found",
+          "status": "owed",
+          "text": "Only `One_tenant_cannot_read_another_tenants_note` exists and it is a GET; delete and list have no cross-tenant probe. With the tenant filter removed from `EfNoteStore.DeleteAsync` both runnable suites stay green, and driving that path over HTTP returns 500 rather than 404, so a forgotten filter is an existence oracle rather than a uniform not-found (E-50). trigger: a cross-tenant probe per mutating verb, asserting the same status the read path returns."
         }
       ]
     },
     "TEN-3": {
       "title": "Tenant-leading composite keys",
-      "status": "proven",
-      "mechanism": "`NoteConfiguration.HasKey(TenantId, Id)`; `TenantKeyTests` (both directions)",
-      "note": ""
+      "status": "owed",
+      "mechanism": "`NoteConfiguration.HasKey(TenantId, Id)`; `TenantKeyTests` (key shape via the `ITenantOwned` marker, unmarked-data via a four-name column registry)",
+      "note": "the key half holds; the registry has no extent assertion and exceptions have no home (E-43, E-44)",
+      "obligations": [
+        {
+          "name": "tenant-owned entities lead their key with the tenant id",
+          "status": "proven",
+          "text": "`Every_tenant_owned_entity_leads_its_key_with_TenantId` reads the EF model and binds: flipping `HasKey` to lead with `Id` turns it red and names TEN-3. It rides on the `ITenantOwned` marker, not on the column registry, so it still binds with that registry narrowed to nothing."
+        },
+        {
+          "name": "no unmarked tenant data",
+          "status": "patterned",
+          "text": "`Every_entity_with_a_tenant_column_is_marked_tenant_owned` binds: stripping `ITenantOwned` from `Note` turns it red. Its whole reach is `TenantColumnNames`, a hand-written four-name list with nothing asserting its extent, so an entity whose tenant column is spelled any other way merges silently (E-43). trigger: an extent assertion over the registry, in the shape `SecretConfigShapeTests` and the UI-2 lint extent test already carry."
+        },
+        {
+          "name": "a sanctioned exception carries a named justification and its own guard",
+          "status": "owed",
+          "text": "`TenantKeyTests` has no exemption list, no justification field and no guard for one, and the claim rules that a key-shape exemption does not belong in the TEN-5 access ledger, so it needs a home of its own (E-44). trigger: the first sanctioned key-shape exception."
+        }
+      ]
     },
     "TEN-4": {
       "title": "Save-time guard and write provenance",
@@ -287,15 +309,49 @@
     },
     "DATA-1": {
       "title": "Stores, records, downward deps",
-      "status": "proven",
-      "mechanism": "layer references + `DependencyDirectionTests`; one service call per endpoint",
-      "note": ""
+      "status": "owed",
+      "mechanism": "`DependencyDirectionTests`: four NetArchTest assertions over the App, Contracts, Persistence and Api assemblies",
+      "note": "the endpoint ban binds but stops at one namespace; two members of the mechanism class have no assertion (E-40, E-41, E-42)",
+      "obligations": [
+        {
+          "name": "no endpoint or host type references a store implementation or DbContext",
+          "status": "patterned",
+          "text": "`Endpoints_do_not_depend_on_Persistence` binds inside `Kernel.Api.Endpoints` and names DATA-1. It is scoped by namespace string, so the same violation in `Kernel.Api.Platform`, where the middleware lives, passes (E-40), and NetArchTest reports success on an empty selection, so a namespace rename silently empties the guard (E-42). trigger: widen the ban to all of `Kernel.Api` bar the composition root, and assert the selected type set is non-empty."
+        },
+        {
+          "name": "no persistence type references application services",
+          "status": "owed",
+          "text": "The only upward assertion bans `Kernel.Api`; a persistence type taking `NoteService` as a dependency passes all 113 tests (E-41). trigger: add the assertion, App services excluded from Persistence."
+        },
+        {
+          "name": "store implementations are reachable only via their interfaces",
+          "status": "owed",
+          "text": "No assertion of its own; covered incidentally where `App_does_not_depend_on_Persistence_or_Api` reaches, and not at all in `Kernel.Api.Platform` (E-41). trigger: add the assertion."
+        }
+      ]
     },
     "DATA-2": {
       "title": "Bounded reads",
-      "status": "patterned",
-      "mechanism": "`EfNoteStore` AsNoTracking + `(CreatedAtUtc, Id)` keyset + the shared page-size clamp; `NoteServiceTests`, integration `KeysetPagingTests` incl. a same-timestamp collision page",
-      "note": "structural + review; single module, no shared store base"
+      "status": "owed",
+      "mechanism": "`EfNoteStore` AsNoTracking + `(CreatedAtUtc, Id)` keyset + a store-side clamp; `NoteServiceTests` (service clamp, over a fake store); integration `KeysetPagingTests`, which needs a Docker daemon",
+      "note": "structural + review; the store is inside the tested path and nothing asserts how it reads (E-48, E-49)",
+      "obligations": [
+        {
+          "name": "every list endpoint has a maximum page size",
+          "status": "patterned",
+          "text": "`NoteServiceTests.List_clamps_the_page_size` is runnable and binds, but drives a `FakeNoteStore`, so it proves the service clamp only; the store clamp whose comment reads \"a direct caller cannot read unbounded\" deletes with every runnable suite green, as does `.Take(limit)` itself (E-48). trigger: each new list endpoint owes its own bound test, and the store bound owes an assertion that observes it."
+        },
+        {
+          "name": "reads run without change tracking",
+          "status": "owed",
+          "text": "Removing `.AsNoTracking()` from `GetAsync` leaves both runnable suites green. Removing it from `ListAsync` turns AI-2's `ListNotesToolReadOnlyTests` red with a message naming a tool and not DATA-2, which is the third scoring outcome and E-22's shape, not coverage (E-48). trigger: an assertion that observes the change tracker across the store's read paths."
+        },
+        {
+          "name": "list reads are paginated by keyset, not offset",
+          "status": "latent",
+          "text": "`KeysetPagingTests` exists and covers a same-timestamp collision page, but `Kernel.Tests.Integration` builds a SQL Server container and fails rather than skips with no Docker daemon, and per E-39 no CI runs dotnet at all, so the mechanism has not been executed here (E-49). trigger: the integration suite running in CI, or a keyset assertion that needs no engine."
+        }
+      ]
     },
     "DATA-3": {
       "title": "Two-layer at-most-once",
@@ -371,9 +427,31 @@
     },
     "CON-1": {
       "title": "One wire dialect",
-      "status": "proven",
-      "mechanism": "ProblemDetails + StatusCodePages + single camelCase enum converter; `WireConventionTests` (naming, enum round-trip, problem+json)",
-      "note": ""
+      "status": "owed",
+      "mechanism": "one host configuration point (`AddProblemDetails`, `UseStatusCodePages`, a single camelCase `JsonStringEnumConverter`); `WireConventionTests` asserts naming, a round-trip of a test-local enum, and problem+json on two routes",
+      "note": "the single configuration point is proven; three statement clauses are not (E-45, E-46, E-47)",
+      "obligations": [
+        {
+          "name": "one host-level serialization and error configuration point",
+          "status": "proven",
+          "text": "Both halves bind: removing the enum converter turns `Json_naming_is_camelCase_with_an_enum_converter` and `Enums_round_trip_as_camelCase_strings` red, and removing `AddProblemDetails()` turns `Unknown_route_returns_problem_json` red."
+        },
+        {
+          "name": "no endpoint invents its own error shape",
+          "status": "patterned",
+          "text": "Two hand-picked routes are asserted to render problem+json and nothing enumerates endpoints, so returning a bespoke `{ok, why}` 400 from `CreateAsync` leaves all 113 tests green (E-46). trigger: an assertion over the endpoint set, in the shape `EndpointSpineTests` already walks."
+        },
+        {
+          "name": "enums cross the wire as closed string sets",
+          "status": "owed",
+          "text": "The host converter is constructed without `allowIntegerValues: false`, so the JSON document `7` deserializes to an undeclared enum value through the host's own options: the set is not closed, and this is a code defect, not only a missing guard (E-45). No enum exists in `src/`; the only one the suite exercises is private to `WireConventionTests`. trigger: pass `allowIntegerValues: false`, plant the integer, and re-test at the first real contract enum."
+        },
+        {
+          "name": "identifiers are opaque strings",
+          "status": "owed",
+          "text": "No test asserts anything about identifier types. `ContractParityTests` compares camelCase property names against a fixture and never reads a property type (E-47). trigger: an assertion that no contract exposes a non-opaque identifier."
+        }
+      ]
     },
     "CON-2": {
       "title": "Contract parity fixture",
