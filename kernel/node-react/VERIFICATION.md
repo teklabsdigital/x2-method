@@ -1616,3 +1616,48 @@ smaller, and its remaining half is the client tiers and the sibling's C#.
 Everything on 24.18.0: node server 306, three client tiers 65 each, node e2e green, both editions docs-lint ok at
 37/40 and conformance ok at 69 rows, compose ok at 40 shared files, loop-check ok, secret-scan ok in both, dash
 scan 0 with a live control.
+
+## 2026-07-28, the edition closes: what is met, what is not, and by whose decision
+
+Measured at c2cec82. Four owner rulings close this effort deliberately, and three of them are decisions NOT to
+build. Recorded in `record/adjudication-digest.md` under RULED, 2026-07-28.
+
+### The state
+
+    rows           5 proven / 4 patterned / 3 latent / 57 owed, 12 non-owed of 69
+    suites         server 306, client-web 65, e2e green end to end, needing no engine container
+    tools          docs-lint 37/40, conformance 69 rows, secret-scan 2 exceptions, gate-check 6/7
+
+### The definition of ready, answered
+
+**Requirement 2 is met**: every plant runs as an executable test. **Requirement 3 is met**: the acceptance test
+ran on 2026-07-28, 9 of 10 commands passing in roughly five human turns against the sibling's twenty-seven, and
+the tenth was the forge. **Requirement 1 is met except for two rows in this edition**, TEST-3 and HUM-1, both
+`latent` on a gate readback that has never executed against a real forge.
+
+That is a decision rather than a pending task. The owner ruled on 2026-07-28 not to instantiate in this pass, and
+both rows now carry the trigger that would move them.
+
+### E-117, and why this edition's rows were already right
+
+The sibling's two rows said the readback was `latent` because it "needs a token this repository does not have".
+Measured false: `gate-check` detects the kernel context and reads no gate at all, exiting 0 with a note whether a
+token is present or not, because the kernel ships the workflow as a template and is not the repository whose
+default branch is gated. What the rows need is an instantiation.
+
+**These two rows named no blocker, and that is why they were correct.** They said only that the readback has
+never run against a real forge, which is true and was true throughout. The finding is worth carrying here rather
+than only in the sibling: the defect came from adding an explanation, written from an assumption about what the
+tool needed rather than from running it. Claiming less was the stronger record. Both rows now name the
+instantiation explicitly, which is a claim that was measured rather than assumed.
+
+### What is deliberately not built
+
+TEST-3 stays `latent` rather than being driven to `proven`, which needs export-level reachability for the client
+tier. UI-2 keeps its last two holes. TEN-3, UI-1 and CON-1 stay `owed` on surface this kernel does not have and
+will not grow purely to be enumerated.
+
+### The verdict
+
+The edition is congruent with the claims catalog: every claim has an honest row. It is not the case that every
+claim is `proven`, and it never was.

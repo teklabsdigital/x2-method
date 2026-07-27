@@ -971,7 +971,7 @@
         {
           "name": "the loop gates merges, armed at instantiation, with the arming step carried and verified",
           "status": "latent",
-          "text": "`gate-check.mjs` derives the required check names from the workflow itself, reads both rulesets and classic protection, catches ruleset evaluate mode (which reports rules and blocks nothing) and requires a pull request. Its `--self-test` runs in this edition's CI. The readback itself has never executed against a real forge, so the half that would prove the gate is ARMED is built and unexercised."
+          "text": "`gate-check.mjs` derives the required check names from the workflow itself, reads both rulesets and classic protection, catches ruleset evaluate mode (which reports rules and blocks nothing) and requires a pull request. Its `--self-test` runs in this edition's CI. The readback itself has never executed against a real forge, so the half that would prove the gate is ARMED is built and unexercised. This row named no blocker for that, and was right not to: the sibling's named a token and E-117 measured that false, since `gate-check` reads no gate in the kernel at all and exits 0 with a note. The readback executes for the first time in a seeded project, where the two files marking the kernel context have stayed behind. trigger: the first instantiation. **Accepted as `latent` by owner ruling on 2026-07-28**, which stops short of one deliberately rather than leaving the row to imply nobody got round to it."
         }
       ]
     },
@@ -995,7 +995,7 @@
         {
           "name": "the merge gate requires that review, armed at instantiation",
           "status": "latent",
-          "text": "`gate-check.mjs` is built and reads code-owner review back from the forge. It has never run against a real forge, so the arming half is unexercised. The claim itself assigns arming to the human and verification to the kernel, which is why this is `latent` rather than `owed`."
+          "text": "`gate-check.mjs` is built and reads code-owner review back from the forge. It has never run against a real forge, so the arming half is unexercised. The claim itself assigns arming to the human and verification to the kernel, which is why this is `latent` rather than `owed`. What it needs is an instantiation and not a credential (E-117). trigger: the first instantiation. **Accepted as `latent` by owner ruling on 2026-07-28.**"
         }
       ]
     },

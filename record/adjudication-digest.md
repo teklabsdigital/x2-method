@@ -109,6 +109,39 @@ by a sentence naming a facility the edition does not have. The report dated into
 per-claim `[informed]` label would, and does it better: the register only grows, so a snapshot is the only honest
 answer to what a step 2 could have seen when it was written, and a snapshot cannot drift.
 
+## RULED, 2026-07-28: where the kernel stops, and what it stops short of
+
+Four decisions taken at c2cec82, closing the readiness effort deliberately rather than by running out of things
+that were easy. They are recorded together because three of them are decisions NOT to do work, and an absence
+with no argument behind it reads exactly like an omission, which is the failure this whole register is about.
+
+| Point | Decision | Consequence |
+|---|---|---|
+| 1. The four `latent` rows, TEST-3 and HUM-1 in both editions | **Accept `latent`. No instantiation.** | **Requirement 1 of readiness is not met, by decision.** Every row says so in its own text, with the trigger that would move it |
+| 2. Observing the new dotnet-e2e job in CI | **The owner pushes; the agent does not** | E-116's trigger stays open. The job is wired and unwitnessed, and both TEST-2 rows say that in those words |
+| 3. Beyond-the-line build work: TEST-3 to `proven`, UI-2's last two holes | **Neither. Stop at the honest line** | Both rows keep accurate statuses with their gaps written down, which is what congruence with the catalog actually requires |
+| 4. TEN-3, UI-1, CON-1, each waiting on kernel surface that does not exist | **Leave all three `owed`** | No surface is invented to make a guard pass |
+
+**Why point 1 is a decision and not a shortfall.** The four rows need a seeded project in a repository that has a
+gate to arm. That was mis-stated in this register until the same day: two of the rows said the blocker was a
+token, and E-117 measured that false, because `gate-check` detects the kernel context and reads no gate at all,
+exiting 0 with a note whether a token is present or not. So the cost of closing those rows is not a credential,
+it is creating a real repository, seeding into it, arming its default branch and reading it back, twice, since
+the two editions are never reconciled against each other and each owes its own run. That is a project, not a
+step, and the owner ruled it out of this pass with the rows left honest.
+
+**What this means for the definition of ready.** Three requirements: every non-`owed` row planted and proven in
+both editions; the plants running as executable tests rather than prose; the acceptance test run at least once
+per edition. **Two and three are met.** One is met except for the four rows above. The kernel is therefore
+congruent with the claims catalog, which is the property that was always the point: every claim has an honest
+row. It is not the case that every claim is `proven`, and it never was.
+
+**Why point 4 refuses the obvious move.** An enumeration over a set of size one cannot fail, a token test against
+a placeholder proves the placeholder, and a 404 shape that is not RFC 9457 is recorded as not being one. Building
+a second table, a design export and an error handler would move three rows and would grow the kernel by surface
+whose only purpose is to be enumerated. The rows are more useful `owed` with their triggers than green against
+scaffolding.
+
 ## Decision sheet
 
 | # | Ruling | One-line question | Recommended | Falsifies a shipped `proven`? |

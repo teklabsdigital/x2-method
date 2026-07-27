@@ -2019,3 +2019,62 @@ workflow scan re-proven by plant: a committed appsettings value restated in the 
 of 208. loop-check 8 caught / 4 ignored, live 11 of 16 with 5 excused. Both editions: docs-lint ok at 37/40,
 conformance ok at 69 rows, compose ok at 40 shared files, secret-scan ok (4 exceptions here, down from 5), dash
 scan 0 with a live control.
+
+## 2026-07-28, the edition closes: what is met, what is not, and by whose decision
+
+Measured at c2cec82. Four owner rulings close this effort deliberately rather than by running out of cheap work,
+and three of them are decisions NOT to build. They are recorded in `record/adjudication-digest.md` under RULED,
+2026-07-28, and summarized here because an absence with no argument behind it reads exactly like an omission.
+
+### The state
+
+    rows           7 proven / 8 patterned / 3 latent / 51 owed, 18 non-owed of 69
+    suites         architecture 208, unit 58, integration 4, e2e green (7 scenarios plus the smoke)
+    tools          docs-lint 37/40, conformance 69 rows, secret-scan 4 exceptions, gate-check 6/7,
+                   compose 40 shared files, loop-check 11 of 16 with 5 excused
+
+### The definition of ready, answered
+
+**Requirement 2 is met**: every plant runs as an executable test, none as prose. **Requirement 3 is met**: the
+acceptance test ran on 2026-07-27, 27 human turns, and the defects it found are repaired. **Requirement 1 is met
+except for two rows in this edition**, TEST-3 and HUM-1, both `latent` on a gate readback that has never executed
+against a real forge.
+
+**That is now a decision rather than a pending task.** Closing those two rows needs a seeded project in a
+repository that has a gate to arm: create it, seed into it, arm the default branch, read it back. The owner ruled
+on 2026-07-28 not to do that in this pass, and both rows say so in their own text alongside the trigger that
+would move them.
+
+### E-117, found while scoping exactly that
+
+Both rows gave the same reason for their status: `latent` because the readback "needs a token this repository
+does not have". **Measured false by running the tool.** `gate-check` detects the kernel context by the two files
+instantiation keeps behind, reads no gate at all, and exits 0 with a note, token or no token:
+
+    gate-check: note: kernel context, no product gate to read. The workflow declares 5 jobs, and
+    instantiation must require all of them: server, client, docs-lint, secret-scan, e2e-wire.
+
+The kernel is not the repository being armed. It ships that workflow as a template, and this repository's own
+gate would have to require `kernel.yml`'s ten jobs rather than the five an edition declares. The right blocker
+was already in each row, one clause later, in the trigger: **the first instantiation**. Two clauses disagreed and
+both shipped, and the wrong one is the half a reader reaches first, because it is the half that explains the
+status in front of them.
+
+The sibling edition's two rows name no blocker at all and are correct for that reason. The defect here came from
+adding an explanation written from an assumption about what the tool needed instead of from running it. E-106 is
+a reason that expired; this is a reason that was never true. Both rows repaired.
+
+### What is deliberately not built
+
+TEST-3 stays `latent` rather than being driven to `proven`, which would need export-level reachability for the
+client tier and a different instrument for this edition's C#. UI-2 keeps its last two holes, a computed key and
+one level of indirection, which need a type-aware rule rather than a wider selector; twelve of fourteen are
+closed. TEN-3, UI-1 and CON-1 stay `owed`: an enumeration over a set of size one cannot fail, a token test
+against a placeholder proves the placeholder, and a 404 shape that is not RFC 9457 is recorded as not being one.
+Building the surface to make those three green would grow the kernel by things whose only purpose is to be
+enumerated.
+
+### The verdict
+
+The edition is congruent with the claims catalog: every claim has an honest row, which is the property that was
+always the point. It is not the case that every claim is `proven`, and it never was.

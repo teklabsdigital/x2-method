@@ -5290,6 +5290,49 @@ The header no longer states the falsified half. **Trigger: the first observed gr
 either the integration tier added to it or a written argument for why an engine-backed job should skip the
 engine-backed tier.**
 
+### E-117. A row named the wrong blocker, and the right one was in the next sentence
+
+**Claim:** TEST-3, HUM-1. **Found:** 2026-07-28, scoping what the owner would have to supply to close the four
+`latent` rows. **Measured at c2cec82**, by running the tool. **Repaired here.**
+
+Both of this edition's `latent` obligations gave the same reason for their status:
+
+    TEST-3  `latent` because it has never been run against a real forge: that needs a token this
+            repository does not have. trigger: the first instantiation
+    HUM-1   `latent`: never run against a real forge, which needs a token this repository does not
+            have. trigger: the first instantiation
+
+**A token would not have moved either row, and the tool says so itself.** `gate-check.mjs` detects the kernel
+context by the two files the instantiation manifest keeps behind, and in that context it deliberately does not
+read a gate at all:
+
+    $ node tools/gate-check.mjs
+    gate-check: note: kernel context, no product gate to read. The workflow declares 5 jobs, and
+    instantiation must require all of them: server, client, docs-lint, secret-scan, e2e-wire.
+    exit=0
+
+Exit 0, no network call, with or without a token. The kernel is not the repository whose gate is being armed: it
+ships the workflow as a TEMPLATE, and this repository's own gate would have to require `kernel.yml`'s ten jobs,
+not the five an edition declares. So the blocker was never a credential. It is an instantiation into a repository
+that HAS a gate to arm, which is exactly what the trigger on the very next clause of each row already said.
+
+**The two clauses disagreed and both were shipped.** A reader acting on the reason acquires a token, runs the
+command, gets exit 0, and has learned nothing about arming while receiving the shell's success code. A reader
+acting on the trigger does the right thing. Nothing in the record distinguished them, and the reason is the half
+a person reads first, because it is the half that explains the status they are looking at.
+
+Sibling comparison, and it is the interesting part: node-react's two rows say only "it has never run against a
+real forge" and name no blocker. **They are correct because they claim less.** The defect here came from adding
+an explanation, and the explanation was written from an assumption about what the tool needed rather than from
+running it. E-106 is a reason that expired; this is a reason that was never true.
+
+**Not a defect in `gate-check`.** Exiting 0 in the kernel is right: failing would be a permanently red gate
+nobody can arm (E-84), and the note names what instantiation must require. The seeded tree cannot get this pass
+by accident, because `BUILD-BRIEF.md` and `VERIFICATION.md` stay behind at seeding, which is the same detection
+`docs-lint` uses so the two tools cannot disagree about which tree they are in.
+
+Repaired by rewriting both reasons to name the instantiation and to say what a token does and does not buy.
+
 ### E-109. A test asserted against the placeholder the manifest tells you to change, so it failed when the rename was done right
 
 **Claim:** CFG-1, and through it the manifest. **Found:** 2026-07-27, executing node-react's acceptance test.
