@@ -166,16 +166,103 @@ export function docLifecycleFindings(rel, text) {
   return out;
 }
 
-export function bypassLedgerFindings(text) {
+/// DOC-1: an archived document is not cited as authority.
+///
+/// The lifecycle's whole point is that a byproduct dies at slice completion, and "dies" has to mean something a
+/// reader can rely on. It did not: an archived runbook still cited by the edition README as the way to run the
+/// system passed every check, because the status field was validated against an enum and never read by anything
+/// (E-33). A status nobody reads is a label, not a lifecycle.
+///
+/// The direction matters. An archived document may cite anything, including other archived documents, because
+/// history refers to history; a LIVE document citing an archived one is the failure, because it hands a reader a
+/// superseded answer with no signal. So the rule is asymmetric on the CITER's status, not the target's alone.
+const MARKDOWN_LINK = /\[[^\]]*\]\(([^)\s#]+)(?:#[^)\s]*)?\)/g;
+
+export function citationFindings(rel, text, statusOf) {
+  const citerStatus = frontMatter(text)?.status ?? (rel.includes('/') ? null : 'authoritative');
+  if (citerStatus === 'archived') {
+    return [];
+  }
+
   const out = [];
-  const rows = text
-    .split('\n')
-    .filter((line) => line.trim().startsWith('|'))
-    .slice(2); // skip the header and separator rows
-  for (const row of rows) {
-    const test = (row.split('|')[3] ?? '').trim();
-    if (test.length === 0) {
-      out.push('tenant-bypass-ledger.md: a bypass row names no sole-reader test (TEN-5).');
+  const seen = new Set();
+  for (const match of text.matchAll(MARKDOWN_LINK)) {
+    const href = match[1];
+    if (!href.endsWith('.md') || /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//')) {
+      continue; // an external URL is somebody else's lifecycle
+    }
+
+    const from = rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '';
+    const target = normalizePath(href.startsWith('/') ? href.slice(1) : (from ? `${from}/${href}` : href));
+    if (seen.has(target)) {
+      continue;
+    }
+    seen.add(target);
+
+    if (statusOf(target) === 'archived') {
+      out.push(`${rel}: cites '${target}', which is archived, as authority. An archived document is history; a live document citing one hands the reader a superseded answer with nothing to signal it (DOC-1, E-33).`);
+    }
+  }
+  return out;
+}
+
+function normalizePath(path) {
+  const parts = [];
+  for (const part of path.split('/')) {
+    if (part === '.' || part === '') {
+      continue;
+    }
+    if (part === '..') {
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  return parts.join('/');
+}
+
+/// TEN-5: the sanctioned-bypass ledger.
+///
+/// Read by COLUMN NAME, not by position, and that is the E-35 repair. The old parse took `row.split('|')[3]`,
+/// so inserting an Owner column moved the sole-reader cell out of reach and every row passed unread; and it took
+/// a row to be any line starting with a pipe, so a ledger reformatted as a bullet list had no rows at all and
+/// passed for having nothing in it. Both were carried as KNOWN GAP controls until 2026-07-27. A parse that
+/// silently finds nothing is the worst failure available to a guard whose subject is usually empty.
+///
+/// `resolvesTest` is the E-34 repair. The named test IS the remedy TEN-5 asks for, and docs-lint never opened a
+/// test file, so a row naming `NoSuchTestAnywhereInThisRepo` passed. A name that resolves to nothing is a row
+/// with no remedy, which is the same as no row at all except that it looks like coverage.
+export function bypassLedgerFindings(text, resolvesTest = () => true) {
+  const out = [];
+  const lines = text.split('\n').map((line) => line.trim()).filter((line) => line.startsWith('|'));
+
+  if (lines.length === 0) {
+    out.push('tenant-bypass-ledger.md: no table found. The ledger is a table, and a ledger this parser cannot read reports no rows and looks exactly like a ledger with no bypasses in it (TEN-5, E-35).');
+    return out;
+  }
+
+  const cellsOf = (line) => line.split('|').slice(1, -1).map((cell) => cell.trim());
+  const header = cellsOf(lines[0]).map((cell) => cell.toLowerCase());
+  const testColumn = header.findIndex((cell) => cell.includes('test'));
+  const pathColumn = header.findIndex((cell) => cell.includes('path'));
+
+  if (testColumn < 0) {
+    out.push(`tenant-bypass-ledger.md: the table has no sole-reader test column (its columns are: ${header.join(', ')}). That column is TEN-5's entire remedy (TEN-5).`);
+    return out;
+  }
+
+  for (const line of lines.slice(1)) {
+    const cells = cellsOf(line);
+    if (cells.every((cell) => /^:?-+:?$/.test(cell))) {
+      continue; // the separator row
+    }
+    const where = (cells[pathColumn] ?? '').trim() || 'an unnamed path';
+    const named = (cells[testColumn] ?? '').trim();
+
+    if (named.length === 0) {
+      out.push(`tenant-bypass-ledger.md: the bypass row for ${where} names no sole-reader test (TEN-5).`);
+    } else if (!resolvesTest(named)) {
+      out.push(`tenant-bypass-ledger.md: the bypass row for ${where} names sole-reader test '${named}', which exists nowhere in this tree (TEN-5, E-34). The named test is the remedy, so a name resolving to nothing is a row with no remedy that reads as coverage.`);
     }
   }
   return out;
@@ -312,6 +399,22 @@ const CATCH = [
   ['a work document with no slice id', () => docLifecycleFindings('docs/work/s1-notes.md', '---\nkind: work\nstatus: working\n---\n')],
   ['a decision with no provenance (DEC-1)', () => docLifecycleFindings('docs/decisions/d-001.md', '---\nkind: decision\nstatus: authoritative\n---\n')],
   ['a bypass row whose sole-reader cell is empty', () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | |\n')],
+  // E-34 and E-35, closed. All three were IGNORE cases marked KNOWN GAP until 2026-07-27.
+  ['a bypass row naming a test that exists nowhere',
+    () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | NoSuchTestAnywhere |\n', () => false)],
+  ['an inserted column, which a positional parse reads past',
+    () => bypassLedgerFindings('| Path | Owner | Justification | Test |\n|--|--|--|--|\n| /billing | @a | invoicing | |\n')],
+  ['a ledger reformatted so the parser finds no table at all',
+    () => bypassLedgerFindings('- Path: /billing\n- Justification: invoicing\n- Test: none\n')],
+  ['a table with no sole-reader column, which is the remedy removed',
+    () => bypassLedgerFindings('| Path | Justification |\n|--|--|\n| /billing | invoicing |\n')],
+  // DOC-1: an archived document cited as authority (E-33).
+  ['a live README citing an archived runbook as the way to run the system',
+    () => citationFindings('README.md', 'Run it as described in [the runbook](docs/runbooks/local-development.md).',
+      (t) => (t === 'docs/runbooks/local-development.md' ? 'archived' : 'authoritative'))],
+  ['the same citation written as a relative path out of a sibling folder',
+    () => citationFindings('docs/work/s1.md', '---\nkind: work\nstatus: working\nslice: S1\n---\nsee [it](../runbooks/local-development.md)',
+      (t) => (t === 'docs/runbooks/local-development.md' ? 'archived' : 'authoritative'))],
   ['an image on a floating :latest tag', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server:latest', () => true)],
   ['an image with no tag at all', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server', () => true)],
   ['a tagged image with no digest', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server:2022-CU12', () => true)],
@@ -348,14 +451,18 @@ const IGNORE = [
   ['a work document carrying a slice id', () => docLifecycleFindings('docs/work/s1.md', '---\nkind: work\nstatus: working\nslice: S1\n---\n')],
   ['a decision carrying provenance', () => docLifecycleFindings('docs/decisions/d-001.md', '---\nkind: decision\nstatus: authoritative\nprovenance: claim SEC-1\n---\n')],
   ['an empty ledger, which is v1 by design', () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n')],
-  ['a ledger row naming a test', () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | BillingSweepIsSoleReader |\n')],
+  ['a ledger row naming a test that resolves', () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | BillingSweepIsSoleReader |\n', () => true)],
+  ['the same row with the column moved, which a header-keyed parse still reads',
+    () => bypassLedgerFindings('| Path | Sole-reader test | Justification |\n|--|--|--|\n| /billing | BillingSweepIsSoleReader | invoicing |\n', () => true)],
+  ['an alignment separator, which is not a bypass row',
+    () => bypassLedgerFindings('| Path | Justification | Test |\n|:-----|:-------------:|----:|\n', () => true)],
+  ['a live document citing a live one', () => citationFindings('README.md', 'see [the runbook](docs/runbooks/x.md)', () => 'authoritative')],
+  ['an ARCHIVED document citing an archived one, because history refers to history',
+    () => citationFindings('docs/work/s0.md', '---\nkind: work\nstatus: archived\nslice: S0\n---\nsee [it](../runbooks/x.md)', () => 'archived')],
+  ['an external URL, which is somebody else\'s lifecycle', () => citationFindings('README.md', 'see [spec](https://example.com/a.md)', () => 'archived')],
+  ['a link to a file this tool does not govern', () => citationFindings('README.md', 'see [config](../../elsewhere/notes.md)', () => undefined)],
+  ['a non-markdown link', () => citationFindings('README.md', 'run [the script](scripts/e2e.sh)', () => 'archived')],
   ['a fully pinned and ledgered image', () => imageFindings('x.sh', `mcr.microsoft.com/mssql/server:2022-CU12${SELF_TEST_DIGEST}`, () => true)],
-  ['KNOWN GAP (E-34): the named test is never resolved, so a row naming nothing that exists passes',
-    () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | NoSuchTestAnywhere |\n')],
-  ['KNOWN GAP (E-35): the test cell is read at index 3, so an inserted column moves it out of reach',
-    () => bypassLedgerFindings('| Path | Owner | Justification | Test |\n|--|--|--|--|\n| /billing | @a | invoicing | |\n')],
-  ['KNOWN GAP (E-35): a row is a line starting with a pipe, so a reformatted ledger has no rows at all',
-    () => bypassLedgerFindings('- Path: /billing\n- Justification: invoicing\n- Test: none\n')],
   ['a scratch base, which names no image to pin', () => imageFindings('Dockerfile', 'FROM scratch\n', () => false)],
   // The false positive the real tree found and this control set did not. Every Dockerfile case above is a line
   // shaped like the thing being caught, so none of them could report that ordinary English beginning a line with
@@ -424,8 +531,21 @@ const MANIFEST_SHAPES = [
 ];
 
 // DOC-1: the rule is `docLifecycleFindings`, defined below with the other predicates; this is the file walk.
-for (const { file, rel } of allFiles.filter(({ rel }) => rel.endsWith('.md'))) {
+const markdown = allFiles.filter(({ rel }) => rel.endsWith('.md'));
+for (const { file, rel } of markdown) {
   for (const message of docLifecycleFindings(rel, readFileSync(file, 'utf8'))) {
+    fail(message);
+  }
+}
+
+// DOC-1: no live document cites an archived one as authority. Statuses are read once, from the same governed set
+// the lifecycle check walks, so a citation of a file outside that set resolves to undefined and is not judged:
+// this asks whether a document THIS TOOL GOVERNS has been superseded, and it can only answer for what it reads.
+const statuses = new Map(
+  markdown.map(({ file, rel }) => [rel, frontMatter(readFileSync(file, 'utf8'))?.status]),
+);
+for (const { file, rel } of markdown) {
+  for (const message of citationFindings(rel, readFileSync(file, 'utf8'), (target) => statuses.get(target))) {
     fail(message);
   }
 }
@@ -433,12 +553,34 @@ for (const { file, rel } of allFiles.filter(({ rel }) => rel.endsWith('.md'))) {
 // TEN-5: every bypass-ledger row names a sole-reader test. An absent ledger is a TEN-5 failure stated as a
 // sentence, not a stack trace from readFileSync: the ledger is where the claim lives, so its absence is the
 // claim's absence.
-const bypassLedgerFile = join(editionRoot, 'docs/claims/tenant-bypass-ledger.md');
+const BYPASS_LEDGER = 'docs/claims/tenant-bypass-ledger.md';
+const bypassLedgerFile = join(editionRoot, BYPASS_LEDGER);
 if (!existsSync(bypassLedgerFile)) {
-  fail('docs/claims/tenant-bypass-ledger.md is missing; the sanctioned-bypass ledger is where TEN-5 lives.');
+  fail(`${BYPASS_LEDGER} is missing; the sanctioned-bypass ledger is where TEN-5 lives.`);
 } else {
-  for (const message of bypassLedgerFindings(readFileSync(bypassLedgerFile, 'utf8'))) {
+  // Resolving a named test means looking for the identifier in the tree. Deliberately a whole-word search over
+  // source rather than a test-framework-aware lookup: this tool is shared, and knowing what counts as a test in
+  // xunit and in vitest is exactly the stack-specific knowledge the shared tier must not hold. The weaker
+  // question ("does this identifier exist anywhere") is answerable in both stacks and is enormously stronger
+  // than the nothing that was there before.
+  const CODE = ['.cs', '.ts', '.tsx', '.mjs', '.js', '.py', '.go', '.rb', '.java', '.kt'];
+  const corpus = everyFile
+    .filter(({ rel }) => rel !== BYPASS_LEDGER && CODE.some((ext) => rel.endsWith(ext)))
+    .map(({ file }) => readFileSync(file, 'utf8'))
+    .join('\n');
+  const resolves = (name) => new RegExp(`(?<![\\w$])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w$])`).test(corpus);
+
+  for (const message of bypassLedgerFindings(readFileSync(bypassLedgerFile, 'utf8'), resolves)) {
     fail(message);
+  }
+}
+
+// TEN-5: one ledger, not several. A sanctioned bypass enumerated in a document nobody reviews as THE ledger is a
+// bypass with no review, and the mechanism cannot notice, because every check above reads one known path (E-34).
+for (const { rel } of allFiles) {
+  const name = rel.split('/').pop().toLowerCase();
+  if (rel !== BYPASS_LEDGER && name.includes('bypass') && name.includes('ledger')) {
+    fail(`${rel}: a second bypass ledger. TEN-5 is one ledger and it is ${BYPASS_LEDGER}; a sanctioned bypass enumerated anywhere else is one nobody reviews (TEN-5).`);
   }
 }
 

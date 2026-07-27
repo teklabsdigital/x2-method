@@ -113,7 +113,7 @@
       "title": "Sanctioned-bypass ledger",
       "status": "owed",
       "mechanism": "`docs/claims/tenant-bypass-ledger.md` (empty) + docs-lint rule that a row without a sole-reader test fails",
-      "note": "planted 2026-07-27, six plants, two red naming TEN-5. The guard binds for exactly two conditions: the ledger is absent, and a row's third pipe-cell is empty. The named test is never resolved, so the claim's actual remedy is unreachable by this mechanism under any input (E-34). The parse is positional and empties silently when the table is reformatted or gains a column (E-35). The tool gained `--self-test` on 2026-07-27, so a narrowing of these predicates now fails a control instead of passing silently (E-28 repaired).",
+      "note": "planted 2026-07-27, six plants, two red naming TEN-5; three more obligations planted 2026-07-28 and two of the three moved off `owed`. The parse is keyed on column name rather than position and refuses a ledger it cannot read as a table (E-35 repaired), the named sole-reader test is resolved against the tree and scored in both directions (E-34 repaired), and a second bypass ledger fails (E-34 repaired). The row stays `owed` on one obligation and the reason is a measurement, not a backlog: this edition enforces tenancy per query rather than by a global filter, so a sanctioned bypass has no lexical signature to scan for (E-77).",
       "obligations": [
         {
           "name": "a committed ledger exists and is where the claim lives",
@@ -123,22 +123,22 @@
         {
           "name": "a ledger row that names no sole-reader test fails the build",
           "status": "proven",
-          "text": "red-correct for an empty third cell. Positional and fragile, which is E-35, not a status."
+          "text": "red-correct for an empty third cell. The parse is keyed on the COLUMN NAME now, not on position, which is E-35 repaired in both of its halves: inserting an Owner column used to move the cell out of reach and pass every row unread, and a ledger reformatted as a bullet list used to yield no rows at all and pass for being empty. A parse that silently finds nothing is the worst failure available to a guard whose subject is empty by design, so a ledger this parser cannot read as a table is now a failure, and so is a table with no sole-reader column."
         },
         {
           "name": "the named sole-reader test exists, and is the remedy",
-          "status": "owed",
-          "text": "unbuilt. A row naming NoSuchTestAnywhereInThisRepo passes; docs-lint never opens a test file (E-34). Trigger: a docs-lint reader that resolves the named test to a test in the suite."
+          "status": "patterned",
+          "text": "The name is resolved against the tree: a row naming an identifier that appears in no source file fails, red-correct for a planted row naming `NightlyBillingSweepIsSoleReader`. Scored in BOTH directions, which is what distinguishes a resolver from a guard that always refuses: adding a declaration of that identifier turns the same row green. Deliberately a whole-word search over source rather than a test-framework lookup, because knowing what counts as a test in xunit and in vitest is the stack-specific knowledge a shared tool must not hold (E-34 repaired). `patterned`, and the residue is the obligation's second clause: it proves the name resolves to SOMETHING, not that the something is a test, and nothing at all checks that the test is the sole reader. Trigger for the rest: the first sanctioned bypass, which would give the clause a subject."
         },
         {
           "name": "every sanctioned cross-tenant path appears in the ledger",
           "status": "owed",
-          "text": "unbuilt. Nothing compares code against the ledger in either direction (E-34). Trigger: the first sanctioned bypass, plus a scan enumerating cross-tenant reads in the persistence layer."
+          "text": "unbuilt, and the reason is worth recording rather than restating the trigger. The scan this obligation's trigger asks for presumes a bypass has a lexical signature, which presumes tenancy is enforced by something that can be bypassed. Measured 2026-07-27: this edition has NO global query filter. Tenancy is an explicit `.Where(n => n.TenantId == tenantId)` per query, so a cross-tenant read is the ABSENCE of a predicate, which no regex can see and which a scan for `IgnoreQueryFilters` would report as clean forever. Building that scan here would be a guard checking for a bypass shape this design cannot produce (E-34, E-77). Trigger: a global query filter or an equivalent chokepoint that a bypass has to name, plus the first sanctioned bypass."
         },
         {
           "name": "one ledger, not several",
-          "status": "owed",
-          "text": "unbuilt. A second bypass ledger carrying its own row passes unexamined (E-34). Trigger: a check that the bypass ledger is the only document of its kind."
+          "status": "patterned",
+          "text": "A second document whose name carries both `bypass` and `ledger` fails, red-correct for a planted `docs/claims/billing-bypass-ledger.md` (E-34 repaired). `patterned` because the rule is on the NAME: a second ledger called `cross-tenant-register.md` escapes it. Each new spelling owes its own entry, which is the ordinary cost of a name-shaped rule and is why the canonical path is named in the message."
         }
       ]
     },
@@ -700,8 +700,8 @@
         },
         {
           "name": "byproducts die at slice completion, and archived documents are not cited as authority",
-          "status": "owed",
-          "text": "unbuilt. An archived runbook still cited by the edition README as the way to run the system passes (E-33). Trigger: a link resolver that reads inbound citations against the cited document's status."
+          "status": "patterned",
+          "text": "`citationFindings` resolves every markdown link in every governed document, relative or root-anchored, and fails a LIVE document that cites an ARCHIVED one. Asymmetric on the citer by design: an archived document may cite anything, because history refers to history; a live one handing a reader a superseded answer is the failure. Red-correct for the edition's one real inter-document citation, README.md to VERIFICATION.md, with the target archived (E-33 repaired). `patterned` because it reads MARKDOWN LINKS: the edition README also names the runbook in backticks as prose, which is a citation a reader follows and this predicate cannot see. The first clause, that a byproduct dies at slice completion, has no mechanism either; nothing compares a slice's completion against the documents it produced. Trigger for both: a citation form register, and a slice-completion signal the tool can read."
         },
         {
           "name": "the docs-lint gate runs in the CI loop",

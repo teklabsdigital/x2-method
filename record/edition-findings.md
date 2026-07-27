@@ -3888,6 +3888,34 @@ image is named on five, and nothing had ever compared them, E-37 and E-64), and 
 overrides, which is how a transitive pin taken under DEP-1's advisory rule actually reaches the tree. The
 advisory-rule section had been parsed into `ledgerPins` and never queried. Both planted red-correct.
 
+### E-77. TEN-5's mechanism class presumes a bypass has a shape, which presumes tenancy has a chokepoint to bypass
+
+**Claim:** TEN-5, and it flows back to the catalog rather than only to the edition. **Found:** 2026-07-27.
+**Measured at 877de8b.**
+
+TEN-5's obligation "every sanctioned cross-tenant path appears in the ledger" carried the trigger "the first
+sanctioned bypass, plus a scan enumerating cross-tenant reads in the persistence layer". Three of the row's other
+four obligations were built this round; this one was left, and the reason turned out to be more interesting than a
+backlog entry.
+
+The scan the trigger names presumes a cross-tenant read has a lexical signature. That presumes tenancy is enforced
+by a chokepoint something can be observed BYPASSING: a global query filter with an `IgnoreQueryFilters()` escape,
+a repository base class, a row-level security policy. Measured at 877de8b: this edition has no global query filter
+at all. `grep -rn HasQueryFilter server/src` returns nothing. Tenancy is an explicit
+`.Where(n => n.TenantId == tenantId)` written per query in `EfNoteStore`.
+
+Under that design a cross-tenant read is the ABSENCE of a predicate, and absence has no syntax. A scan for
+`IgnoreQueryFilters` would be green forever, not because the edition has no bypasses but because it cannot express
+one in the shape the scan looks for. Building it would have produced the exact defect this session keeps finding
+at different altitudes: a guard whose subject cannot occur, reporting success.
+
+**What flows back.** TEN-5's mechanism class should say that the ledger obligation is conditional on tenancy
+having a chokepoint, and that an edition enforcing tenancy per query owes a different mechanism (a runtime
+assertion at the store boundary, or the chokepoint itself) before the ledger can be checked against code. As
+written, the claim reads as though the scan is always available. Not repaired here; `kernel/claims/` is not edited
+from the register. The obligation's trigger now names the chokepoint as a precondition rather than restating the
+scan.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

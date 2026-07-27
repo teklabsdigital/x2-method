@@ -1556,3 +1556,53 @@ check on the record-keeper as much as on the record, and prose about a defect is
 Both docs-lints ok, both conformance records ok at 69 rows, both self-tests 22 caught / 18 ignored (from 14 / 11),
 compose 78 files / 2 editions, architecture 200, unit 58. Non-owed rows unchanged at 18: DEP-1's publish-date
 obligation is genuinely unbuilt, so the row does not move and should not.
+
+## 2026-07-27, section D part 4: TEN-5 and DOC-1, and the obligation that should not be built
+
+Baseline: **877de8b**, docs-lint self-test 22 caught / 18 ignored.
+
+### TEN-5
+
+| obligation | plant | outcome |
+|------------|-------|---------|
+| a row that names no sole-reader test fails | an inserted Owner column, and a ledger reformatted as a bullet list | both red-correct, both previously carried as KNOWN GAP controls (E-35) |
+| the named test exists | a row naming `NightlyBillingSweepIsSoleReader` | red-correct |
+| the same row, with that identifier declared somewhere in the tree | **green** | the resolver resolves rather than always refusing |
+| one ledger, not several | a second `docs/claims/billing-bypass-ledger.md` | red-correct |
+
+The second row of that table is the one worth keeping. A resolver that always returned false would have produced
+an identical red on the plant above it, and the pair is the only thing that separates the two.
+
+The parse is keyed on column NAME now. Both E-35 halves were failures of the same kind and it is worth naming:
+a parse that silently finds nothing is the worst failure available to a guard whose subject is empty BY DESIGN.
+An empty ledger is v1's correct state, so "no rows" is indistinguishable from "no ledger I could read" unless the
+tool refuses the second. It refuses it now, and so is a table with no sole-reader column.
+
+### DOC-1
+
+`citationFindings` resolves every markdown link in every governed document and fails a live document citing an
+archived one. Asymmetric on the citer deliberately: an archived document may cite anything, because history refers
+to history. Planted by archiving `VERIFICATION.md`, which `README.md` links; red-correct.
+
+That plant also measured the guard's own reach. There is exactly ONE real inter-document markdown link in this
+edition, and the README names the runbook in backticks as prose, which is a citation a reader follows and this
+predicate cannot see. `patterned`, with the residue in the row.
+
+### The obligation that should not be built
+
+TEN-5's "every sanctioned cross-tenant path appears in the ledger" stays `owed`, and not for lack of effort. Its
+trigger asks for a scan enumerating cross-tenant reads, which presumes a bypass has a lexical signature, which
+presumes tenancy has a chokepoint something can be seen bypassing. Measured: this edition has no global query
+filter. Tenancy is an explicit per-query predicate, so a cross-tenant read is the ABSENCE of a predicate, and
+absence has no syntax. A scan for `IgnoreQueryFilters` here would be green forever, and green because the shape it
+looks for cannot occur, which is the defect this whole section keeps finding. Recorded as E-77, which flows back
+to the catalog: the claim reads as though the scan is always available.
+
+Both rows stay `owed` on their weakest obligation, correctly. TEN-5 on the above; DOC-1 on forward-only status
+transitions, which needs a reader for a document's previous committed value and therefore a decision about a
+shared tool depending on git in a tree that may not have it.
+
+### Gates
+
+Both docs-lints ok, both conformance records ok at 69 rows, both self-tests 28 caught / 22 ignored, compose 78
+files / 2 editions, architecture 200, unit 58.
