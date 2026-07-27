@@ -106,6 +106,11 @@ const EXEMPTIONS: readonly Exemption[] = Object.freeze([
     literal: 'https://kernel.invalid/issuer',
     why: `${FIXTURE_REASON} This one is a CFG-1 literal rather than a SEC-5 one: the fixture mirrors the committed issuer so the layering tests resolve something realistic.`,
   }),
+  Object.freeze({
+    file: 'server/src/platform/__tests__/tokenVerification.test.ts',
+    literal: 'node-architecture-tests-symmetric-signing-phrase-0123456789',
+    why: 'The SEC-4 verification tests both mint and verify with this phrase, so it is a test fixture rather than a credential: nothing in the shipped server ever signs or verifies with it, and no deployed process can reach it. It is written out rather than derived because the alternative is a value whose name does not say what it is, and dodging a secret scan by renaming the binding is the failure the scan exists to prevent. Same reasoning the sibling records for its own architecture-test signing key. The three other secret-shaped values this file needs are DERIVED from this one, so this is the single exempted literal rather than the first of a set.',
+  }),
 ]);
 
 // Two further exemptions were here and are deleted, which is the staleness check doing its job on its own

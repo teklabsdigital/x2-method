@@ -4236,6 +4236,83 @@ Repaired here, both halves. Recorded as a gap in the audit protocol rather than 
 audit has to read the text against the mechanism, not only the status against the mechanism**, and the other rows
 lifted in F1 through F5 have not been checked that way.
 
+### E-88. The E-55 class was closed for two flags and left open for five, in the same object literal, in the same pass
+
+**Claim:** SEC-4, and the shape of a repair. **Found:** 2026-07-27. **Measured at 1302d7a.** **Sibling edition.**
+
+E-55 established a class: **a security configuration flag that no test asserts and that no input ever exercises
+is not a mechanism, it is a comment.** It was found on `RequireSignedTokens`, where setting the flag false left
+all twelve host tests green, and the repair added both a configuration assertion and an alg:none token to send.
+
+`Program.cs` sets seven validation properties. Two of them, `ValidAlgorithms` and `RequireSignedTokens`, now carry
+assertions read off every registered bearer scheme. The other five carry nothing:
+
+    ValidateIssuer = true          ValidateAudience = true        ValidateLifetime = true
+    RequireExpirationTime = true   ClockSkew = TimeSpan.FromSeconds(30)
+
+Planted all five at once, permissive, at 1302d7a:
+
+    ValidateIssuer = false   ValidateAudience = false   ValidateLifetime = false
+    RequireExpirationTime = false   ClockSkew = TimeSpan.FromDays(365)
+
+    architecture 203 passed, unit 58 passed.
+
+So this host accepts a token from any issuer, for any audience, with no expiry claim at all, or expired by up to a
+year, and nothing in 261 tests says a word. The cause is visible in `TestTokens.cs`: every mint routes through one
+`Build` that always passes `KernelApiFactory.JwtIssuer`, `JwtAudience` and `expires: UtcNow.AddMinutes(30)`. There
+is no minter for a wrong issuer, a wrong audience, an absent `exp` or a past one, so no violating input exists to
+send. The test harness bounds what the suite can ever discover, which is E-42's vacuity argument arriving through
+the fixture rather than through the scan.
+
+**SEC-4's words do not name issuer, audience or expiry, and that is the more useful half of this finding.** The
+claim is genuinely silent on all three, so a guard set derived from the claim's sentences is complete without
+them and the SEC-4 row is not overstating. But the revocation half says revocation takes effect "immediately
+rather than at token expiry", and that contrast PRESUPPOSES that tokens expire. With `ValidateLifetime = false` a
+token never expires, the sentence loses its subject, and the session-version check stops being the faster of two
+bounds and becomes the only one. **A claim can rest on a premise it states as background rather than as a
+requirement, and a guard set built from the claim's words alone will not cover the premise.** That is E-39's shape
+(a decision resting on a premise that is no longer true) relocated from a document to a claim.
+
+Not repaired here: this is the sibling edition and the work in front of the loop is node's verifier. Recorded with
+the plant so the next dotnet pass starts from a measurement. **Trigger: the next dotnet security round, which owes
+a minter for each violating input before it owes any assertion**, because the assertions without the inputs are
+what produced this state.
+
+### E-89. A relaxation that is harmless today, and becomes a fail-open the moment the next security change lands
+
+**Claim:** SEC-5, DATA-5, and SEC-4 prospectively. **Found:** 2026-07-27. **Measured at 1302d7a.** **Node edition.**
+
+`settings.ts` resolves a secret from the out-of-tree store or from a derived environment variable, and when both
+are absent it relaxes, conditional on the environment name, exactly as DATA-5's weakening note licenses. The
+environment name is `sources.environment.NODE_ENV ?? 'development'`, and `development` is in the relaxed set.
+
+Measured, with `NODE_ENV` unset and no secret store:
+
+    signingKey : "development-only-value-not-a-secret"
+    is the committed relaxation literal: true
+
+So on a fresh clone, with nothing configured and nothing wrong, `auth.signingKey` is a string committed to this
+repository. **Today that is harmless, and the reason it is harmless is that this edition has no verifier**:
+`noCredential` returns null whatever the key is, so every gated route answers 401 and the key is never used for
+anything.
+
+**The defect is armed by the change that closes SEC-4.** The moment a verifier reads `settings.auth.signingKey`,
+a deploy that forgets to set `NODE_ENV` verifies bearer tokens against a signing key that anyone can read in the
+repository, and it does so silently, on a process that started cleanly. Fail-closed becomes fail-open, and the
+commit that does it is the one whose message says the edition now validates tokens.
+
+The relaxation carries a stated mitigation and it does not hold for this leaf. The comment says the value is "a
+sentence rather than a plausible key, so that a relaxation which escaped to production would be visible in a
+decoded token rather than merely weak". A signing key never appears in a token it signs. The mitigation works for
+a setting whose value is echoed somewhere a reader can see it, and `auth.signingKey` is precisely the leaf for
+which nothing echoes the value.
+
+**Consequence for the build in front of the loop, which is why this is recorded before the verifier rather than
+after it:** the verifier owes an explicit refusal of `DEVELOPMENT_RELAXATION` as a verification key, at the
+verifier and not at the resolver, with its own red proof. Refusing at the resolver would be wrong: the relaxation
+is legitimate for a process that never verifies anything, and DATA-5's note licenses it. It is the ACT of
+verifying with it that is not legitimate, so the refusal belongs where the verifying happens.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

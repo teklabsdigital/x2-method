@@ -231,7 +231,7 @@
       "title": "JWT hardening and revocation",
       "status": "proven",
       "mechanism": "pinned HS256, `RequireSignedTokens`, `SessionVersionMiddleware`; `HostSecurityTests` asserts both token-validation properties off every registered bearer scheme and covers a tampered signature, an HS384 token, an unsigned alg:none token, a missing `sv` and a bumped `sv`",
-      "note": "both halves of the token-validation sentence now read off the host, over every bearer scheme, not one by name",
+      "note": "both halves of the token-validation sentence now read off the host, over every bearer scheme, not one by name. Still `proven` after E-88, and the reason is worth stating rather than leaving to be rediscovered: E-88 planted `ValidateIssuer`, `ValidateAudience`, `ValidateLifetime` and `RequireExpirationTime` false and `ClockSkew` at a year, all five at once, and all 261 tests stayed green. SEC-4's statement names none of those five, so this row is not overstating what the claim asks. What it does not say, and E-88 records, is that the revocation half's phrase `rather than at token expiry` presupposes that tokens expire, so the premise under this claim is unguarded here even though the claim's sentences are met. The cause is the harness rather than the assertions: every mint routes through one `TestTokens.Build` that always passes the right issuer, the right audience and a thirty-minute expiry, so no violating input exists to send. Findings: E-54, E-55, E-88.",
       "obligations": [
         {
           "name": "the signing algorithm is pinned to exactly one",
