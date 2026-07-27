@@ -92,8 +92,6 @@ jobs:
           --health-interval 10s --health-timeout 5s --health-retries 20
     env:
       HARN_JWT_KEY: 'ci-harness-signing-key-0123456789-abcdefghij'
-      HARN_JWT_ISSUER: kernel
-      HARN_JWT_AUDIENCE: kernel
       CS: 'Server=localhost,1433;Database=Kernel;User Id=sa;Password=Ci_Harness_Pass123!;TrustServerCertificate=True'
     steps:
       - uses: actions/checkout@v4
@@ -120,12 +118,25 @@ jobs:
       - name: Install client
         working-directory: client-web
         run: npm ci
+      # CFG-1: the JWT identity is committed configuration, so this reads it instead of restating it. It was
+      # restated here four times (job env twice, step env twice), and the harness mints tokens with the same
+      # values the server validates them against, so a change to appsettings.json would have left CI green while
+      # every other caller broke. That is the drift the claim was minted from, in the file that decides whether
+      # the build is green (E-75).
+      - name: Read the committed JWT identity
+        run: |
+          APPSETTINGS=server/src/Kernel.Api/appsettings.json
+          READ="process.stdout.write(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).Jwt[process.argv[2]])"
+          {
+            echo "JWT_ISSUER=$(node -e "$READ" "$APPSETTINGS" Issuer)"
+            echo "JWT_AUDIENCE=$(node -e "$READ" "$APPSETTINGS" Audience)"
+          } >> "$GITHUB_ENV"
       - name: Start server, run the harness, run the composed-entrypoint smoke
         env:
           ASPNETCORE_ENVIRONMENT: Production
+          HARN_JWT_ISSUER: ${{ env.JWT_ISSUER }}
+          HARN_JWT_AUDIENCE: ${{ env.JWT_AUDIENCE }}
           Jwt__Key: ${{ env.HARN_JWT_KEY }}
-          Jwt__Issuer: kernel
-          Jwt__Audience: kernel
           ConnectionStrings__Kernel: ${{ env.CS }}
         run: |
           dotnet run --no-build --project server/src/Kernel.Api --urls http://localhost:5080 --no-launch-profile &

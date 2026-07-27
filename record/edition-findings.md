@@ -3791,6 +3791,61 @@ This is not SEC-7, and the two should not be merged. SEC-7 is about what address
 how the token is minted; it is honestly `owed` with a trigger the exemplar has never met. CON-1's clause is about
 the wire dialect, and binds on every surface whatever the minting.
 
+### E-75. The committed JWT identity was restated four times in the workflow that decides whether the build is green
+
+**Claim:** CFG-1. **Found:** 2026-07-27. **Measured at 6371bcc.** **Live instance, repaired in the same round.**
+
+CFG-1's statement ends "Scripts are part of the code surface: a script never duplicates a committed configuration
+value, it reads it." E-13 recorded that nothing enforced it; E-36 measured that appending literal issuer and
+audience values to `e2e.sh` left the suite at 100 passed. The guard built for it this round reads the values out of
+the committed appsettings and looks for THOSE, which is the opposite direction from the literal registry beside it
+and is why it needs no entry when a project adds a setting.
+
+Against `scripts/*.sh` it was green, and `e2e.sh` is genuinely clean: it reads both values with `node -e`, which is
+the shape the claim asks for. Widening the surface to the edition's CI workflow turned it red on four values.
+
+| line | what it said |
+|------|--------------|
+| job `env:` | `HARN_JWT_ISSUER: kernel` |
+| job `env:` | `HARN_JWT_AUDIENCE: kernel` |
+| step `env:` | `Jwt__Issuer: kernel` |
+| step `env:` | `Jwt__Audience: kernel` |
+
+This is not a cosmetic duplication. The harness mints tokens with the first pair and the server validates them with
+the second, both copied rather than read, so changing `Jwt:Issuer` in `appsettings.json` would have left this
+workflow green while every other caller broke. The claim's harm is "the two copies could drift" and the copies were
+sitting in the file that decides whether the build is green.
+
+**The second pair is why the guard's exemption had to be narrowed, and it is the more interesting half.** CFG-1
+sanctions a fourth home: the ambient environment, provided the read resolves through the declared configuration
+surface under a name derived from a declared key. `Jwt__Issuer` is exactly that, so the first version of the
+exemption passed it. But an override set to the value already committed is not an override, it is a copy, and it
+drifts exactly as a literal does. The exemption now requires the value to DIFFER from the committed one. Without
+that, the guard would have reported two of the four and read as a pass on the other two.
+
+**Repaired.** A step reads both values into `$GITHUB_ENV` before the harness step, and the four literals are gone.
+The server no longer receives `Jwt__Issuer` at all, because in Production it loads `appsettings.json` and the
+committed value is already there. The read step was executed locally against the shipped appsettings and returns
+the two values the literals used to state.
+
+**Two things NOT repaired, both recorded with their triggers.**
+
+- `client-web/tools/harness/mintToken.mjs` falls back to `?? 'kernel'` for both issuer and audience. That is a
+  duplicated committed value AND the silent default CFG-1's own text calls out one claim over ("the fallback it is
+  almost always written with is the silent default DATA-5 forbids"). It is not repaired because the file is a
+  COMPOSED SHARED file, byte-identical in both editions, so teaching it to read a .NET appsettings path would be
+  wrong for the node edition. How a shared client tool locates its edition's committed configuration is a
+  cross-edition design decision, not a mechanical fix. **Trigger: the first shared-tier read of edition
+  configuration, or a decision to make the harness CLI fail fast instead.**
+- The scan surface is a list (`scripts/*.sh`, `.github/workflows/*.yml`), and CFG-1's completeness obligation says
+  the enumeration should be "a rule the test can check rather than a list of directories somebody maintains". What
+  blocks the rule was measured rather than guessed: over every shipped file, the scan also reports
+  `.vscode/tasks.json`, whose window group is coincidentally named `kernel`, and a `secret-scan.mjs` self-test
+  fixture that quotes `"Issuer": "kernel"` as test data. Both are false positives, so widening needs a carve-out
+  register with a justification field, in the shape SEC-1's anonymous allowlist already carries. **Trigger: the
+  first shipped file outside the two globs that carries a real duplication.** This is why the obligation is
+  `patterned` and not `proven`.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

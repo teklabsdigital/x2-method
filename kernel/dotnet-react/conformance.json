@@ -463,9 +463,9 @@
     },
     "CFG-1": {
       "title": "Operational settings are configuration, not code",
-      "status": "owed",
-      "mechanism": "`OperationalSettingsTests` scans `server/src` and `scripts/` for model-id and provider-endpoint literals. `scripts/e2e.sh` is intended to read Jwt values from committed appsettings rather than duplicating them, and nothing enforces that (E-36)",
-      "note": "planted 2026-07-27, six plants, three red naming OperationalSettingsTests. The registry is heuristic by its own comment, so each new operational-setting shape owes its own entry. The duplication half the mechanism used to assert is unguarded (E-36), and both regexes could be narrowed to match nothing with all 100 tests green until this round landed the extent assertion the sibling SecretConfigShapeTests already carried (E-29).",
+      "status": "patterned",
+      "mechanism": "`OperationalSettingsTests` scans `server/src` and `scripts/` for model-id and provider-endpoint literals, and compares every leaf value in the committed appsettings against every literal in the shipped scripts and CI workflows",
+      "note": "planted 2026-07-27, six plants, three red naming OperationalSettingsTests. Both regexes could once be narrowed to match nothing with all 100 tests green; the registry's extent is now a Theory (E-29 repaired). The duplication half, which the row's own mechanism text used to describe as though it were a mechanism, was built on 2026-07-27 and immediately found four live duplications of the committed JWT identity in the CI workflow, all repaired (E-13, E-36 repaired; E-75). Both obligations are `patterned` for different reasons: the literal registry is heuristic in its PREDICATE, so a novel operational-setting shape escapes it, and the duplication scan is total in its predicate and heuristic in its SURFACE, which is two globs rather than the rule the claim's completeness obligation asks for. Two live defects remain recorded with triggers rather than repaired: the shared harness token minter carries `?? 'kernel'` as a silent default, and it is a composed shared file so the fix is a cross-edition decision.",
       "obligations": [
         {
           "name": "a scan over host source and shipped scripts fails the build on an operational-setting literal",
@@ -474,8 +474,8 @@
         },
         {
           "name": "shipped scripts read committed values rather than duplicating them",
-          "status": "owed",
-          "text": "unbuilt. Appending literal issuer and audience values to scripts/e2e.sh leaves the suite at 100 passed (E-36). Trigger: a predicate comparing values in scripts/ against the committed appsettings they duplicate."
+          "status": "patterned",
+          "text": "`No_shipped_script_duplicates_a_committed_configuration_value` reads every leaf value out of the committed appsettings and looks for THOSE in the shipped scripts and CI workflows, which is the opposite direction from the literal registry above and needs no entry when a project adds a setting. Red-correct for the E-36 recurrence, literal issuer and audience in scripts/e2e.sh, in both the quoted and bare assignment forms. It found four LIVE duplications in the CI workflow, all repaired (E-75). CFG-1's sanctioned fourth home is honoured and bounded: an environment assignment under a declared key is an override, but only where its value DIFFERS from the committed one, because an override set to the value already committed is a copy that drifts. `patterned` for the surface, not the predicate: the scan covers `scripts/*.sh` and `.github/workflows/*.yml`, which is the maintained list the claim's completeness obligation says is not enough. Widening was measured, not assumed, and reports two false positives (E-75), so it needs a carve-out register rather than a wider glob. Each shipped file kind outside those two globs owes its own entry."
         }
       ]
     },

@@ -1431,3 +1431,76 @@ Row status is the weakest obligation, so CON-1 is `patterned`: two `proven` clau
 
 Architecture 191, unit 58, integration 4 skipped, both conformance records ok at 69 rows, both docs-lints ok.
 Non-owed dotnet rows 16 to 17.
+
+## 2026-07-27, section D part 2: CFG-1's second closure route, and four live copies
+
+CFG-1's statement ends "Scripts are part of the code surface: a script never duplicates a committed configuration
+value, it reads it." E-13 recorded that nothing enforced it. E-36 measured it: literal issuer and audience values
+appended to `e2e.sh` left the suite at 100 passed. The row's own mechanism text described the current state of
+`e2e.sh` as though it were a mechanism. Baseline for this round: **6371bcc**, architecture 191, unit 58.
+
+The new scan runs the opposite way round from the literal registry beside it. The registry knows the shapes it
+bans and hunts for them, so a project adding a setting owes it an entry. This reads every leaf value out of the
+committed appsettings and hunts for THOSE, so it owes nothing to a new setting.
+
+| plant | outcome |
+|-------|---------|
+| `ISSUER="kernel"` in `e2e.sh`, the E-36 recurrence | red-correct, naming the script, the value, both keys it duplicates and the variable |
+| `AUDIENCE=kernel`, the bare form | red-correct, same message, second parser branch |
+
+Reverted with `cp`, `git diff` over `scripts/` empty, 200 and 58 restored.
+
+### The negative control caught the parser before the shipped tree could
+
+`The_script_literal_parser_does_not_report_a_read` failed on its first run, on this line from `e2e.sh`:
+
+    ISSUER="$(node -e "process.stdout.write(cfg.Jwt.Issuer)")"
+
+which is the canonical CORRECT read, the exact line the claim asks a script to write. The quoted-literal pass
+walked into the middle of the command substitution and came out with the node program's own text as a script
+literal. Harmless against this tree, and a false positive waiting for the first script that greps a value out
+with a quoted pattern. A guard that fails the build for obeying the claim gets deleted by whoever hits it, so
+the parser now masks every `$(...)`, `${...}` and backtick span before either pass runs.
+
+### Widening the surface found four live copies
+
+`scripts/*.sh` was clean. Adding `.github/workflows/*.yml`:
+
+| line | what it said |
+|------|--------------|
+| job `env:` | `HARN_JWT_ISSUER: kernel` |
+| job `env:` | `HARN_JWT_AUDIENCE: kernel` |
+| step `env:` | `Jwt__Issuer: kernel` |
+| step `env:` | `Jwt__Audience: kernel` |
+
+The harness mints tokens with the first pair and the server validates them with the second, both copied rather
+than read, so changing `Jwt:Issuer` in `appsettings.json` would have left this workflow green while every other
+caller broke. That is the claim's stated harm, in the file that decides whether the build is green (E-75).
+
+**The second pair is why the exemption had to be narrowed.** CFG-1 sanctions the ambient environment as a fourth
+home provided the read resolves through the declared configuration surface under a name derived from a declared
+key. `Jwt__Issuer` is exactly that, so the first version of the exemption passed it. An override set to the value
+already committed is not an override, it is a copy, and it drifts exactly as a literal does. The exemption now
+requires the value to differ from the committed one. Without that narrowing the guard would have reported two of
+the four and read as a pass on the other two.
+
+Repaired: a step reads both values into `$GITHUB_ENV`, and the server no longer receives `Jwt__Issuer` at all,
+because in Production it loads `appsettings.json` and the value is already there. The read step was executed
+locally against the shipped appsettings and returns the two values the literals used to state. The control is the
+measurement above: the same guard against the pre-repair workflow reports all four.
+
+### Two live defects recorded rather than repaired
+
+`mintToken.mjs` carries `?? 'kernel'` for both values, which is a duplicated committed value AND the silent
+default CFG-1's own text calls out. It is a COMPOSED SHARED file, byte-identical in both editions, so teaching it
+to read a .NET appsettings path would be wrong for node. Trigger recorded.
+
+The surface is two globs, and the claim asks for a rule rather than a maintained list. What blocks the rule was
+measured, not guessed: over every shipped file the scan also reports `.vscode/tasks.json`, whose window group is
+coincidentally named `kernel`, and a `secret-scan.mjs` fixture quoting `"Issuer": "kernel"` as test data. Widening
+needs a carve-out register with a justification field, which is a decision, not a wider glob.
+
+### Gates
+
+Architecture 200, unit 58, integration 4 skipped, conformance ok at 69 rows, docs-lint ok, gate-check self-test
+6 caught 7 ignored, secret-scan self-test 11 caught 13 ignored. Non-owed dotnet rows 17 to 18.
