@@ -35,7 +35,7 @@ Paying the quarantine's cost for a benefit the work no longer needs is the trade
 **What closing it changes.** The 61 claims that never got a step 2 do not owe one. Any record that gates a status
 or a piece of work on "this claim's delta pass" is stating a fact about a closed procedure, not about a
 mechanism, and is corrected where it appears: `kernel/node-react/README.md`'s conformance section and the
-`Sixty-one claims still owe a step 2` section of `record/adjudication-digest.md`. For 36 of those 61 no delta was
+`Sixty-one claims owed a step 2, and no longer do` section of `record/adjudication-digest.md`, and that document's standing constraint at its head. For 36 of those 61 no delta was
 ever possible in any case, because the claim is `owed` in the .NET edition too and a delta needs two realizations
 to sit between.
 

@@ -74,6 +74,15 @@ window and carries GHSA-r28c-9q8g-f849. Under the ruling the advisory outranks t
 and never reconciled against either edition's mechanism column. 61 claims still owe a step 2, and that
 reconciliation would destroy it for all of them. Ruling 1 was applied under that constraint.
 
+**Corrected 2026-07-27, at the point of use.** The sentence above is kept because ruling 1 really was applied
+under it, and the constraint itself still holds. Its stated REASON does not: this document retracts it 673 lines
+below, under `Sixty-one claims owed a step 2, and no longer do`, and `record/delta-log.md` carries the owner's
+closure of the delta protocol's research phase. No claim owes a step 2. The constraint survives on a different
+and better reason, which ruling 1's own argument already gives: a claim file states what is true of the claim,
+so reading an edition's mechanism column while editing one is how a realization's limits get written back into
+the normative text as if they were the claim's. Anyone executing the go-forward plan below inherits the
+constraint and should not inherit the dead premise.
+
 ## RULED, 2026-07-27: the three points the raise pass left with the owner
 
 Not part of the eleven. These are the questions the raise pass handed back rather than deciding, worked one at a

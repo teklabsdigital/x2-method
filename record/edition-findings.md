@@ -73,7 +73,7 @@ which is machine-checked and can hold as many editions as exist.
 
 What replaces the bullet is not nothing: ruling 2 puts a completeness **obligation** in the claim, which is
 portable and is what an edition actually needs from a claim. Applied from the claim files alone, never
-reconciled against either edition's mechanism column, because 61 claims still owe a step 2.
+reconciled against either edition's mechanism column, because 61 claims still owe a step 2. (That reason was retired on 2026-07-27 with the delta protocol's research phase; the constraint stands on the reason in the digest's corrected head note.)
 
 ### S-2. `locus` is documented as an enum and realized as prose
 
@@ -3581,6 +3581,52 @@ and it covers what the import ban structurally cannot.
 
 **Not measurable here:** the composed-entrypoint smoke needs the server up, so UI-5's second half was read and
 not run.
+
+### E-71. Sixty-one node rows carried a trigger naming a procedure the owner had closed
+
+**Claims:** 61 rows of the node-react conformance record. **Found:** 2026-07-27. **Measured at e82fc4a.**
+
+An `owed` row is honest only if its trigger names an event that can occur. On 2026-07-27 the owner closed the
+delta protocol's research phase (`record/delta-log.md`): "The 61 claims that never got a step 2 do not owe one."
+Every one of node-react's 61 owed rows still named that step as its trigger. A trigger naming a closed procedure
+is not a deferral, it is an abandonment wearing a deferral's clothes, and it is the exact defect this register
+was opened to catch, one level up from the code.
+
+The single number covered three different situations, which is why it needed measuring rather than counting.
+
+**Class B, 35 rows.** Shape: "trigger: this claim's delta pass in the node-react build. It is deferred in every
+edition so far: `<a real product event>`." The lead clause is dead and the clause after it is live and matches
+the dotnet sibling exactly. Repair: delete the lead clause, promote the survivor. No status moves.
+
+**Class A, 25 rows.** Shape: the dead trigger plus "A realized precedent exists in dotnet-react, so a Node
+mechanism is expected to be reachable." That second sentence is a prediction about reachability, not an event, so
+subtracting the delta pass left these rows with no discharge condition at all. Nine of them are worse than owed
+in the other direction: the mechanism is realized in the shared tier, composed into this edition and passing,
+while the row reads not built. Those nine now carry the only honest trigger available, which is the measurement
+rather than the build: a violation planted against the claim's own obligation turning the claim's own guard red.
+The other sixteen take the product event their dotnet sibling names.
+
+**Class C, 1 row.** DEP-2's trigger was already live; one sentence inside it asserted the dead debt. Deleted.
+
+**Two related defects found in the same scan and repaired with it.**
+
+`kernel/dotnet-react/conformance.json` carried the dead premise twice, in TEN-1's and SEC-2's notes: "the row is
+still `owed` ... because repairing it means opening MOD-2's realization before MOD-2 has had its delta pass."
+Both rows read `proven` at this commit, so those sentences contradicted the row they sat in, and both were
+regenerated into the README table. Struck.
+
+`record/adjudication-digest.md` opens with a standing constraint on all future claim-file edits whose entire
+stated justification is "61 claims still owe a step 2", and retracts that premise 673 lines later in the same
+document. The constraint itself is defensible on a different reason, which ruling 1's own argument supplies, so
+the head note is corrected at the point of use rather than deleted: anyone executing the go-forward plan
+inherits the constraint and should not inherit the dead premise. `record/delta-log.md` pointed at the digest
+section by its former heading, a dangling cross-reference, now repointed.
+
+**What this cost to find and what it says about the record.** The 61 rows were visible as a grep the whole time.
+What was not visible is that the row-level trigger check reads `note` and the obligation-level check reads
+`text`, so a scan of obligation text alone returns a clean bill for this file: node-react has four
+obligation-level triggers and all four are live. The record was machine-checked and the machine was checking the
+other field.
 
 ## Acceptance test, first execution (2026-07-27)
 

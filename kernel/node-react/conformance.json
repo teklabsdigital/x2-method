@@ -24,31 +24,31 @@
       "title": "Ambient scope, fail-closed",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first background job or any second scope entry point."
     },
     "TEN-3": {
       "title": "Tenant-leading composite keys",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first tenant-owned entity in this edition."
     },
     "TEN-4": {
       "title": "Save-time guard and write provenance",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first tenant-owned write path."
     },
     "TEN-5": {
       "title": "Sanctioned-bypass ledger",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first sanctioned cross-tenant access path."
     },
     "TEN-6": {
       "title": "Tenant is minted from membership, never asserted",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: first identity slice (shared with SEC-4's version store and SEC-10)."
+      "note": "trigger: first identity slice (shared with SEC-4's version store and SEC-10)."
     },
     "SEC-1": {
       "title": "Every endpoint gated",
@@ -72,7 +72,7 @@
       "title": "JWT hardening and revocation",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the credential mint (shared with TEN-6 and SEC-10)."
     },
     "SEC-5": {
       "title": "No secrets in config",
@@ -106,37 +106,37 @@
       "title": "Log safety",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "SEC-7": {
       "title": "Opaque public identifiers",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first anonymous resource surface in an edition project (the kernel exemplar has none)."
+      "note": "trigger: the first anonymous resource surface in an edition project (the kernel exemplar has none)."
     },
     "SEC-8": {
       "title": "Abuse posture",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first publicly exposed edition host (the launch pre-flight names it)."
+      "note": "trigger: the first publicly exposed edition host (the launch pre-flight names it)."
     },
     "SEC-9": {
       "title": "Deployment-edge hardening",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first deployed edition host (arrives with the launch pre-flight)."
+      "note": "trigger: the first deployed edition host (arrives with the launch pre-flight)."
     },
     "SEC-10": {
       "title": "Authentication strength asserted at mint, verified at the gate",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: first identity slice (shared with SEC-4's version store and TEN-6)."
+      "note": "trigger: first identity slice (shared with SEC-4's version store and TEN-6)."
     },
     "SEC-11": {
       "title": "The runtime credential cannot touch the schema",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass (rides DATA-6: the migrate mode and the role split are one provisioning story; the integration tier's provisioning path is where both roles are created)."
+      "note": "trigger: the next edition build pass (rides DATA-6: the migrate mode and the role split are one provisioning story; the integration tier's provisioning path is where both roles are created)."
     },
     "TIME-1": {
       "title": "UTC, offset-aware, and nothing else",
@@ -165,25 +165,25 @@
       "title": "Stores, records, downward deps",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first store implementation."
     },
     "DATA-2": {
       "title": "Bounded reads",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first list endpoint."
     },
     "DATA-3": {
       "title": "Two-layer at-most-once",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: first idempotent external side effect."
+      "note": "trigger: first idempotent external side effect."
     },
     "DATA-4": {
       "title": "Cross-store reconcile",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: first cross-store sequence."
+      "note": "trigger: first cross-store sequence."
     },
     "DATA-5": {
       "title": "Fail-fast mandatory config",
@@ -207,37 +207,37 @@
       "title": "Migrate and exit",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass (a small host change; the mechanism is two facts on the composed host)."
+      "note": "trigger: the next edition build pass (a small host change; the mechanism is two facts on the composed host)."
     },
     "DATA-7": {
       "title": "Ruled retention and disposal",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first PII-bearing entity in an edition project, or the first contractual deletion clause, whichever lands first."
+      "note": "trigger: the first PII-bearing entity in an edition project, or the first contractual deletion clause, whichever lands first."
     },
     "DATA-8": {
       "title": "A state change and its event commit together or not at all",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first event publish in an edition project (arrives with the first broker, alongside RES-5)."
+      "note": "trigger: the first event publish in an edition project (arrives with the first broker, alongside RES-5)."
     },
     "DATA-9": {
       "title": "A stale write is refused, never silently applied",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass (rides TEN-4's interceptor work; the token and the refusal live in the same save pipeline the tenancy guard already owns)."
+      "note": "trigger: the next edition build pass (rides TEN-4's interceptor work; the token and the refusal live in the same save pipeline the tenancy guard already owns)."
     },
     "DATA-10": {
       "title": "Everything that grows has a registered sweep",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first append-only operational table in an edition project (DATA-8's outbox is the likely first, with RES-5's dead-letter quarantine close behind)."
+      "note": "trigger: the first append-only operational table in an edition project (DATA-8's outbox is the likely first, with RES-5's dead-letter quarantine close behind)."
     },
     "DATA-11": {
       "title": "A migration never breaks the release running beside it",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first production deployment with rolling replacement; the lint half can land at the next edition build pass, ahead of the compatibility job."
+      "note": "trigger: the first production deployment with rolling replacement; the lint half can land at the next edition build pass, ahead of the compatibility job."
     },
     "CFG-1": {
       "title": "Operational settings are configuration, not code",
@@ -249,235 +249,235 @@
       "title": "One wire dialect",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first enum on the wire."
     },
     "CON-2": {
       "title": "Contract parity fixture",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first hand-mirrored contract."
     },
     "CON-3": {
       "title": "Read completeness for action-bearing surfaces",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first edition project with a restorable session (the kernel exemplar has none)."
+      "note": "trigger: the first edition project with a restorable session (the kernel exemplar has none)."
     },
     "CON-4": {
       "title": "A breaking change is detected by machine, approved by human",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first published external contract (a versioned API consumed outside the repo, a partner surface, or the first schema registry; the composed client in the same repo is CON-2's territory, not a published contract)."
+      "note": "trigger: the first published external contract (a versioned API consumed outside the repo, a partner surface, or the first schema registry; the composed client in the same repo is CON-2's territory, not a published contract)."
     },
     "RT-1": {
       "title": "Realtime discipline",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: first realtime slice; the promotion set is the hub arch test, MaximumReceiveMessageSize, the createHub client seam, and the socket harness scenario."
+      "note": "trigger: first realtime slice; the promotion set is the hub arch test, MaximumReceiveMessageSize, the createHub client seam, and the socket harness scenario."
     },
     "SRV-1": {
       "title": "One deployable unit",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass. Applies to web products; an API-only project re-rules it in its deltas file at adoption."
+      "note": "trigger: the next edition build pass. Applies to web products; an API-only project re-rules it in its deltas file at adoption."
     },
     "RES-1": {
       "title": "Every outbound call is bounded, and retries are earned",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first external service dependency in an edition project. Database session bounds are RES-6's, carved out so this claim stays about the chokepoint shape."
+      "note": "trigger: the first external service dependency in an edition project. Database session bounds are RES-6's, carved out so this claim stays about the chokepoint shape."
     },
     "RES-2": {
       "title": "No unbounded queue, pool, or backlog in the process",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first background worker or in-process queue in an edition project."
+      "note": "trigger: the first background worker or in-process queue in an edition project."
     },
     "RES-3": {
       "title": "The host dies cleanly, and there is a test that kills it",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first deployed edition host (rides SEC-9's deployment-edge work; the drain budget is a CFG-1 operational setting ruled against the platform's grace period)."
+      "note": "trigger: the first deployed edition host (rides SEC-9's deployment-edge work; the drain budget is a CFG-1 operational setting ruled against the platform's grace period)."
     },
     "RES-4": {
       "title": "Liveness answers alone; readiness answers for its dependencies",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first deployed edition host (lands with RES-3 and SEC-9; the health root SEC-1 already allowlists is the surface this claim splits in two)."
+      "note": "trigger: the first deployed edition host (lands with RES-3 and SEC-9; the health root SEC-1 already allowlists is the surface this claim splits in two)."
     },
     "RES-5": {
       "title": "Poison is quarantined at a counted limit, never retried forever, never dropped",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first message broker in an edition project (the transactional outbox relay, DATA-8, is the likely first consumer)."
+      "note": "trigger: the first message broker in an edition project (the transactional outbox relay, DATA-8, is the likely first consumer)."
     },
     "RES-6": {
       "title": "Every database session carries four finite bounds, each proven where it lives",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass. Everything here runs on the existing integration tier against the real engine, so proven is reachable immediately; nothing waits on a new dependency."
+      "note": "trigger: the next edition build pass. Everything here runs on the existing integration tier against the real engine, so proven is reachable immediately; nothing waits on a new dependency."
     },
     "PERF-1": {
       "title": "A hot operation's IO is counted, budgeted, and gated",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass (the v1 exemplar's list endpoint is the first designated seam; the interceptor rides the same seam TEN-4's stamps use)."
+      "note": "trigger: the next edition build pass (the v1 exemplar's list endpoint is the first designated seam; the interceptor rides the same seam TEN-4's stamps use)."
     },
     "PERF-2": {
       "title": "A designated hot path's allocations are budgeted per operation",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first designated hot path in an edition project; designation before need fails the YAGNI gate, so the family expects most projects to hold zero designations for a long time, honestly."
+      "note": "trigger: the first designated hot path in an edition project; designation before need fails the YAGNI gate, so the family expects most projects to hold zero designations for a long time, honestly."
     },
     "PERF-3": {
       "title": "A designated algorithmic seam proves its scaling with a counted ratio",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first hand-written algorithm over unbounded input in an edition project; library calls and database queries are not designations (the library's complexity is its documentation's promise, and query shape is PERF-1's and DATA-2's)."
+      "note": "trigger: the first hand-written algorithm over unbounded input in an edition project; library calls and database queries are not designations (the library's complexity is its documentation's promise, and query shape is PERF-1's and DATA-2's)."
     },
     "PERF-4": {
       "title": "No sync IO and no whole-payload buffering on the serving path",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass (a BannedApiAnalyzers configuration plus one host assertion; the client side already carries the idiom under UI-2's lint discipline)."
+      "note": "trigger: the next edition build pass (a BannedApiAnalyzers configuration plus one host assertion; the client side already carries the idiom under UI-2's lint discipline)."
     },
     "PERF-5": {
       "title": "Every cache is bounded and every entry expires",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first cache in an edition project; the claim deliberately does not mandate caching anywhere, it prices caching where chosen."
+      "note": "trigger: the first cache in an edition project; the claim deliberately does not mandate caching anywhere, it prices caching where chosen."
     },
     "PERF-6": {
       "title": "Wall time is never asserted raw",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first wall-time benchmark in an edition project; the lint half can land at the next edition build pass, ahead of any benchmark existing, since its job is to keep the first timing assert out."
+      "note": "trigger: the first wall-time benchmark in an edition project; the lint half can land at the next edition build pass, ahead of any benchmark existing, since its job is to keep the first timing assert out."
     },
     "MOD-1": {
       "title": "Module co-location",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the second module."
     },
     "MOD-2": {
       "title": "Deterministic naming and placement",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "DOC-1": {
       "title": "Documentation lifecycle",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "DEC-1": {
       "title": "A module's behaviour traces to a decision",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the downward link is owed (trigger: first regeneration of a module from its decisions); the artifact-order check rides here too (trigger: next acceptance test); the upward provenance lint is built and proven."
+      "note": "trigger: the downward link is owed (trigger: first regeneration of a module from its decisions); the artifact-order check rides here too (trigger: next acceptance test); the upward provenance lint is built and proven."
     },
     "UI-1": {
       "title": "Token source lockstep",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "UI-2": {
       "title": "Literal visual values are lint errors",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "UI-3": {
       "title": "Screens compose primitives only",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "UI-4": {
       "title": "Fidelity ledger",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "UI-5": {
       "title": "Thin UI over tested services, composed entrypoint exercised",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "DEP-1": {
       "title": "Dependency quarantine",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
     },
     "DEP-2": {
       "title": "Standing advisory sweep with a remediation clock",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: the next edition build pass, moved there from the first armed CI loop by adjudication ruling 9c on 2026-07-26, because the sweep is buildable in the shared tier today with no instantiation and no third-party action. This claim still owes its delta pass in this edition's build, which is now the same event; the publish-date check DEP-1 names as its upgrade path rides the same job."
+      "note": "trigger: the next edition build pass, moved there from the first armed CI loop by adjudication ruling 9c on 2026-07-26, because the sweep is buildable in the shared tier today with no instantiation and no third-party action. the publish-date check DEP-1 names as its upgrade path rides the same job."
     },
     "TEST-1": {
       "title": "Tier strategy",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first store, which is what gives the tiers something to be real about."
     },
     "TEST-2": {
       "title": "E2E harness",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first client data service."
     },
     "TEST-3": {
       "title": "CI loop",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first instantiation."
     },
     "TEST-4": {
       "title": "Real-runtime boot proof",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the next edition build pass. UI-5's composed smoke already proves entrypoint wiring in-process; the real-boot script assertion and built-form pinning are the promotion set that completes it."
+      "note": "trigger: the next edition build pass. UI-5's composed smoke already proves entrypoint wiring in-process; the real-boot script assertion and built-form pinning are the promotion set that completes it."
     },
     "HUM-1": {
       "title": "Irreversible surfaces get a human turn, unconditionally",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first instantiation."
     },
     "AI-1": {
       "title": "Server-injected identity",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first tool-execution seam."
     },
     "AI-2": {
       "title": "Untrusted content, no authority",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. A realized precedent exists in dotnet-react, so a Node mechanism is expected to be reachable."
+      "note": "trigger: the first tool."
     },
     "AI-3": {
       "title": "Prompt architecture",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first model-backed feature in an edition project."
+      "note": "trigger: the first model-backed feature in an edition project."
     },
     "OBS-1": {
       "title": "External-effect seam observability",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first external side-effect port in an edition project. This claim opens the observability family the v1 cut deliberately deferred."
+      "note": "trigger: the first external side-effect port in an edition project. This claim opens the observability family the v1 cut deliberately deferred."
     },
     "OBS-2": {
       "title": "Refusals and privileged actions are security events",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: this claim's delta pass in the node-react build. It is deferred in every edition so far: the first deployed edition host (alongside SEC-9; the refusal seams it instruments are already built and tested, so the events attach to existing tested paths)."
+      "note": "trigger: the first deployed edition host (alongside SEC-9; the refusal seams it instruments are already built and tested, so the events attach to existing tested paths)."
     }
   }
 }
