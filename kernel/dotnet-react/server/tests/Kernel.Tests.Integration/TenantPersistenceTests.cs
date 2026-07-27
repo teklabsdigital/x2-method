@@ -11,7 +11,7 @@ namespace Kernel.Tests.Integration;
 [Collection("sqlserver")]
 public sealed class TenantPersistenceTests(SqlServerFixture fixture)
 {
-    [Fact]
+    [RequiresEngineFact]
     public async Task The_same_note_id_coexists_under_two_tenants()
     {
         var id = Guid.NewGuid();
@@ -31,7 +31,7 @@ public sealed class TenantPersistenceTests(SqlServerFixture fixture)
         Assert.Equal("tenant B note", b.Title);
     }
 
-    [Fact]
+    [RequiresEngineFact]
     public async Task A_cross_tenant_modify_throws_on_the_real_engine()
     {
         var id = Guid.NewGuid();

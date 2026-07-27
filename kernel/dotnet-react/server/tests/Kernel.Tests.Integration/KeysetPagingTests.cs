@@ -12,7 +12,7 @@ namespace Kernel.Tests.Integration;
 [Collection("sqlserver")]
 public sealed class KeysetPagingTests(SqlServerFixture fixture)
 {
-    [Fact]
+    [RequiresEngineFact]
     public async Task Pages_are_newest_first_with_a_strict_boundary()
     {
         var tenant = Guid.NewGuid();
@@ -39,7 +39,7 @@ public sealed class KeysetPagingTests(SqlServerFixture fixture)
         }
     }
 
-    [Fact]
+    [RequiresEngineFact]
     public async Task Identical_timestamps_neither_crash_nor_drop_rows_across_pages()
     {
         var tenant = Guid.NewGuid();

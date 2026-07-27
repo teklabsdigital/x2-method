@@ -2988,6 +2988,17 @@ Docker up and nowhere else.
 A suite that fails rather than skips on a missing environment is the worse of the two shapes here, because the red
 is indistinguishable at a glance from a conformance failure and teaches a reader to discount it.
 
+**Repaired 2026-07-27 at 14f1b2d+.** `RequiresEngineFactAttribute` skips the real-engine tier, naming the claim
+and naming what goes untested, when no container runtime responds. xunit 2 reads `Skip` at discovery, so a
+`FactAttribute` subclass setting it in its constructor is the whole mechanism and no package was added;
+`Assert.Skip` is a v3 API and moving to v3 for this would have been far larger than the problem.
+
+Measured: 4 failed becomes 4 skipped, and the whole solution now runs clean with no daemon. Control: forcing the
+runtime probe to return true turns all four red again, so the attribute is not skipping unconditionally.
+
+Skipping is the smaller dishonesty and it is not free. A tier that silently skips everywhere has never run, which
+is why TEST-1's integration obligation stays `latent` rather than moving, and why the skip reason says so.
+
 ### E-50. TEN-2's uniform not-found is probed on one verb, and the backstop is a 500
 
 **Claim:** TEN-2. **Found:** 2026-07-27. **Measured at 1e52bfa.**
@@ -3415,6 +3426,56 @@ this pass. Trigger: node Phase B, which is where that edition's shipped surface 
 The general shape is worth keeping separately from the instance. Two editions of one kernel, and the check that
 both are complete is that a human reads both READMEs. `conformance.json` is machine-checked in both, 69 rows in
 each, because it is a data file with a tool. The manifest is the same kind of obligation with no tool.
+
+### E-66. TEST-1's ban on fake in-memory providers was never measured, and measuring it moves two of its own claims
+
+**Claim:** TEST-1. **Found:** 2026-07-27, from the owner's question about whether a fake provider would do.
+**Measured on macOS arm64, EF Core 9.0.6, no container.**
+
+TEST-1 bans EF Core InMemory and states the harm: "Fake in-memory providers pass queries the real engine rejects
+and miss the semantics tenancy depends on (query filters, collations, constraint behavior)". The ban is enforced
+and red-green proven (a package reference turns `Test_projects_do_not_reference_ef_in_memory` red). The harm
+behind it had never been measured in this edition, which makes it an asserted claim of exactly the kind this
+whole exercise exists to distrust.
+
+One model, one set of probes, both providers, each probe asking only whether the store does the safe thing.
+No raw SQL anywhere, because EF InMemory does not support it and a provider refusing to run a statement is not a
+provider that caught the defect in it. Colliding writes go through a SECOND context over the SAME store, so EF's
+identity map cannot be what refuses them.
+
+| does the store do the safe thing? | SQLite `:memory:` | EF InMemory |
+|---|---|---|
+| duplicate primary key is refused | yes | yes |
+| null in a required column is refused | yes | yes |
+| unique index violation is refused | yes | **NO** |
+| value past max length is refused | **NO** | **NO** |
+| foreign key to a missing row is refused | yes | **NO** |
+| a query the engine cannot run fails at test time | yes | **NO** |
+| a rolled back transaction leaves nothing behind | yes | **NO** |
+| concurrent-token conflict is detected | **NO** | **NO** |
+
+Four differences, every one in SQLite's favour, and three of them are the harm sentence verbatim: a unique index
+that is not an index, a foreign key that is not a key, and a query that runs green in the test and throws in
+production. The rolled-back transaction is the one worth naming separately, because it is not a constraint at
+all: EF InMemory accepts `BeginTransaction` and ignores it, so a test asserting rollback behaviour passes while
+proving nothing.
+
+Two rows say SQLite is unsafe too, and they stay in the table because they are the substance of TEST-1's own
+weakening note ("SQLite in the fast tier is a deliberate semantic compromise"). Max length is real: SQLite has
+type affinity and no length constraint, so a column the shipped schema declares `nvarchar(10)` accepts five
+hundred characters in the fast tier. The concurrency row measures a lost update with no token modelled, so it
+indicts neither provider and marks what the fast tier cannot answer.
+
+**Nothing to repair; two things to record.** The ban is correct and now has evidence under it rather than an
+assertion. And this measurement cannot become a test in this edition, because the test would have to reference
+the banned package. It is a measurement in the register, not a guard, and saying so is more honest than moving
+the ban to accommodate its own proof.
+
+**The platform question that prompted it, answered separately.** Both providers are pure managed code and both
+ran here on arm64 with no container. The Docker dependency in this edition is not the fast tier and never was:
+215 of 219 tests already run on SQLite `:memory:`. It is SQL Server, which is amd64-only and needs emulation on
+Apple Silicon, which is why `scripts/db-up.sh` carries a colima and Rosetta precheck. Swapping the fast tier's
+engine would not remove a container from anything.
 
 ## Acceptance test, first execution (2026-07-27)
 

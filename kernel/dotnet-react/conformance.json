@@ -811,7 +811,7 @@
         {
           "name": "the integration tier uses the real engine, disposable, unique per run, with real migrations",
           "status": "latent",
-          "text": "`SqlServerFixture` starts one ephemeral container, points it at `Kernel_{guid}` and runs `MigrateAsync()` rather than `EnsureCreated`, which is exactly the claim's shape. It cannot be executed here: with no Docker daemon the tier fails rather than skips (E-49), so this is read and not run. trigger: a run with a daemon available, which is also E-49's fix."
+          "text": "`SqlServerFixture` starts one ephemeral container, points it at `Kernel_{guid}` and runs `MigrateAsync()` rather than `EnsureCreated`, which is exactly the claim's shape. It has not been executed here: no container runtime is available. Until 2026-07-27 that produced four RED tests whose messages were container startup errors, in a suite where red means a conformance defect (E-49); they now skip, naming the claim and naming what goes untested, which is engine-specific by construction (`DateTimeOffset` ordering under the keyset cursor, composite-key behaviour). Controlled: forcing the runtime probe true turns all four red again, so the attribute is not skipping unconditionally. `latent` is what a tier that skips everywhere is worth, and CI is the gate against it staying that way. trigger: a run with a container runtime available."
         },
         {
           "name": "exactly one provisioning path",
