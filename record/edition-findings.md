@@ -4759,6 +4759,78 @@ tenancy from uniformly wrong tenancy, because a consistent error succeeds at eve
 both cases is a second, differently-positioned actor**, and the assertions that moved are the ones comparing what
 one caller wrote against what a DIFFERENT caller can see, plus the one reading the row rather than the response.
 
+### E-103. The third instance, one job along from where the second was found
+
+**Claim:** TEST-3. **Found:** 2026-07-27, by asking the question E-95 wrote down instead of answering it by hand.
+**Measured at 8457adf.** **Repaired here, and mechanised.**
+
+`tools/gate-check.mjs` is shipped by both editions. Each edition's `ci.yml` runs `gate-check --self-test`. Each
+`ci.yml` is a template that executes only after a project is seeded. `kernel.yml` did not mention gate-check at
+all, so the readback's own controls, the half that would notice the predicate rotting before a seeded project
+depends on it, had never run in this repository.
+
+That is E-95's structure exactly, in the same workflow, one job along. E-95 closed with an obligation stated in
+the right words:
+
+> when a mechanism is added to an edition, the pass owes an answer to whether anything in THIS repository runs
+> it, and `kernel.yml` is the register of that answer.
+
+**The obligation was correct and was addressed to a person.** E-39 had already established what that is worth,
+in this repository, about this workflow: TEST-3's own sentence is that a mechanism running only when a developer
+remembers is aspirational rather than enforced. The same is true of an obligation. Three findings of one shape,
+each discovered by somebody running a command they had not run in a while, is not three lapses of attention; it
+is a missing mechanism whose absence the register kept describing.
+
+So the repair is two things rather than one. The job is added, and `kernel/tools/loop-check.mjs` now asks the
+question on every push: **for each executable an edition ships, does its own `ci.yml` run it, and does
+`kernel.yml` run it?** Two registers, because there are two questions and the same file can be correctly present
+in one and missing from the other, which is the state all three findings were in.
+
+Three things the check needed that a text scan would not have:
+
+- **Steps, not lines.** `working-directory` may sit either side of `run:` within a step, and node's e2e job
+  writes it after, so a parser remembering the last directory it saw attributes the wrong one.
+- **Block scalars, read whole.** The sibling's `e2e-wire` job carries its entire orchestration inside a `run: |`,
+  and a parser taking only the first line sees one command out of six.
+- **Edition-qualified paths.** Both editions ship `tools/docs-lint.mjs`, so a filename match lets one edition
+  discharge the other's obligation. There is a control for exactly that, in the ignored set.
+
+It enumerates `kernel/tools/` as well, under the one register that applies to it, which is what puts this file
+inside its own subject: a check for mechanisms nothing runs, which nothing ran, would be the joke version of
+E-95.
+
+### E-104. The sibling ships an e2e orchestrator and its CI re-implements it instead of running it
+
+**Claim:** TEST-2, TEST-3, CFG-1. **Found:** 2026-07-27, by the loop check on its first live run.
+**Measured at 8457adf.** **Recorded, not repaired.**
+
+`kernel/dotnet-react/scripts/e2e.sh` brings the database up, migrates it, mints two bearers, boots the server,
+runs the harness, runs the composed-entrypoint smoke and tears down. The `e2e-wire` job in that edition's
+`ci.yml` does all seven of those things and **does not call the script**. It inlines the sequence in a `run: |`
+block: its own readiness loop, its own mint calls, its own harness and smoke invocation, its own exit arithmetic.
+
+So the edition carries two procedures for one job, and nothing keeps them equal. A scenario added to the harness
+is picked up by both, because both end in `node tools/harness/main.ts`; a change to the ORDER, to the readiness
+condition, to what is torn down on failure, or to what the tokens carry lands in one and not the other. The
+developer runs one and CI runs the other, so the divergence surfaces as "it works on my machine" with both halves
+green in their own context.
+
+This is E-75's family at the scale of a procedure rather than a value. The register already holds three instances
+where a value had to agree across a boundary and only a person kept the copies equal; this is the same defect
+where the thing duplicated is a sequence of steps.
+
+**Node does not have it, and the difference is not virtue.** `scripts/e2e.ts` obtains its own throwaway database,
+generates its own signing key and picks its own port, so there is nothing for CI to supply and the job is one
+line: `node scripts/e2e.ts`. The sibling's script cannot be called by CI as it stands, because it reads the
+signing key from `dotnet user-secrets` and starts the engine with `docker compose`, and CI has neither. The
+duplication is a consequence of the script depending on a developer's machine, which is the actual defect.
+
+Not repaired here: the repair is to make the script supply its own dependencies the way node's does, which is a
+change to the sibling's dev-setup and engine story and needs a container runtime to verify. Recorded with the
+exception it justifies, in `loop-check.mjs`, written so the reason names this finding rather than waving the file
+past. **Trigger: the next pass in that edition with a container runtime available, which owes either one
+procedure called from both places or a written argument for why two is correct.**
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

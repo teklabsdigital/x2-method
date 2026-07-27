@@ -70,6 +70,30 @@ jobs:
       # fail here. A catalog pass therefore cannot complete while an edition stays silent about a new claim.
       - run: node tools/docs-lint.mjs
         working-directory: kernel/${{ matrix.edition }}
+      # Added 2026-07-27, and it is the third time this exact omission has been found (E-103). The gate readback
+      # itself needs a token with repository administration read and is an instantiation step; what runs here is
+      # its predicate against its own controls, which is the half that would notice the readback rotting before a
+      # seeded project depends on it. Each edition's `ci.yml` has always run this, and each `ci.yml` is a template
+      # that never executes here, which is E-95's structure exactly, one job along from where E-95 was found.
+      - name: Assert what gate-check catches (TEST-3, HUM-1)
+        run: node tools/gate-check.mjs --self-test
+        working-directory: kernel/${{ matrix.edition }}
+
+  loop:
+    name: every mechanism an edition ships is run by something (TEST-3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.1'
+      # The check that would have caught E-39, E-95 and E-103, each of which was found by a person running a
+      # command they had not run in a while. E-95 closed with the right obligation addressed to the wrong kind of
+      # reader: "when a mechanism is added to an edition, the pass owes an answer to whether anything in THIS
+      # repository runs it". A person is exactly what TEST-3 says does not scale.
+      - name: Assert what the loop check catches (TEST-3)
+        run: node kernel/tools/loop-check.mjs --self-test
+      - run: node kernel/tools/loop-check.mjs
 
   node-server:
     name: node-react server tier

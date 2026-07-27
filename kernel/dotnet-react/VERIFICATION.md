@@ -1795,3 +1795,43 @@ tokens expire.
 
 Architecture 208, unit 58, integration 4 skipped by design, build clean with `-warnaserror`, conformance ok at 69
 rows, docs-lint ok. Both plants restored byte-for-byte, verified by hash, backup deleted in this round (E-59).
+
+## 2026-07-27, the loop check, and a duplicated procedure it found here
+
+Measured at `8457adf`. A repo-level mechanism, recorded here because it changes this edition's TEST-3 row and
+because the one finding it surfaced that is not shared belongs to this edition.
+
+`kernel/tools/loop-check.mjs` asks, of every executable an edition ships, whether the edition's own `ci.yml` runs
+it and whether the repository's `kernel.yml` runs it. E-95 wrote that obligation down for a person; this is the
+same question asked on every push. It found `tools/gate-check.mjs` never run by `kernel.yml` in this edition,
+which is E-95's exact structure one job along and the third instance of the shape (E-103). The job is added.
+
+**E-104, which is this edition's alone.** `scripts/e2e.sh` brings the database up, migrates it, mints two
+bearers, boots the server, runs the harness, runs the smoke and tears down. The `e2e-wire` job does all seven of
+those things and never calls the script: it inlines the sequence in a `run: |` block, with its own readiness
+loop, its own mint calls and its own exit arithmetic. Two procedures for one job, and nothing keeps them equal.
+
+A scenario added to the harness reaches both, because both end at `node tools/harness/main.ts`. A change to the
+ORDER, to the readiness condition, to what is torn down on failure, or to what the tokens carry lands in one and
+not the other, and the developer runs one while CI runs the other. That is E-75's family with a procedure in
+place of a value.
+
+The cause is worth naming precisely, because it is not carelessness: the script cannot be called from CI as it
+stands, since it reads `Jwt:Key` from `dotnet user-secrets` and starts its engine with `docker compose`, and a
+runner has neither. **The duplication is a consequence of the script depending on a developer's machine.** The
+sibling edition has no such duplication and the difference is structural rather than virtuous: its
+`scripts/e2e.ts` obtains a throwaway database, generates its own signing key and asks the operating system for a
+port, so there is nothing for CI to supply and the job is one line.
+
+Recorded, not repaired. The repair is to make this script supply its own dependencies the way the sibling's does,
+which touches the dev-setup and engine story and needs a container runtime to verify; none was available.
+**Trigger: the next pass in this edition with a container runtime, which owes either one procedure called from
+both places or a written argument for why two is correct.** The loop check carries the exception meanwhile, with
+the reason naming this finding rather than waving the file past, because a permanently red gate gets disabled
+rather than fixed (E-84).
+
+### Gates
+
+Architecture 208, unit 58, integration 4 skipped (no container runtime, by design). loop-check ok, self-test 7
+caught 3 ignored; gate-check self-test 6/7; secret-scan ok with 5 justified exceptions; conformance ok at 69
+rows; docs-lint ok, self-test 33/32.

@@ -1283,3 +1283,66 @@ re-derives that sentence on the day the trigger fires.
 Server 283, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, self-test 33/32, secret-scan ok,
 `node scripts/e2e.ts` green. Every plant restored from a copy and its backup deleted in the same round (E-59),
 each restoration confirmed against the baseline count before the next plant.
+
+## 2026-07-27, the loop check: E-95's obligation turned into a mechanism, and what it found
+
+Measured at `8457adf`. Repo-level rather than edition-level, recorded here and in the sibling because it changes
+both TEST-3 rows.
+
+E-95 closed with an obligation in exactly the right words: when a mechanism is added to an edition, the pass owes
+an answer to whether anything in THIS repository runs it. It was addressed to a person. Asking it mechanically,
+once, found `tools/gate-check.mjs` in the same position secret-scan had been in: shipped by both editions, run by
+each edition's template `ci.yml`, and never run by `kernel.yml`. Third instance of one shape (E-103).
+
+### What the check has to read, and what a weaker reading misses
+
+`kernel/tools/loop-check.mjs` asks two questions per executable, because there are two registers and the same
+file can be right in one and missing from the other. Three things it needs, each of which was got wrong first:
+
+- **Steps, not lines.** `working-directory` may sit either side of `run:` inside one step, and node's e2e job
+  writes it after, so a line-by-line parser remembering the last directory attributes the wrong one and reports
+  `scripts/e2e.ts` as unrun when the job that runs it is three lines above.
+- **Block scalars, read whole.** The sibling's `e2e-wire` job carries its entire orchestration inside a `run: |`.
+  A parser taking the first line sees `dotnet run ... &` and none of the six commands under it.
+- **Edition-qualified paths.** Both editions ship `tools/docs-lint.mjs`, so a filename match lets one edition
+  discharge the other's obligation. That case is in the ignored set as a control.
+
+It enumerates `kernel/tools/` too, under the one register that applies, which puts the file inside its own
+subject: a check for mechanisms nothing runs, which nothing ran, would be the joke version of E-95. Removing the
+`loop` job from `kernel.yml` reports the checker itself.
+
+### Plants
+
+| plant | outcome |
+|---|---|
+| the `gate-check` step removed from `kernel.yml` again | red-correct, both editions named |
+| the whole `loop` job removed | red-correct, and it names `kernel/tools/loop-check.mjs` |
+
+### The exceptions, and the one that is a finding
+
+Seven of sixteen shipped executables are excused, each with a written reason and each reported if it goes stale.
+Six are ordinary: `conformance.mjs` is a library `docs-lint.mjs` imports, and the sibling's four `db-*.sh` and
+`dev-setup.sh` are developer commands whose CI equivalent is a service container rather than a skipped script.
+
+The seventh is `scripts/e2e.sh` and it is a finding rather than a category (E-104). The sibling's `e2e-wire` job
+does not call that script: it re-implements the whole orchestration inline, so that edition carries two
+procedures for one job and nothing keeps them equal. A scenario added to the harness reaches both, because both
+end at `node tools/harness/main.ts`; a change to the ORDER, the readiness condition, the teardown or the token
+contents lands in one. E-75's family at the scale of a procedure. Node does not have it because
+`scripts/e2e.ts` supplies its own database, key and port, so CI is one line, and the sibling's script cannot be
+because it reads user-secrets and starts an engine with a container runtime. Recorded with its trigger rather
+than repaired, and the exception is written so the reason names the finding, because a permanently red gate gets
+disabled rather than fixed (E-84).
+
+### Statuses
+
+TEST-3's first obligation keeps `patterned` in both editions and its residual changes from a sentence to a
+mechanism with a narrower residual behind it. The enumeration is over shipped EXECUTABLES, so a claim guard that
+is a test inside a suite, or an eslint rule inside a config, is covered only by whatever runs that suite or that
+config. trigger for `proven`: an enumeration keyed on this record's own `mechanism` field rather than on the
+filesystem, so that a mechanism a row NAMES and nothing invokes is the failing case.
+
+### Gates
+
+loop-check ok (9 of 16 run by both registers, 7 excused), self-test 7 caught 3 ignored; gate-check self-test 6/7
+in both editions; conformance ok at 69 rows in both; docs-lint ok in both.
