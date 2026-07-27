@@ -2465,6 +2465,193 @@ So UI-1 reads `proven` in a seeded project on the strength of the kernel's own f
 carry "mechanism built, not yet armed". UI-1 needs the same asterisk and does not have it. This is the same shape
 as E-23: a check that confirms a placeholder is shaped like the real thing.
 
+### E-28. docs-lint is fixture-free, and the documented edit path disables it with every gate green
+
+**Claims:** DOC-1, TEN-5, DEP-1, HUM-1. **Status carried:** `proven` on DOC-1 and DEP-1, `latent` on TEN-5.
+**Found:** 2026-07-27, planting round for batch 1. **Measured, at the correct edit site, with a control.**
+
+`docs-lint.mjs` carries the whole locally testable half of four claims and has no self-test and no fixture. The
+repair precedent is one directory away and predates this: `tools/secret-scan.mjs` ships `--self-test`, six
+references to it, and CI runs it as its own step before the scan, because E-11 was a regex nobody could execute.
+`docs-lint.mjs` is the same shape and did not get the same repair. `conformance.mjs` has none either.
+
+The probe was run the way the build brief says to change a shared file, not the way it says never to. The TEN-5
+ledger row filter in `kernel/shared/tools/docs-lint.mjs` was changed to select on a prefix no line can start
+with, then `node kernel/tools/compose.mjs` was re-run so both editions carried it. Every gate stayed green:
+`compose: ok (36 shared files match in 2 edition(s))`, `docs-lint: ok` in both editions, `conformance: ok (69
+rows)` in both. A real violation planted underneath, a ledger row with an empty sole-reader cell, still produced
+`docs-lint: ok`, exit 0.
+
+**What `compose --check` does and does not buy.** It catches the one-sided edit, editing an edition's composed
+copy, which is the mistake the brief already forbids. It compares the two copies to the shared source and cannot
+observe whether any of the three still does anything. So the mechanism that looks like it guards the guard
+guards only the disallowed edit path, and the allowed one is open.
+
+**Not repaired in this round.** The remedy is a `--self-test` mode over known-bad fixtures, following
+`secret-scan.mjs` exactly, and it is a shared-tier build, not a verification-round edit.
+
+### E-29. CFG-1's registry can be reduced to reaching nothing with all 100 tests green
+
+**Claim:** CFG-1. **Status carried:** `proven`. **Found:** 2026-07-27. **Measured, no plant required.**
+
+`OperationalSettingsTests` is two compiled regexes behind a single `[Fact]`. Replacing
+`(?:claude|gpt|gemini|mistral)` with a vendor token that appears nowhere, and the four provider hosts with one
+that does not exist, leaves `dotnet test tests/Kernel.Tests.Architecture` at `Passed! Failed: 0, Passed: 100`.
+No violation is needed to demonstrate it: with the registry neutered and the tree otherwise untouched, nothing
+in the edition reports that the cheap net now catches nothing.
+
+**The repair precedent is in the same directory.** `SecretConfigShapeTests` asserts its predicate's EXTENT as a
+`[Theory]`, with positive cases and, importantly, negative ones (`Issuer`, `Audience`, `Monkey` all expected
+false), so narrowing that predicate breaks its own test. `OperationalSettingsTests` was written without it. The
+two files sit beside each other and one of them is guarded.
+
+### E-30. UI-2's config can be reduced to reaching nothing with `npm run verify` green
+
+**Claim:** UI-2. **Status carried:** `proven`. **Found:** 2026-07-27. **Measured, with a control.**
+
+`kernel/shared/client-web/eslint.config.js` holds the entire claim in hand-written alternations. Prefixing
+`NAMED_COLORS` and `DIM_CAMEL` with tokens that match nothing leaves `npm run verify` green in full: `tsc
+--noEmit` silent, 16 tests passed, `eslint .` exit 0. The control is the part that matters: with `DIM_CAMEL`
+neutered, `style={{ padding: 12 }}` planted into a real screen passes silently, having been red one command
+earlier.
+
+Nothing in either edition feeds the config a known-bad input. The file's own comment records this exact class of
+defect being found and repaired once already ("the old value-only selector was vacuous for `borderRadius: 8`"),
+which is the argument for a fixture rather than against one.
+
+### E-31. UI-2's dimension ban misses every negative literal, and the ungated axes
+
+**Claim:** UI-2. **Status carried:** `proven`. **Found:** 2026-07-27. **Measured, nine plants.**
+
+Seven plants went red with the message naming UI-2: `color: "#ff0000"`, `color: "rebeccapurple"`, `padding: 12`,
+`top: "-8px"`, `borderRadius: 4`, `border: "1px solid"`, `fontWeight: 550`. Two went green:
+
+- `marginTop: -8`. Both numeric dimension selectors use the direct-child combinator, `Property[key.name=...] >
+  Literal[raw=...]`. A negative numeric parses as `Property > UnaryExpression > Literal`, so the literal is a
+  grandchild and the selector cannot reach it. The string form `'-8px'` is caught; the bare negative is not. The
+  px/rem selectors do not backstop it, because they test `value`, which is undefined for a number.
+- `borderTopWidth: 1`. The axis appears in neither `DIM_CAMEL` nor the `^(?:borderWidth|border)$` selector, so
+  the per-side widths and `outline`/`outlineWidth` are unguarded while `border` is.
+
+The first is a syntactic hole in a mechanism that reads as total. The second is the standing per-seam debt the
+`patterned` tag exists to name, and naming it is why the row moves there rather than staying `proven`.
+
+### E-32. DOC-1's walk skips any directory named bin, obj, dist or node_modules, at any depth
+
+**Claim:** DOC-1. **Status carried:** `proven`. **Found:** 2026-07-27. **Measured.**
+
+`SKIP_DIRS` is matched by directory BASENAME inside the recursive walk, not by path prefix from the build-output
+roots it was written for. So `docs/work/bin/handover.md`, a markdown file with no front matter at all, is never
+enumerated and `docs-lint` reports ok. One four-character directory name holes both the completeness obligation
+and the closure obligation at once, inside `docs/` itself.
+
+### E-33. DOC-1's stateless halves were never built, while the row read `proven` and its own note said so
+
+**Claim:** DOC-1. **Status carried:** `proven`, with the note "forward-only status transitions not linted,
+stateless". **Found:** 2026-07-27. **Measured, four plants.**
+
+Measured green, all four: a status moved forward (`authoritative` to `archived`) and then backward (`archived`
+to `authoritative`) produce byte-identical clean output, because the tool holds no prior value and opens no
+history, so no transition of any direction is representable to it. An archived runbook still cited by the
+edition README as the way to run the system passes. A work document declaring `slice: whenever` passes, because
+the key's presence is checked and its value never is. A stored descriptive narrative of how the server works
+passes under any legal kind, because the guard reads the folder and the declared kind and never the content.
+
+**The defect is not that these are unbuilt.** It is that the row said so in prose and read `proven` anyway. The
+per-obligation array from ruling 3 was available and is the instrument this row needed; it is applied now.
+
+### E-34. TEN-5 resolves no test and verifies one cell
+
+**Claim:** TEN-5. **Status carried:** `latent`. **Found:** 2026-07-27. **Measured, four plants and a control.**
+
+The ledger guard binds for exactly two conditions, both confirmed red with the message naming TEN-5: the ledger
+file is absent, and a row's third pipe-cell is empty. Everything else the claim asks for is green:
+
+- A row naming `NoSuchTestAnywhereInThisRepo` passes. `docs-lint` never opens a test file, so the claim's actual
+  remedy, that the named sole-reader test IS the mechanism, is unreachable by this guard under any input.
+- A row whose justification cell is empty passes; only the third cell is read.
+- A second ledger, `docs/claims/scheduler-bypass-ledger.md`, carrying its own bypass row, passes unexamined.
+
+`latent` was the honest tag for an empty ledger and it is no longer sufficient, because the mechanism has now
+been executed against a real surface and most of what the claim asks for is not in it.
+
+### E-35. TEN-5's ledger parse is positional, and empties silently on reformatting
+
+**Claim:** TEN-5. **Found:** 2026-07-27. **Measured, two probes.**
+
+Rows are lines beginning with `|`, then `.slice(2)` to drop the header and separator, and the test is
+`split('|')[3]`. Both assumptions are load-bearing and neither is asserted:
+
+- Rewriting the table as a bullet list, with the document still titled the tenant bypass ledger and still
+  declaring a bypass with no test, yields `docs-lint: ok`.
+- Inserting an `Owner` column shifts the sole-reader cell off index 3, so the guard reads the justification
+  instead. A row with a visibly empty sole-reader cell then passes.
+
+### E-36. CFG-1's script-duplication half is unguarded, and the row's own mechanism text asserts it
+
+**Claim:** CFG-1. **Status carried:** `proven`. **Found:** 2026-07-27. **Measured.**
+
+The row's mechanism reads, in part, "`scripts/e2e.sh` reads Jwt values from committed appsettings, never
+duplicating them". Appending literal `ISSUER` and `AUDIENCE` values to `scripts/e2e.sh` leaves the suite at
+`Passed! Failed: 0, Passed: 100`. The registry covers model ids and provider endpoints and nothing else, so the
+duplication shape that the acceptance-test pilot actually hit, and that the test's own summary comment cites as
+the reason scripts are a first-class surface, has no predicate.
+
+The three plants that do bind bind correctly: a model id in `scripts/dev-setup.sh`, a model id in
+`Kernel.Api/Program.cs`, and `https://api.anthropic.com` in `Kernel.App/Agents/ToolExecutor.cs` each fail
+`OperationalSettingsTests` by name.
+
+### E-37. DEP-1's mechanism class has unguarded members
+
+**Claim:** DEP-1. **Status carried:** `proven`, on two obligations both reading `proven`. **Found:** 2026-07-27.
+**Measured, seventeen plants: four red-correct, twelve green, one red-different.**
+
+Named members of the mechanism class with no predicate behind them:
+
+- Source mapping. Deleting the entire `<packageSourceMapping>` block from `server/nuget.config` leaves
+  `docs-lint` green.
+- `package.json` `overrides` is never read, because the npm reader spreads only `dependencies` and
+  `devDependencies`. The transitive pin taken under the advisory rule, which is the one DEP-1 gained an explicit
+  resolution order for at ruling 9a, is invisible to the ledger check that exists to vouch for it.
+- No cross-surface digest comparison. The check asserts a digest is present and the repo:tag is ledgered, never
+  that two surfaces name the same digest.
+- The cooling-off window number is asserted independently in at least eight files and read by nothing, so
+  `VERSIONS.md` can disagree with every other file and no guard notices.
+- Publish dates are shape-tested only, a regex for the date format. No date is parsed and today's date is never
+  obtained, so a dependency ledgered as adopted one day after publication passes.
+
+The one red-different is worth its own line: the lockfile-drift remedy does fail the build, but npm's own
+`EUSAGE` names npm, not DEP-1 and not the registry, and it fires in a different CI job from every other DEP-1
+check. Under the third-outcome rule that is a guard that does not bind for this claim, not a pass.
+
+### E-38. DEP-1's image check cannot see Docker Hub shorthand or an extensionless Dockerfile
+
+**Claim:** DEP-1. **Found:** 2026-07-27. **Measured.**
+
+`imageRef` is a four-host allowlist, `mcr.microsoft.com|docker.io|ghcr.io|quay.io`. Docker Hub shorthand, which
+is the most common way an image is spelled and is the violation shape the obligation itself states
+(`FROM node:22-alpine`), matches nothing and passes. Separately, `IMAGE_SCAN_EXTENSIONS` has no entry an
+extensionless `Dockerfile` can match, so the surface the obligation names first cannot be opened at all, even
+for a correctly hosted image with no digest. The check that does bind, an unpinned `mcr.microsoft.com` image in
+a shell script, binds correctly and names DEP-1.
+
+### E-39. This repository's CI runs no dotnet at all
+
+**Claims:** every dotnet row whose mechanism is an architecture test or the client lint. **Found:** 2026-07-27.
+**Measured.**
+
+`.github/workflows/kernel.yml` has five jobs: `shared-tier`, `conformance`, `node-server`, `client`, `dashes`.
+The only occurrences of the string "dotnet" in it are a comment and the edition matrix label. The `client` job
+builds `kernel/shared/client-web`, not `kernel/dotnet-react/client-web`.
+
+So `Kernel.Tests.Architecture`, all 100 tests, and the dotnet edition's client verification chain run only when
+a human runs them locally. The edition's own `ci.yml` does wire both up, and that file is a template which
+becomes real CI only at instantiation, which E-24 established ships no arming mechanism and has never been
+executed until this week.
+
+This is not an argument that the guards are wrong. It is the reason a neutered guard survives: E-29 and E-30
+both required editing a file, and no continuous process anywhere would have reported either edit.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

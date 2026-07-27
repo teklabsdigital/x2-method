@@ -521,3 +521,95 @@ secret scan), E-26 (five places document port 5080 and the host binds 5000, beca
 exists), E-27's manifest half (step 6 demands a design export that the method's own skill order puts two skills
 away, and offers no fallback). All four are manifest and file-set defects rather than guard defects, and the
 manifest is the artifact the next round should take as its subject.
+
+## Round: batch 1 planting, and five guards that could be switched off (2026-07-27)
+
+The first round of workstream 2. Five rows planted against, chosen off the staleness ranking as the ones most
+likely to be overstating: every obligation in them was classified GUARD-ONLY or PROSE-ONLY, meaning a guard runs
+over the real tree but nothing anywhere feeds its predicate a violating input. Forty-nine plants, five vacuity
+probes, every revert byte-exact and every baseline restored.
+
+The round was designed by agents that read only the claim file, then only the mechanism, and every result below
+was executed against the working tree at `394e8aa` and re-run by hand where the execution environment could not
+be proven current. That last clause is not decoration: one executor was handed a checkout fourteen commits stale,
+reported the mismatch itself, and its numbers were discarded and re-measured rather than believed. Another
+reported a stale tree and re-ran its whole set at the right commit before reporting. A `docs-lint` result from
+the wrong commit is worthless, because that file differs by 476 insertions between the two.
+
+### Red-green, by claim
+
+| Claim | plants | red, naming the claim | green | red, different check | vacuity probe |
+|-------|--------|----------------------|-------|---------------------|----------------|
+| UI-2 | 9 | 7 | 2 | 0 | **green**, `npm run verify` clean with the patterns neutered |
+| DOC-1 | 11 | 5 | 6 | 0 | **green**, and a known-bad input under it still ok |
+| TEN-5 | 6 | 2 | 4 | 0 | **green**, two independent ways |
+| CFG-1 | 6 | 3 | 3 | 0 | **green**, 100 of 100 with both regexes reaching nothing |
+| DEP-1 | 17 | 4 | 12 | 1 | **green**, the image check silently disabled |
+
+The one red-different is DEP-1's lockfile-drift remedy. The build does fail, and npm's `EUSAGE` names npm. It
+names neither DEP-1 nor the registry, and it fires in a different CI job from every other check on the row. Under
+the three-outcome rule that is a guard that does not bind for this claim.
+
+### The vacuity probes are the finding
+
+Every one of the five guards can be reduced to reaching nothing while every gate stays green. The probe was run
+the way the build brief says to change a shared file, not the way it says never to: edit `kernel/shared/`, re-run
+`compose.mjs`. Result, with the TEN-5 row scrape unable to match any line:
+
+| gate | result with the guard neutered |
+|------|-------------------------------|
+| `compose --check` | ok, 36 shared files across 2 editions |
+| `docs-lint`, both editions | ok |
+| `conformance --check`, both editions | ok, 69 rows |
+| a real TEN-5 violation planted underneath | **still ok** |
+
+`compose --check` catches the one-sided edit, which is the mistake the brief already forbids, and cannot observe
+whether any of the three copies still does anything. The permitted edit path is the open one. That is E-28, and
+E-29, E-30, E-38 and E-39 are the same shape at four other sites.
+
+The repair pattern already exists in this edition and was applied unevenly: `tools/secret-scan.mjs` ships
+`--self-test` and CI runs it as its own step, and `SecretConfigShapeTests` asserts its predicate's extent as a
+Theory with negative cases. `docs-lint.mjs`, `conformance.mjs`, `OperationalSettingsTests` and the shared eslint
+config were all written without either. Nothing about the mechanisms made this hard; it was not done.
+
+### Repaired, with the control
+
+CFG-1's registry gained the extent assertion its sibling already had: thirteen cases, eight positive and five
+negative, asserting the reach of the two patterns rather than describing it.
+
+| state | mechanism | plant | result |
+|-------|-----------|-------|--------|
+| the hole | shipped registry, no extent test | both patterns narrowed to match nothing | green, 100 of 100 |
+| repaired | extent test in place | shipped registry | green, 113 of 113 |
+| control | extent test in place | both patterns narrowed to match nothing | **red**, the reach assertions fail by name |
+
+That is the whole repair this round makes. E-28's remedy is a `--self-test` mode for `docs-lint` over known-bad
+fixtures, which is a shared-tier build and not a verification-round edit, and E-30's is the same shape for the
+eslint config.
+
+### Status
+
+| Claim | was | now | why |
+|-------|-----|-----|-----|
+| UI-2 | `proven` | `patterned` | bare negative numerics escape every dimension selector, and the per-side axes are in no alternation, so the surface is not whole |
+| DOC-1 | `proven` | `owed` | the stateless halves were never built, which the row's own note said while the status did not |
+| TEN-5 | `latent` | `owed` | the mechanism has now been executed and resolves no test; `latent` was right for an empty ledger and is not right for this |
+| CFG-1 | `proven` | `owed` | the script-duplication half the mechanism text asserted has no predicate |
+| DEP-1 | `proven` | `owed` | twelve of seventeen obligations green, including named members of its own mechanism class |
+
+Every one of the five now carries a per-obligation array, which is where the honest detail lives: most of DOC-1
+and both halves of DEP-1's shipped pair are `patterned`, not worthless, and the roll-up takes the weakest. The
+tally moves from 20/6/3/40 to **16/7/2/44**, and non-`owed` rows from 29 to 25.
+
+Four rows falling to `owed` looks like a bad round and is the opposite. None of these mechanisms got worse this
+week. They were recorded as covering more than they covered, and the row that overstates is the defect that
+matters, because a seeded project inherits the row and not the measurement.
+
+Baselines: .NET architecture **113 of 113** (100 before this round, plus the 13 extent cases), node server 154 of
+154, node client-web 16 of 16, dotnet client-web `npm run verify` clean, `compose --check` 36 shared files across
+2 editions, both editions' `docs-lint` and `conformance --check` ok, literal em-dash and en-dash scans zero.
+
+Not repaired in this round: E-28 and E-30 (the two missing self-tests), E-31 (the UnaryExpression hole and the
+ungated axes), E-32 through E-37 (the unbuilt halves, each now an `owed` obligation with a named trigger), E-38,
+and E-39. E-39 is the one to read first: this repository's CI runs no dotnet at all, so the neutered-guard probes
+in this round would not have been reported by any continuous process, only by a human choosing to look.

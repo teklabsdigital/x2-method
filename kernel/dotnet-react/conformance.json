@@ -84,9 +84,36 @@
     },
     "TEN-5": {
       "title": "Sanctioned-bypass ledger",
-      "status": "latent",
+      "status": "owed",
       "mechanism": "`docs/claims/tenant-bypass-ledger.md` (empty) + docs-lint rule that a row without a sole-reader test fails",
-      "note": "ledger empty; the first sanctioned bypass is its first run"
+      "note": "planted 2026-07-27, six plants, two red naming TEN-5. The guard binds for exactly two conditions: the ledger is absent, and a row's third pipe-cell is empty. The named test is never resolved, so the claim's actual remedy is unreachable by this mechanism under any input (E-34). The parse is positional and empties silently when the table is reformatted or gains a column (E-35).",
+      "obligations": [
+        {
+          "name": "a committed ledger exists and is where the claim lives",
+          "status": "proven",
+          "text": "removing docs/claims/tenant-bypass-ledger.md fails docs-lint with a sentence naming TEN-5, not a stack trace."
+        },
+        {
+          "name": "a ledger row that names no sole-reader test fails the build",
+          "status": "proven",
+          "text": "red-correct for an empty third cell. Positional and fragile, which is E-35, not a status."
+        },
+        {
+          "name": "the named sole-reader test exists, and is the remedy",
+          "status": "owed",
+          "text": "unbuilt. A row naming NoSuchTestAnywhereInThisRepo passes; docs-lint never opens a test file (E-34). Trigger: a docs-lint reader that resolves the named test to a test in the suite."
+        },
+        {
+          "name": "every sanctioned cross-tenant path appears in the ledger",
+          "status": "owed",
+          "text": "unbuilt. Nothing compares code against the ledger in either direction (E-34). Trigger: the first sanctioned bypass, plus a scan enumerating cross-tenant reads in the persistence layer."
+        },
+        {
+          "name": "one ledger, not several",
+          "status": "owed",
+          "text": "unbuilt. A second bypass ledger carrying its own row passes unexamined (E-34). Trigger: a check that the bypass ledger is the only document of its kind."
+        }
+      ]
     },
     "TEN-6": {
       "title": "Tenant is minted from membership, never asserted",
@@ -326,9 +353,21 @@
     },
     "CFG-1": {
       "title": "Operational settings are configuration, not code",
-      "status": "proven",
-      "mechanism": "`OperationalSettingsTests` scans `server/src` and `scripts/` for model-id and provider-endpoint literals; `scripts/e2e.sh` reads Jwt values from committed appsettings, never duplicating them",
-      "note": ""
+      "status": "owed",
+      "mechanism": "`OperationalSettingsTests` scans `server/src` and `scripts/` for model-id and provider-endpoint literals. `scripts/e2e.sh` is intended to read Jwt values from committed appsettings rather than duplicating them, and nothing enforces that (E-36)",
+      "note": "planted 2026-07-27, six plants, three red naming OperationalSettingsTests. The registry is heuristic by its own comment, so each new operational-setting shape owes its own entry. The duplication half the mechanism used to assert is unguarded (E-36), and both regexes could be narrowed to match nothing with all 100 tests green until this round landed the extent assertion the sibling SecretConfigShapeTests already carried (E-29).",
+      "obligations": [
+        {
+          "name": "a scan over host source and shipped scripts fails the build on an operational-setting literal",
+          "status": "patterned",
+          "text": "red-correct three ways: a model id in scripts/dev-setup.sh, a model id in Kernel.Api/Program.cs, and https://api.anthropic.com in Kernel.App/Agents/ToolExecutor.cs. Two literal shapes are covered; each new shape owes its own entry. The registry's extent is now asserted as a Theory (13 cases, 8 positive and 5 negative), so narrowing a pattern fails its own test: measured red on the neutered registry with the assertion in place, green on the shipped one (E-29)."
+        },
+        {
+          "name": "shipped scripts read committed values rather than duplicating them",
+          "status": "owed",
+          "text": "unbuilt. Appending literal issuer and audience values to scripts/e2e.sh leaves the suite at 100 passed (E-36). Trigger: a predicate comparing values in scripts/ against the committed appsettings they duplicate."
+        }
+      ]
     },
     "CON-1": {
       "title": "One wire dialect",
@@ -452,9 +491,41 @@
     },
     "DOC-1": {
       "title": "Documentation lifecycle",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`docs-lint.mjs`: front matter, placement, work slice ids, the narrow design/ governance, the MET-08 dash check (exclusions declared above)",
-      "note": "forward-only status transitions not linted, stateless"
+      "note": "planted 2026-07-27, eleven plants, five red naming DOC-1 and six green. The stateless halves the previous note admitted were never built while the row read `proven`; they are per-obligation now (E-33). The tree walk skips any directory named bin, obj, dist or node_modules at any depth, inside docs/ included (E-32). The tool is fixture-free and the documented shared-tier edit path disables it with every gate green (E-28).",
+      "obligations": [
+        {
+          "name": "every markdown declares a kind, and the kind matches the single legal root it lives in",
+          "status": "patterned",
+          "text": "red-correct on a wrong kind in docs/claims/ and in docs/decisions/. Enumeration is not total: markdown under any bin/obj/dist/node_modules directory is never walked (E-32)."
+        },
+        {
+          "name": "no markdown outside the legal roots, closure over the edition tree",
+          "status": "patterned",
+          "text": "red-correct for server/handover.md. Same walk, same basename hole (E-32)."
+        },
+        {
+          "name": "working documents carry a slice id",
+          "status": "patterned",
+          "text": "red-correct for a work doc with no slice key. The value is never validated (`slice: whenever` passes) and the check keys only on the folder name work, so a document declaring itself working in any other root owes nothing (E-33)."
+        },
+        {
+          "name": "status transitions move only forward",
+          "status": "owed",
+          "text": "unbuilt. Forward and backward transitions on the same file produce byte-identical clean output; the guard is a snapshot lint that holds no prior value (E-33). The previous note admitted this while the row read `proven`. Trigger: a docs-lint reader that compares a declared status against its previous committed value."
+        },
+        {
+          "name": "byproducts die at slice completion, and archived documents are not cited as authority",
+          "status": "owed",
+          "text": "unbuilt. An archived runbook still cited by the edition README as the way to run the system passes (E-33). Trigger: a link resolver that reads inbound citations against the cited document's status."
+        },
+        {
+          "name": "the docs-lint gate runs in the CI loop",
+          "status": "owed",
+          "text": "the edition's own ci.yml is a template; deleting its only invocation of the guard is reported by nothing. What runs docs-lint in this repo is kernel.yml, which the row did not name (E-39). Trigger: instantiation arming the loop, which E-24 established ships no mechanism."
+        }
+      ]
     },
     "DEC-1": {
       "title": "A module's behaviour traces to a decision",
@@ -470,9 +541,21 @@
     },
     "UI-2": {
       "title": "Literal visual values are lint errors",
-      "status": "proven",
+      "status": "patterned",
       "mechanism": "`eslint.config.js` bans visual literals in styles: colors, font props, radii, hairlines, and spacing/dimension literals (numerics matched on `raw`), with the structural allowlist",
-      "note": ""
+      "note": "the ban is not total: bare negative numerics escape every dimension selector, because the numeric selectors use a direct-child combinator and a negative parses as Property > UnaryExpression > Literal, and the per-side axes (borderTopWidth, outline) are in no alternation (E-31). Planted 2026-07-27, nine plants, seven red naming UI-2. The config itself is fixture-free and can be narrowed to reach nothing with `npm run verify` green (E-30).",
+      "obligations": [
+        {
+          "name": "error-tier rules ban literal visual values and gate the client verification chain",
+          "status": "proven",
+          "text": "planted 2026-07-27 across seven categories (hex, named colour, bare dimension, px string, radius, border shorthand, fontWeight); each failed `eslint .` with the message naming UI-2, and `verify` short-circuits on it."
+        },
+        {
+          "name": "coverage of every axis and every syntactic form a literal can take",
+          "status": "patterned",
+          "text": "`marginTop: -8` and `borderTopWidth: 1` both pass (E-31). Each newly gated axis and each newly reachable syntactic form owes its own selector, which is the standing debt this tag names."
+        }
+      ]
     },
     "UI-3": {
       "title": "Screens compose primitives only",
@@ -506,19 +589,44 @@
     },
     "DEP-1": {
       "title": "Dependency quarantine",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "CPM exact pins + lockfiles + locked-mode restore (`--locked-mode` / `npm ci`) + `VERSIONS.md` (30-day window header, container-images section, kernel-provenance section) + docs-lint ledger, image, and kernel-provenance checks; the SQL Server image is one tag@digest value across runbook, CI, and the Testcontainers fixture",
-      "note": "publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin; the CI toolchain itself is unpinned and carries no ledger rows (E-1, not repaired). The shared client tier was re-planned against the 30-day window on 2026-07-26 (E-3): 14 advisories to 1 root, 0 critical, verified by `npm ci` and `npm run verify` in both editions. `postcss` GHSA-r28c-9q8g-f849 had no release satisfying both the window and the advisory, and DEP-1 gained the resolution order at adjudication ruling 9a on 2026-07-26: the advisory outranks the window above the 7-day floor, by explicit decision, with a ledger row for the pin whether it is direct or transitive. The override moved to 8.5.18 in the shared tier and `npm audit` over that tier now reports 0 vulnerabilities, down from 1 high. The pin is the first row of VERSIONS.md's advisory-rule section and leaves it on 2026-08-11 (E-18).",
+      "note": "publish-date CI check owed (dates recorded by hand); kernel-provenance check latent until the next instantiation fills a real pin; the CI toolchain itself is unpinned and carries no ledger rows (E-1, not repaired). The shared client tier was re-planned against the 30-day window on 2026-07-26 (E-3): 14 advisories to 1 root, 0 critical, verified by `npm ci` and `npm run verify` in both editions. `postcss` GHSA-r28c-9q8g-f849 had no release satisfying both the window and the advisory, and DEP-1 gained the resolution order at adjudication ruling 9a on 2026-07-26: the advisory outranks the window above the 7-day floor, by explicit decision, with a ledger row for the pin whether it is direct or transitive. The override moved to 8.5.18 in the shared tier and `npm audit` over that tier now reports 0 vulnerabilities, down from 1 high. The pin is the first row of VERSIONS.md's advisory-rule section and leaves it on 2026-08-11 (E-18). Planted 2026-07-27, seventeen plants: four red-correct, twelve green, one red-different. The lockfile-drift remedy fails the build but npm's EUSAGE names npm rather than DEP-1 or the registry, and fires in a different job from every other check, which is a third-outcome result and not a pass. Source mapping, package.json overrides, cross-surface digest equality, the window number and publish-date parsing have no predicate (E-37); the image check cannot see Docker Hub shorthand or an extensionless Dockerfile (E-38); the tool is fixture-free (E-28).",
       "obligations": [
         {
           "name": "every direct dependency is pinned exactly, dated, and restored in locked mode",
-          "status": "proven",
-          "text": "CPM exact pins plus committed lockfiles plus `--locked-mode` and `npm ci`, with the docs-lint ledger check keyed on name AND version so a row for one version vouches for no other."
+          "status": "patterned",
+          "text": "the ledger check is keyed on name AND version and is red-correct for a floating range and for an unledgered direct dependency. Source mapping is deletable unreported, package.json overrides are never read, and publish dates are shape-tested only, never parsed against today (E-37)."
         },
         {
           "name": "every container image is pinned tag-plus-digest and ledgered",
-          "status": "proven",
-          "text": "the SQL Server image is one tag@digest value across runbook, CI and the Testcontainers fixture; docs-lint fails a reference that floats or that has no ledger row (INV-05)."
+          "status": "patterned",
+          "text": "red-correct for an unpinned mcr.microsoft.com image in a shell script. The host allowlist misses Docker Hub shorthand, the obligation's own stated violation shape, and no extension pattern matches an extensionless Dockerfile (E-38)."
+        },
+        {
+          "name": "one image value across every surface naming an image",
+          "status": "owed",
+          "text": "unbuilt. The check asserts a digest is present and the tag is ledgered, never that two surfaces agree (E-37). Trigger: docs-lint collecting image matches across files into a map keyed by repository."
+        },
+        {
+          "name": "a transitive pin taken under the advisory rule carries its own ledger row",
+          "status": "owed",
+          "text": "unbuilt. The advisory-rule section is parsed into ledgerPins and then never queried, because an override reaches the tree through no dependency surface (E-37). Trigger: docs-lint gains a reader for package.json overrides."
+        },
+        {
+          "name": "the cooling-off window number lives in exactly one place",
+          "status": "owed",
+          "text": "unbuilt. The number is asserted independently in at least eight files and read by none of them (E-37). Trigger: a check that parses the number from the VERSIONS.md header and compares every other assertion of it."
+        },
+        {
+          "name": "kernel provenance is ledgered and moves only with the mechanisms",
+          "status": "latent",
+          "text": "the section's absence fails docs-lint, red-correct. No real pin exists until the next instantiation fills one, so the comparison half has never run."
+        },
+        {
+          "name": "publish date is checked against the cooling-off window",
+          "status": "owed",
+          "text": "unbuilt, and the row has said so in prose since before this round. Trigger: the publish-date CI check DEP-1 already names as its upgrade path."
         }
       ]
     },

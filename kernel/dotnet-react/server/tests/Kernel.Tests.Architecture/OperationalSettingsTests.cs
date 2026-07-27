@@ -48,4 +48,33 @@ public sealed class OperationalSettingsTests
 
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
     }
+
+    /// <summary>
+    /// The registry's EXTENT, asserted rather than described, following the repair SecretConfigShapeTests already
+    /// carries for E-11. Measured 2026-07-27 (E-29): with both patterns above narrowed to tokens appearing
+    /// nowhere, the whole architecture suite stayed green, because a Fact scanning a clean tree passes equally
+    /// whether the predicate reaches everything or nothing. Red-green proof establishes that a guard binds and
+    /// establishes nothing about how far it reaches, so the reach is a test. Every `true` case is a literal the
+    /// planting round saw fail by name; every `false` case is a shape a careless widening would break.
+    /// </summary>
+    [Theory]
+    // Model ids, the shape the acceptance-test pilot shipped into Program.cs.
+    [InlineData("claude-opus-4-20250514", true)]
+    [InlineData("gpt-4o-mini", true)]
+    [InlineData("gemini-1.5-pro", true)]
+    [InlineData("mistral-large-latest", true)]
+    // Provider endpoints, all four hosts the registry names.
+    [InlineData("https://api.anthropic.com", true)]
+    [InlineData("https://api.openai.com/v1/chat", true)]
+    [InlineData("https://generativelanguage.googleapis.com", true)]
+    [InlineData("https://api.mistral.ai", true)]
+    // Not operational settings. These are the shapes a careless widening would start failing on, written down so
+    // that widening has to be argued rather than discovered by a red build.
+    [InlineData("claude", false)]
+    [InlineData("the gpt era", false)]
+    [InlineData("https://example.com/api", false)]
+    [InlineData("https://docs.anthropic.com", false)]
+    [InlineData("Gemini is a constellation", false)]
+    public void Banned_literal_registry_reaches_every_shape_it_claims(string text, bool expected) =>
+        Assert.Equal(expected, BannedLiterals.Any(entry => entry.Pattern.IsMatch(text)));
 }
