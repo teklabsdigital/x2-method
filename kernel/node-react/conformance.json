@@ -893,7 +893,7 @@
         {
           "name": "every container image is pinned tag-plus-digest and ledgered",
           "status": "latent",
-          "text": "The predicate is built and control-tested (a floating tag, a missing tag, a missing digest, a missing ledger row, and Docker Hub shorthand on a Dockerfile FROM line are all caught in `--self-test`). It has never run against a real reference here, because this edition has no container image: no persistence engine has been chosen, and `VERSIONS.md` says so in the section where the first one will land. Trigger: the first image, which arrives with the store."
+          "text": "The predicate is built and control-tested (a floating tag, a missing tag, a missing digest, a missing ledger row, and Docker Hub shorthand on a Dockerfile FROM line are all caught in `--self-test`). It has never run against a real reference here, because this edition has no container image, and since 2026-07-27 that is a property of the engine rather than of not having one. The engine is chosen and declared: `node:sqlite`, in process, shipping no image and opening no port, so its version IS the runtime version and the Runtime row is where it is pinned. This text and `VERSIONS.md` both read \"no persistence engine has been chosen\" for four commits after the store landed (E-106). trigger: an engine that ships an image, which this one does not, so the honest reading is that this obligation may stay latent in this edition permanently."
         },
         {
           "name": "one image value across every surface naming an image",

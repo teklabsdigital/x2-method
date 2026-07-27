@@ -482,6 +482,23 @@ function committedConfigFiles(): readonly string[] {
   return walk(CONFIG_DIRECTORY, ['.json']);
 }
 
+// Exported for the duplication test, which needs a value the scan will actually recognize as committed and must
+// not transcribe one. E-109: it carried the literal `'kernel-api'`, which is this kernel's PLACEHOLDER audience
+// and which the instantiation manifest's first step tells a seeded project to change, so the test failed on the
+// day the rename was performed correctly. The test that enforces "a script reads a committed value, it does not
+// carry a second copy" carried a second copy.
+//
+// It returns the pair rather than the value because a test asserting on the message needs the key too, and the
+// pair is what the scan itself works in.
+export function committedValueFor(key: string): { key: string; value: string } | undefined {
+  for (const [value, name] of committedNonSecretValues(committedConfigFiles())) {
+    if (name === key) {
+      return { key: name, value };
+    }
+  }
+  return undefined;
+}
+
 function walk(root: string, extensions: readonly string[]): readonly string[] {
   let entries: string[];
   try {

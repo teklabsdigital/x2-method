@@ -1398,3 +1398,73 @@ from the import-graph machinery already here and needs a different instrument fo
 
 docs-lint ok and 35/36 in both editions, conformance ok at 69 rows in both, loop-check ok, compose ok at 39
 shared files, node server 283, e2e green.
+
+## 2026-07-27, the acceptance test: this edition seeded, renamed and verified as a set for the first time
+
+Measured at 7b70f2d, into a scratch directory outside the kernel repository, product name Ledgerly (the same name
+the sibling's run used, so the two are comparable). This edition's instantiation had never been executed.
+
+### Part A, and it failed before anything was copied
+
+The file set did not name `scripts/`, four commits after `scripts/e2e.ts` landed and `ci.yml` learned to run it
+by that path. E-108 has the finding and the mechanism that now holds it; on its first run that check also found
+`.nvmrc` unnamed by BOTH editions, so the runtime pin travelled as five surfaces of six.
+
+Executing the corrected step then found a second defect in the same paragraph. The enumeration is not what
+excludes `node_modules/`: `cp -R` over the named items produces a 233M tree, because the ignored paths are nested
+INSIDE `server/` and `client-web/` rather than beside them. The manifest claimed the enumeration did that work.
+Copying what git tracks: **96 files, 1.2M**.
+
+### Part B
+
+The rename list omitted the database file name, which is written twice (`database.file` in
+`server/config/settings.json`, `engine.file` in `edition.json`), so a correctly seeded project ran `kernel.db`.
+Repaired in the list.
+
+Step 4 could not be performed: no forge, no token. That is where this run stops and it is the same wall the
+sibling's run hit.
+
+### Part C, verified as a set
+
+| command | result |
+|---|---|
+| `npm run verify` in `server/` | **282 of 283**, then 283 of 283 after E-109 |
+| `npm run verify` in `client-web/` | pass |
+| `docs-lint --self-test`, `docs-lint` | pass, with five `note:` lines naming what the seeded shape does not check |
+| `conformance --check` | pass |
+| `secret-scan --self-test`, `secret-scan` | pass, both (the sibling's run failed this on day one, E-25) |
+| `gate-check --self-test` | pass |
+| `gate-check` | **fail, correctly**: no forge remote, named as a decision to record |
+| `node scripts/e2e.ts` | pass, needing no engine container |
+| the dash greps | clean |
+
+**9 of 10, and the failure is the forge.**
+
+### E-109, the one that made a seeded build red
+
+CFG-1's script-duplication proof asserted against `'kernel-api'`, this kernel's placeholder audience, which
+manifest step 1 tells the seeder to change. Rename it correctly and the fixture stops duplicating a committed
+value, the scan correctly reports nothing, and the test fails. The check under test is that a script READS a
+committed value rather than carrying a second copy; the test carried a second copy.
+
+Repaired by exporting `committedValueFor` and deriving the fixture. Two-way: 283 of 283 in the kernel, and 283 of
+283 in the seeded tree whose audience is `ledgerly-api`, where it was red before the change.
+
+### The turn count
+
+**Roughly five human turns, against the sibling's twenty-seven**, and all five are the forge: create the remote
+and choose the default branch, the owner's handle for CODEOWNERS, arm protection, verify the arming with a test
+PR and a second identity, and choose the CLAUDE.md house-style set. The difference is not documentation quality:
+the sibling's twenty-seven carried nineteen manifest gaps and this run found three.
+
+### Recorded, not repaired
+
+`skills/seed/SKILL.md` step 4 tells the builder to verify that `.claude/settings.json` survived instantiation.
+This edition ships no `.claude/` at all, and its manifest names the absence as a decision, so the skill and the
+manifest disagree and the skill is what the seeder runs. PC-10 measured that the CLAUDE.md rule alone drifts
+under long-context sessions, so a project seeded from here has nothing mechanical holding the ledger discipline.
+
+### Gates
+
+Both editions: docs-lint ok and 37 caught / 40 ignored, conformance ok at 69 rows. compose ok at 39 shared files,
+loop-check ok, node server 283, node e2e green, shared client 65, dash scan 0 with a live control.

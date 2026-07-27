@@ -53,9 +53,13 @@ the kernel context by BUILD-BRIEF.md and VERIFICATION.md, which stay behind at s
 
 ## Container images
 
-This edition has no container image yet: no persistence engine has been chosen, so nothing pins one. The first
-image reference arrives with the store, and it arrives in the pinned tag@digest form with a row in this section,
-because docs-lint fails any reference that floats or that has no row here (DEP-1 / INV-05).
+This edition has no container image, and since 2026-07-27 that is a consequence of the engine rather than of the
+absence of one. The engine is chosen and declared: `node:sqlite`, in `edition.json`, in process. It ships no
+image and opens no port, so its version IS the runtime version and the Runtime row above is where it is pinned.
+This section read "no persistence engine has been chosen" until the store landed and nothing re-read it (E-106).
+
+The first image reference, if a later engine brings one, arrives in the pinned tag@digest form with a row here,
+because docs-lint fails any reference that floats or that has no row (DEP-1 / INV-05).
 
 ## Server (npm, save-exact)
 

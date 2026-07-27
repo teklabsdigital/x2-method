@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { declaredKeys, scanConfigurationSurface, scannedFiles } from '../configurationSurface.ts';
+import { committedValueFor, declaredKeys, scanConfigurationSurface, scannedFiles } from '../configurationSurface.ts';
 import { EDITION_ROOT } from '../../platform/settings.ts';
 
 // CFG-1 and SEC-5 over the real tree, plus a red proof for every branch. The green assertion alone would be the
@@ -95,10 +95,22 @@ describe('CFG-1: a literal in code is the third, wrong home', () => {
   it('refuses a script that duplicates a committed configuration value instead of reading it', () => {
     // The audience rather than the issuer, deliberately: the issuer is also a URL, so it trips the provider
     // endpoint rule as well and the assertion would not isolate the check it names.
-    const root = scratch({ 'tools/smoke.mjs': "const audience = 'kernel-api';\n" });
+    //
+    // READ, never transcribed, and E-109 is why. This line carried the literal `'kernel-api'`, which is this
+    // kernel's PLACEHOLDER audience and which the instantiation manifest's first step tells a seeded project to
+    // change. So the test failed on the day the rename was performed CORRECTLY, in every project seeded from this
+    // edition, before a line of product code existed. The check under test is that a script reads a committed
+    // value rather than carrying a second copy of it; the test carried a second copy.
+    const committed = committedValueFor('auth.audience');
+    if (committed === undefined) {
+      throw new Error(
+        "no committed value for 'auth.audience' that this scan would recognize. The candidate set excludes values shorter than eight characters, so a project whose audience is short has no subject for this test and owes a different key rather than a passing assertion over nothing.",
+      );
+    }
+    const root = scratch({ 'tools/smoke.mjs': `const audience = '${committed.value}';\n` });
 
     expect(scanConfigurationSurface(scriptSurface(root), [])).toMatchObject([
-      { claim: 'CFG-1', message: expect.stringContaining("duplicates the committed value of 'auth.audience'") },
+      { claim: 'CFG-1', message: expect.stringContaining(`duplicates the committed value of '${committed.key}'`) },
     ]);
   });
 });

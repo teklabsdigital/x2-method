@@ -4988,6 +4988,65 @@ Two controls catch, four ignore. One of the ignores is the parser's own trap: th
 `node_modules/` and `server/src/main.ts`, and in the sibling it names `scripts/e2e.sh`, so a check that read the
 whole section would have called the forgotten directory named and reported nothing.
 
+### E-109. A test asserted against the placeholder the manifest tells you to change, so it failed when the rename was done right
+
+**Claim:** CFG-1, and through it the manifest. **Found:** 2026-07-27, executing node-react's acceptance test.
+**Measured at 7b70f2d.** **Repaired, both ways.**
+
+In a project seeded from node-react and renamed exactly as manifest step 1 says, `npm run verify` fails on the
+server tier: **282 of 283.** The failing test is CFG-1's script-duplication proof, and its fixture was the
+literal `'kernel-api'`, this kernel's placeholder `auth.audience`. Rename the audience to the product's and the
+fixture no longer duplicates a committed value, so the scan correctly reports nothing and the assertion fails.
+
+**The check under test is that a script reads a committed configuration value rather than carrying a second copy
+of it. The test carried a second copy.** It is E-91's shape (an orchestrator carrying permission strings instead
+of reading `POLICIES`) with the sharpest possible subject, and the repair is the same one: `committedValueFor`
+is exported and the fixture is derived. If no committed value qualifies, the test throws a sentence saying so
+rather than passing over nothing, because the scan's candidate set excludes values under eight characters.
+
+Two-way remedy, both measured at 7b70f2d: 283 of 283 in the kernel, and 283 of 283 in the seeded tree whose
+audience is `ledgerly-api`, where it was red before the change. Every project seeded from this edition would
+have hit it on day one, before a line of product code existed.
+
+The general shape: **a kernel placeholder is a value with two readers, and only one of them was told it moves.**
+The manifest's rename list is the register of what changes at instantiation, and nothing relates it to the code
+that reads those values. `configurationSurface.ts` also names `https://kernel.invalid/issuer` in an exemption
+and does NOT break, because the fixture it exempts is self-contained; the difference between the two is invisible
+by reading and was found only by performing the rename.
+
+## Acceptance test, node-react, first execution (2026-07-27)
+
+Executed at 7b70f2d into a scratch directory outside this repository, product name Ledgerly, the same name the
+sibling's run used. The kernel tree was verified unmodified afterwards.
+
+**Result: the seeded project passes 9 of the 10 verification commands, and the one failure is honest.**
+`gate-check` exits 1 with "no GitHub remote found on `origin`, so the merge gate cannot be read back", naming
+the decision to record rather than skipping silently. Everything else passes, including `secret-scan` (which
+failed on day one in the sibling's run, E-25) and the full e2e tier, which needs no engine because the store is
+`node:sqlite`.
+
+**The human turns are roughly five, against the sibling's twenty-seven**, and every one of the five is the forge:
+create the remote and choose the default branch, supply the owner's handle for CODEOWNERS, arm branch protection,
+verify the arming with a test PR and a second identity, and choose the CLAUDE.md house-style set. Two of the
+sibling's blocking turns did not arise here: the kernel checkout was clean so no pin ruling was needed, and step
+6 already rules that seeding proceeds with the placeholder design export. The gap is not that this edition is
+better documented; it is that the sibling's twenty-seven included nineteen manifest gaps, and this run found
+three.
+
+The three, all repaired above: the enumeration does not exclude nested ignored paths (E-109's paragraph), the
+rename list omitted the database file name in two surfaces, and `VERSIONS.md`'s container section still said no
+persistence engine had been chosen. The fourth finding is E-109 itself, and it is the only one that made a
+seeded project's build red.
+
+**One gap recorded and not repaired.** `skills/seed/SKILL.md` step 4 tells the builder to "verify the hook file
+survived instantiation; it is part of the manifest's file set", naming `.claude/settings.json`, the
+`UserPromptSubmit` hook that injects the turn-ledger reminder on every prompt. **This edition ships no `.claude/`
+at all**, and its manifest names the absence as a decision. So the skill and the manifest disagree, the skill is
+the document the seeder runs, and PC-10's measurement (the CLAUDE.md rule alone drifts under long-context
+sessions) applies to a project seeded from this edition with nothing to hold it. E-25 recorded the same sentence
+against the sibling, where the file existed and the file set dropped it. Here the file does not exist. That is
+edition work with a real decision in it, so it is recorded rather than patched.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
