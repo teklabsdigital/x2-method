@@ -23,15 +23,22 @@ namespace Kernel.Tests.Architecture;
 /// </summary>
 internal static class BodyMemberWalk
 {
+    /// <summary>A member the walk reached, with the type it was declared as. CON-1's identifier obligation asks a
+    /// question about the type and every other reader asks one about the name, which is why the walk yields both
+    /// and `MemberNames` is a projection: a second walk that carried types would be E-2 one level down.</summary>
+    public readonly record struct BodyMember(string Name, Type Type);
+
     /// <summary>
     /// Names the JSON binder can populate: public instance properties AND constructor parameters, because an
     /// immutable DTO carries its server-controlled field only as a get-only property fed by the constructor.
     /// </summary>
-    public static IEnumerable<string> MemberNames(Type type) => MemberNames(type, []);
+    public static IEnumerable<string> MemberNames(Type type) => Members(type).Select(member => member.Name);
+
+    public static IEnumerable<BodyMember> Members(Type type) => Members(type, []);
 
     // `seen` is cycle protection, not a depth cap: a self-referential DTO is legal and must terminate, and there
     // is deliberately no maximum depth, because a maximum depth is the same bug with a larger constant.
-    private static IEnumerable<string> MemberNames(Type type, HashSet<Type> seen)
+    private static IEnumerable<BodyMember> Members(Type type, HashSet<Type> seen)
     {
         if (!seen.Add(type))
         {
@@ -40,9 +47,9 @@ internal static class BodyMemberWalk
 
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
-            yield return property.Name;
+            yield return new BodyMember(property.Name, property.PropertyType);
 
-            foreach (var nested in Bindable(property.PropertyType).SelectMany(t => MemberNames(t, seen)))
+            foreach (var nested in Bindable(property.PropertyType).SelectMany(t => Members(t, seen)))
             {
                 yield return nested;
             }
@@ -52,10 +59,10 @@ internal static class BodyMemberWalk
         {
             if (parameter.Name is not null)
             {
-                yield return parameter.Name;
+                yield return new BodyMember(parameter.Name, parameter.ParameterType);
             }
 
-            foreach (var nested in Bindable(parameter.ParameterType).SelectMany(t => MemberNames(t, seen)))
+            foreach (var nested in Bindable(parameter.ParameterType).SelectMany(t => Members(t, seen)))
             {
                 yield return nested;
             }

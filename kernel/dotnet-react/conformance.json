@@ -481,9 +481,9 @@
     },
     "CON-1": {
       "title": "One wire dialect",
-      "status": "owed",
-      "mechanism": "one host configuration point (`AddProblemDetails`, `UseStatusCodePages`, a single camelCase `JsonStringEnumConverter`); `WireConventionTests` asserts naming, a round-trip of a test-local enum, and problem+json on two routes",
-      "note": "the single configuration point and the closed enum set are proven; two statement clauses are not (E-46, E-47)",
+      "status": "patterned",
+      "mechanism": "one host configuration point (`AddProblemDetails`, `UseStatusCodePages`, a single camelCase `JsonStringEnumConverter`); `WireConventionTests` asserts naming, an enum round-trip in both directions, problem+json on two routes, every mapped endpoint's declared result union against an allowlist of dialect-conforming result types, and every identifier-shaped member in `Kernel.Contracts` against the types that cross the wire as strings",
+      "note": "all four statement clauses now have a mechanism, and two of the four are heuristic in a direction the claim admits. Built 2026-07-27: the error-shape scan walks the framework's own `EndpointDataSource` rather than two hand-picked routes (E-46 repaired), and the identifier scan reads member TYPES, which no guard in the suite had ever done (E-47 repaired). Both plants red-correct at c5a7fb7, and neither was noticed by any other test, which is what unguarded meant. Two holes recorded rather than hidden: the error-shape predicate reads only `IResult`-rooted return types, so an MVC controller action is enumerated and never questioned (E-73), and the identifier registry is two entries compared heuristically (E-74). Both scans carry an extent assertion, because a walk over three routes and one identifier reads identically working and empty.",
       "obligations": [
         {
           "name": "one host-level serialization and error configuration point",
@@ -493,7 +493,7 @@
         {
           "name": "no endpoint invents its own error shape",
           "status": "patterned",
-          "text": "Two hand-picked routes are asserted to render problem+json and nothing enumerates endpoints, so returning a bespoke `{ok, why}` 400 from `CreateAsync` leaves all 113 tests green (E-46). trigger: an assertion over the endpoint set, in the shape `EndpointSpineTests` already walks."
+          "text": "`No_endpoint_declares_a_result_type_that_invents_an_error_shape` walks every route in the host's `EndpointDataSource` and reads each handler's declared result union against an allowlist of dialect-conforming result types. An allowlist, not a ban list: any `Xxx<TBody>` renders TBody raw at whatever status it carries, so a ban list reads green for the result types it has not heard of. Red-correct for `GetAsync` returning `NotFound<string>` in place of `NotFound`, naming the route; 158 green before, and no other test noticed (E-46 repaired). The extent of the predicate is a 14-case Theory written from CON-1's statement, not derived from the shipped handlers. `patterned` and not `proven` because the predicate reads only `IResult`-rooted return types, so an MVC controller action returning a bespoke body is enumerated and never questioned (E-73). Each new endpoint style owes its own entry."
         },
         {
           "name": "enums cross the wire as closed string sets",
@@ -502,8 +502,8 @@
         },
         {
           "name": "identifiers are opaque strings",
-          "status": "owed",
-          "text": "No test asserts anything about identifier types. `ContractParityTests` compares camelCase property names against a fixture and never reads a property type (E-47). trigger: an assertion that no contract exposes a non-opaque identifier."
+          "status": "patterned",
+          "text": "`Contract_identifiers_cross_the_wire_as_opaque_strings` walks every type in `Kernel.Contracts` through the shared `BodyMemberWalk`, at any depth, and asserts every identifier-shaped member is declared as a type that crosses the wire as a string. Red-correct for a planted `NoteRevisionResponse(int RevisionId, string Summary)`, naming the contract, the member and the type; 158 green before. `ContractParityTests` cannot cover this by construction: it compares property NAMES against a fixture, so an `Id` changing from `Guid` to `int` matches the fixture exactly (E-47 repaired). `patterned` because the registry is `id` and `key` compared heuristically, so a resource address under another spelling owes its own entry (E-74); both directions carry a floor, including six ordinary field names that must not match. The assembly holds exactly one identifier, so the scan asserts it found at least one."
         }
       ]
     },

@@ -3735,6 +3735,62 @@ both expressions. Control: the same plant with the assertion in place turns it r
 SEC-1's row was flat, a single `proven` with no obligations, which is how four separate things came to be carried
 by one status. It now carries all four.
 
+### E-73. CON-1's error-shape scan reads a declared return type, so it can only police handlers that declare one
+
+**Claim:** CON-1. **Found:** 2026-07-27. **Measured at c5a7fb7.**
+
+E-46 recorded that CON-1's "no endpoint invents its own error shape" clause was carried by two hand-picked routes,
+so a bespoke `{ok, why}` 400 left the suite green. The guard built for it this round,
+`No_endpoint_declares_a_result_type_that_invents_an_error_shape`, walks the framework's own `EndpointDataSource`
+and reads each handler's declared return type against an allowlist of dialect-conforming result types. Planted with
+`GetAsync` returning `NotFound<string>` instead of `NotFound`, it is red-correct and names the route.
+
+Its subject is every route the host maps, which is total. Its PREDICATE is not.
+
+The scan classifies a return type three ways: a `Results<...>` union is its arms, any other `IResult` is itself,
+and anything that is not an `IResult` contributes nothing. That third branch is the hole. A minimal-API handler
+returning a raw DTO genuinely cannot carry an error status, which is why the branch exists. But an MVC controller
+action returns `IActionResult` or `ActionResult<T>`, which are not `IResult`, so a controller returning
+`BadRequest(new { ok = false, why = "..." })` is walked, classified as carrying no error shape, and passes. The
+route is enumerated; the question is never asked of it.
+
+This is E-68's shape at a different altitude. There the subject came from a marker the code applies to itself; here
+the subject is total and the predicate only reads one of the ways a handler can declare its result, so the guard
+polices the endpoint style that already opted into typed results. No live instance: this edition ships no
+controllers. It is why the obligation is recorded `patterned` rather than `proven`, with the trigger named.
+
+Not repaired, and deliberately. The available repairs are both worse than the hole: ban-listing `IActionResult`
+re-opens the enumeration problem the allowlist was chosen to close, and driving every route with a forced error is
+a different mechanism that would answer a different question (what one request returned, not what the handler is
+allowed to return). **Trigger: the first non-minimal endpoint style in an edition.**
+
+### E-74. Nothing read a contract's identifier TYPE, and the parity fixture cannot
+
+**Claim:** CON-1, and SEC-7 which is adjacent and is not this. **Found:** 2026-07-27. **Measured at c5a7fb7.**
+
+CON-1's fourth clause is "identifiers are opaque strings". E-47 recorded that no test asserted anything about
+identifier types. Worth stating why the guard that looks closest to it cannot: `ContractParityTests` compares
+camelCase property NAMES against a committed fixture, so a contract whose `Id` changed from `Guid` to `int` matches
+the fixture exactly and the parity gate is silent by construction.
+
+Planted a `NoteRevisionResponse(int RevisionId, string Summary)` into `Kernel.Contracts`. Before this round: 158
+green. After: red-correct, naming the contract, the member and the declared type.
+
+Two things about the guard, both recorded rather than left to be discovered:
+
+- The identifier registry is `id` and `key`, compared through the shared `NameComparison` rather than by equality,
+  so `noteId` and `NoteID` reach the entry without being listed. It is heuristic in the direction the claim admits,
+  so the obligation is `patterned`: a member that addresses a resource under some other spelling owes its own
+  entry. Both directions are asserted as a floor, including six ordinary field names that must NOT match, because
+  a registry that matched everything would make the scan pass or fail for reasons unrelated to identifiers.
+- The whole contracts assembly holds exactly ONE identifier-shaped member. A scan over a subject that thin reads
+  identically whether it is working or empty, so it carries an extent assertion: zero identifiers found is a
+  failure, not a pass.
+
+This is not SEC-7, and the two should not be merged. SEC-7 is about what addresses an ANONYMOUS surface and about
+how the token is minted; it is honestly `owed` with a trigger the exemplar has never met. CON-1's clause is about
+the wire dialect, and binds on every surface whatever the minting.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

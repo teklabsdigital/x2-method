@@ -1379,3 +1379,55 @@ fourth exists because the other three could be made vacuous without any of them 
 
 Architecture 158, unit 58, integration 4 skipped, client 65, both conformance records ok at 69 rows, both
 docs-lints ok, dash scans 0 and 0.
+
+## 2026-07-27, section D part 1: CON-1's two unbuilt clauses
+
+CON-1 read `owed` because two of its four statement clauses had no mechanism at all. Both are built. Baseline for
+every number here: **c5a7fb7**, architecture 158, unit 58.
+
+| clause | what carried it before | what carries it now |
+|--------|------------------------|---------------------|
+| no endpoint invents its own error shape | two hand-picked routes asserted to render problem+json (E-46) | every route in the host's `EndpointDataSource`, read as a declared result union against an allowlist |
+| identifiers are opaque strings | nothing (E-47) | every identifier-shaped member in `Kernel.Contracts`, at any depth, read as a declared type |
+
+An allowlist rather than a ban list, because the violation shape is open: any `Xxx<TBody>` result renders TBody raw
+at whatever status `Xxx` carries, so a ban list would have to enumerate every error-status result the framework
+ships today and every one it adds later, and would read green for the ones it had not heard of. `NotFound` is on
+the list and `NotFound<>` is deliberately not.
+
+| plant | outcome |
+|-------|---------|
+| `GetAsync` returns `NotFound<string>` in place of `NotFound` | red-correct, naming the route, the type and E-46 |
+| `NoteRevisionResponse(int RevisionId, string Summary)` added to `Kernel.Contracts` | red-correct, naming the contract, the member and E-47 |
+
+Exactly two failures, one per plant, and **no other test in the suite noticed either**. That is what unguarded
+meant, and it is also the reason both plants were run together: they are attributable by message, and neither
+masked the other.
+
+Reverted with `cp`, not `mv`, per E-59. `git diff` over `server/src` empty, rebuilt with `--no-incremental`,
+191 and 58 restored.
+
+### The extent, and why both scans carry one
+
+The error-shape scan walks three routes. The identifier scan finds exactly one identifier in the whole contracts
+assembly. A loop over a subject that thin reads identically whether it is working or empty, which is E-30, so
+each carries an assertion that its subject is non-empty and each carries a Theory floor written from CON-1's
+statement rather than derived from the code under test: 14 cases for the result predicate, 11 for the identifier
+types, 6 more asserting that ordinary field names are NOT treated as identifiers.
+
+### Two holes recorded rather than hidden
+
+**E-73.** The error-shape predicate reads only `IResult`-rooted return types. An MVC controller action returns
+`IActionResult`, which is not an `IResult`, so it is enumerated and never questioned. E-68's shape at a different
+altitude: total subject, partial predicate, and the guard polices the endpoint style that already opted in. Not
+repaired, deliberately, because both available repairs are worse than the hole. Trigger recorded.
+
+**E-74.** The identifier registry is two entries, `id` and `key`, compared through the shared `NameComparison`.
+Heuristic in the direction the claim admits, so `patterned`.
+
+Row status is the weakest obligation, so CON-1 is `patterned`: two `proven` clauses, two `patterned`.
+
+### Gates
+
+Architecture 191, unit 58, integration 4 skipped, both conformance records ok at 69 rows, both docs-lints ok.
+Non-owed dotnet rows 16 to 17.
