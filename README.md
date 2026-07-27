@@ -242,7 +242,7 @@ Install the plugin once, from inside Claude Code:
 /plugin install x2@x2
 ```
 
-The first command registers this repo as a plugin marketplace; the second installs the 12 skills,
+The first command registers this repo as a plugin marketplace; the second installs the skills,
 namespaced under `x2:`, so they are available in every project, including the new repo the method
 creates for you. Type `/x2:` in Claude Code to see them listed.
 

@@ -2261,6 +2261,75 @@ before it is honoured, on the same standard as a finding. Three passes treated "
 established because a previous pass had written it down, which is exactly the failure the delta protocol exists
 to prevent, applied to the protocol's own rules rather than to a claim.
 
+### S-13. The catalog's own README states a status tally for a catalog that carries no statuses
+
+**Claim:** none, and that is the point. **Found:** 2026-07-28, designing the skill that would maintain the
+catalog. **Measured at 8fc67cf.** **Recorded, not repaired**, because `kernel/claims/` is not edited from this
+register.
+
+`kernel/claims/README.md` line 57 reads:
+
+    v1 tally (retrued by the invariants pass, 2026-07-11): 25 `proven` (two of them, TEST-3 and
+    HUM-1, gate only once branch protection is armed at instantiation), 6 `patterned`, 2 `latent`,
+    4 `owed`. Total 37
+
+**Measured against the tree: the catalog holds 69 claim files, not 37.** The line is short by 32, which is every
+claim minted after 2026-07-11.
+
+**The larger half is that the tally should not exist at all.** Line 37 of the SAME document records the ruling of
+2026-07-26: "A claim file carries no edition realization, and no status. Both live in each edition's
+`conformance.json`." So one document says the catalog carries no statuses and, twenty lines later, gives the
+tally of them. Ruling 1 moved the fact and did not remove the sentence that had been summarizing it.
+
+**Why nothing caught it.** `docs-lint` is edition-scoped: it validates each edition's record against the catalog
+and regenerates each edition's table. Nothing reads the catalog's own README, so every number in it is
+unguarded prose. The locus split two lines earlier, 55 centralized and 14 per-seam, happens to still be exactly
+right at 69, which is worse rather than better: an accurate number beside a stale one is what stops a reader
+checking either.
+
+**This is E-106 outside an edition.** A status is a claim about a mechanism and has a guard; a NUMBER in prose is
+a claim about the tree and has none, so any pass can falsify one without touching the file it lives in. The three
+buckets that would have prevented it are already in use elsewhere in this repository: **generated** (the edition
+README conformance table, rewritten from the record on every change), **checked** (a lint that fails when a
+stated fact disagrees with the tree), and **dated** (a measurement in a record, never retouched). Line 57 is in
+none of them. It reads as dated, because it names a pass and a date, while sitting in a live governance document
+under a heading about the current vocabulary.
+
+The fourth option deserves equal weight and is probably the right one here: **delete the number.** E-76 settled
+the same question for the cooling-off window, where two documents asserted two different values and the repair
+was not to sync them but to give the number one home and have everything else cite it. A tally of statuses
+belongs where the statuses are, which the same document already says is each edition's `conformance.json`.
+
+**Trigger: the first catalog pass that changes the claim count, or the first run of the maintenance skill's
+verify verb, whichever comes first.** Both would report it, and the second is being built because of it.
+
+**Measured the same day, and the class is larger than the instance.** Writing the maintenance skill added one
+file to `skills/`, and the blast radius of that single addition was checked rather than assumed. Four live
+documents were stale within minutes, and **two of them were already stale before the change**:
+
+| document | said | actual | already stale? |
+|---|---|---|---|
+| the repository's own CLAUDE.md | "the twelve skills" | thirteen | no, caused by the change |
+| the same line | "the claims and the `<one edition>` edition" | two editions | **yes**, since the second edition was built |
+| the root README | "installs the 12 skills" | thirteen | no, caused by the change |
+| the narrative document | "## The twelve skills", and "Twelve of them carry the method" | thirteen | no, caused by the change |
+| the help skill's own list | omits `adopt` entirely | thirteen skills, twelve listed | **yes**, for as long as `adopt` has existed |
+
+The last row is the sharpest, because the help skill exists to tell a reader which skills there are. **A list is
+a count that has learned to hide**: nobody re-reads a list to see whether it is still complete, and an omission
+in one reads as a skill that does not exist rather than as a document that is wrong.
+
+Three of the five were repaired by DELETING the number rather than correcting it, which is the fourth bucket and
+was the right answer in every case: nothing needed the count, the sentences read better without it, and a count
+nobody states cannot go stale. The two list entries were added, because a list of skills is content rather than
+a tally.
+
+**The generalization, and it is the reason the skill carries this section.** A status is a claim about a
+mechanism and has a guard. A COUNT in prose is a claim about the tree and has none. So the counts do not decay
+slowly, they are falsified instantly by the change that makes them wrong, in files that change had no reason to
+open. This one was predicted, then found four more times inside ten minutes of looking, which is the difference
+between a worry and a class.
+
 ### E-21. The build brief still describes the mechanisms four rounds of repairs replaced
 
 **Claim:** SEC-1, SEC-2, SEC-3, TEN-1, TIME-1, structurally all of them. **Found:** the raise pass of 2026-07-27,

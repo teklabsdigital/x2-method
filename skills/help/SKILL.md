@@ -27,8 +27,10 @@ turns per shipped slice, kept in a ledger file in the repo.
 | slice-exit | The exit report: the definition of green, audited by intake | Gate 3: ratified green |
 
 On demand: **problem-solve** (runtime defect, cause unknown, fewest observation turns),
-**extract** (after a project completes: the quality feedback loop that folds the ledger's
-evidence back into the method), and this skill.
+**adopt** (an existing project not built with X2 is migrated to run under it), **extract**
+(after a project completes: the quality feedback loop that folds the ledger's evidence back
+into the method), **kernel** (change the claims catalog, manage an edition, measure conformance,
+or check the whole kernel is still coherent), and this skill.
 
 ## Where the durable artifacts live
 
