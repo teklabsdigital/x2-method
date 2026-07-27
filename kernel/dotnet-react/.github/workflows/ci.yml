@@ -148,8 +148,14 @@ jobs:
           set +e
           HARN_BASE_URL=http://localhost:5080 HARN_TOKEN="$TA" HARN_TOKEN_B="$TB" node tools/harness/main.ts
           HARN=$?
-          # UI-5: the smoke boots the ACTUAL entrypoint against the same live server; green requires both.
+          # UI-5: the smoke loads the BUILT entrypoint against the same live server, so the build runs here with
+          # the SAME values (E-107). Added 2026-07-28, in a second place, because this job re-implements
+          # scripts/e2e.sh inline rather than calling it: the script gained its build step in the same change and
+          # this copy would have run the smoke against no dist/ at all. That is E-104's predicted cost arriving on
+          # the first change after the finding, which is worth more than the finding was.
+          VITE_API_BASE_URL=http://localhost:5080 VITE_API_TOKEN="$TA" npm run build
+          BUILD=$?
           VITE_API_BASE_URL=http://localhost:5080 VITE_API_TOKEN="$TA" npm run smoke
           SMOKE=$?
           kill $API_PID || true
-          exit $((HARN + SMOKE))
+          exit $((HARN + BUILD + SMOKE))

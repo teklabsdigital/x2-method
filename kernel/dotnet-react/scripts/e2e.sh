@@ -79,12 +79,18 @@ cd "$CLIENT_DIR"
 set +e
 HARN_BASE_URL="$BASE_URL" HARN_TOKEN="$TOKEN_A" HARN_TOKEN_B="$TOKEN_B" node tools/harness/main.ts
 HARN=$?
+# E-107: the smoke asserts the BUILT client, so the build runs here and with the SAME values. Two separate
+# substitutions of one variable is the defect the finding names; handing both steps one environment is what makes
+# the smoke's green say something about the artifact that ships. Built inside the run rather than beforehand,
+# because a stale dist/ is otherwise indistinguishable from a fresh one.
+VITE_API_BASE_URL="$BASE_URL" VITE_API_TOKEN="$TOKEN_A" npm run build
+BUILD=$?
 VITE_API_BASE_URL="$BASE_URL" VITE_API_TOKEN="$TOKEN_A" npm run smoke
 SMOKE=$?
 set -e
 
-if [ $((HARN + SMOKE)) -ne 0 ]; then
-  echo "e2e failed (harness=$HARN smoke=$SMOKE). Server log: $SERVER_LOG" >&2
+if [ $((HARN + BUILD + SMOKE)) -ne 0 ]; then
+  echo "e2e failed (harness=$HARN build=$BUILD smoke=$SMOKE). Server log: $SERVER_LOG" >&2
   exit 1
 fi
 echo "e2e green: harness + composed-entrypoint smoke."

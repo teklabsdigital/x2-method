@@ -4831,6 +4831,16 @@ exception it justifies, in `loop-check.mjs`, written so the reason names this fi
 past. **Trigger: the next pass in that edition with a container runtime available, which owes either one
 procedure called from both places or a written argument for why two is correct.**
 
+### E-104 confirmed, 2026-07-28: the first change to the script after the finding missed the copy
+
+E-104 recorded that the sibling ships `scripts/e2e.sh` and its CI re-implements the orchestration inline rather
+than calling it, and named the cost as a change reaching one procedure and not the other. **The next change to
+that script did exactly that.** E-107 added a build step before the smoke; the script got it, and `e2e-wire`
+would have run `npm run smoke` against a `dist/` that does not exist, failing with the sentence the smoke throws
+for precisely that case. Caught by reading the job while changing the script, which is the reviewer E-104 said is
+not a mechanism. Both copies now carry the build. The finding stands unrepaired and its trigger is unchanged: the
+sibling e2e script needs to supply its own dependencies before CI can call it rather than copy it.
+
 ### E-105. The mechanism field describes the edition, and I broke that within the hour of writing the check that found it
 
 **Claim:** TEST-3, DOC-1. **Found:** 2026-07-27, one commit after causing it. **Measured at f151902.**
@@ -4939,9 +4949,25 @@ what it therefore has to do and nothing asked whether it did. `src/main.tsx` and
 so the gap is identical in both editions and is recorded in both, at `owed`, with the trigger stated as an
 outcome: a smoke that loads the BUILT bundle, which needs the build to run before the smoke in the same job.
 
-Not repaired here because it changes both editions' e2e orchestrators, and the sibling's cannot run at all
-without a developer's machine (E-104). Recording it costs a row and closes the honesty gap; repairing it is a
-slice.
+Not repaired when found, because it changes both editions' e2e orchestrators and the sibling's could not run at
+all (E-110, E-111, both since repaired). Recording it cost a row and closed the honesty gap.
+
+**Repaired 2026-07-28 at 834b1de, and the plant is the finding restated as a measurement.** The smoke reads the
+built `dist/index.html`, takes the module script it names and the body it ships, imports that bundle and mounts
+into that DOM. Both orchestrators now run `npm run build` and the smoke from ONE environment, in that order, and
+inside the timed run rather than as a prerequisite, because a stale `dist/` is otherwise indistinguishable from a
+fresh one.
+
+The control: hand the BUILD a different base URL than the smoke asserts against.
+
+| form | build gets | smoke asserts | outcome |
+|---|---|---|---|
+| source (before) | `http://localhost:1` | the real port | **green**, because the runner substituted its own value |
+| built (after) | `http://localhost:1` | the real port | **red**, `Timed out waiting for the list request` |
+
+The default base URL went with it, on E-96's rule: an absent `VITE_API_BASE_URL` now throws a sentence naming
+the orchestrator rather than falling back onto the committed port, so the tier cannot pass by coincidence.
+`proven` in both editions, green in both against a real server each.
 
 ### E-108. The instantiation manifest's file set is prose, and it had stopped describing either edition
 

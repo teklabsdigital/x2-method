@@ -241,11 +241,13 @@ try {
   });
   failures += await harnessDroveThisServer();
 
-  failures += run('composed-entrypoint smoke', 'npm', ['run', 'smoke'], CLIENT, {
-    ...process.env,
-    VITE_API_BASE_URL: baseUrl,
-    VITE_API_TOKEN: tokenA,
-  });
+  // E-107: the smoke asserts the BUILT client, so the build runs here and with the SAME values. Two separate
+  // substitutions of one variable is the defect the finding names; passing the same environment to both is what
+  // makes the smoke's green say something about the artifact that ships. The build is inside the timed run
+  // rather than a prerequisite because a stale `dist/` would otherwise be indistinguishable from a fresh one.
+  const clientEnvironment = { ...process.env, VITE_API_BASE_URL: baseUrl, VITE_API_TOKEN: tokenA };
+  failures += run('client build', 'npm', ['run', 'build'], CLIENT, clientEnvironment);
+  failures += run('composed-entrypoint smoke', 'npm', ['run', 'smoke'], CLIENT, clientEnvironment);
 } finally {
   if (server?.pid !== undefined && serverExit === null) {
     try {
