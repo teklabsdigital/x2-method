@@ -2402,6 +2402,46 @@ its own controls before its output is believed** (E-11).
 **Trigger: the first claim minted, amended or retired after this date.** That change touches both copies, and
 whether the second copy moved with the first is exactly what nothing currently asks.
 
+### S-14 CORRECTED, same day: two of the nine checks were vacuous, and the headline was wrong
+
+**Measured at 2ea9812.** The table above claimed **zero drift across 69** for the restated statement and the
+restated harm. **That measurement compared nothing.** The scan matched section headings of the form `## Statement`;
+claim files do not use headings for those sections, they use inline bold, `**Statement.**`. Every lookup returned
+nothing, every claim was skipped by a `continue`, and the loop reported zero differences out of zero comparisons.
+
+Re-run against the real format, 276 restated sections across 69 claims:
+
+| section | identical | near, 0.85 or better | condensed | median similarity |
+|---|---|---|---|---|
+| Statement | **0** | 6 | 63 | 0.47 |
+| Harm | **0** | 3 | 66 | 0.57 |
+| Enforcement | **0** | 8 | 61 | 0.60 |
+| Weakening | **0** | 2 | 67 | 0.40 |
+
+**Not one of the 276 is identical.** The index is not a copy that has been held in agreement by hand; it is an
+editorial CONDENSATION that was never identical and was never meant to be. TEN-1 is typical: the claim file says
+"validated authentication credential" and "tenant identifier field", the index says "validated auth credential"
+and "tenant-identifier field".
+
+**So the finding is a different and larger one than the one recorded above.** A condensed restatement of a
+normative text is a second normative text that nobody ruled, and the index is the catalog's front door, so it is
+the version most readers actually read. At a median similarity below 0.6 there is no mechanical way to ask
+whether a condensation dropped a qualifier that mattered, and no generator can produce it, because condensing is
+editorial judgment rather than a transformation. The original finding's proposed remedy, a check that the two
+copies agree, **cannot be built at all**. That is the real result.
+
+**Six of nine checks were valid, not eight of nine.** Files against index entries, the heading count, the family
+intros, the locus split, the citation resolution and the provenance dates all genuinely ran and genuinely pass.
+The status tally genuinely fails, which is S-13. The two prose comparisons ran over nothing.
+
+**The lesson is sharper than the one this finding first drew.** It warned that a check over documents this dense
+fails toward false ALARMS, and listed three scans that were the bug. The fourth failed the other way, toward a
+false PASS, which is strictly worse: a false alarm is investigated and a false pass is filed as evidence. It is
+E-11 exactly, committed inside a finding about checks, by the same discipline that names E-11 as its oldest
+lesson. **The non-vacuity assertion is not an ornament on a scan. A comparison that reports zero differences owes
+its comparison COUNT in the same breath**, and every table in this register that says "zero" without saying "of
+how many" is now suspect on its face.
+
 ### E-21. The build brief still describes the mechanisms four rounds of repairs replaced
 
 **Claim:** SEC-1, SEC-2, SEC-3, TEN-1, TIME-1, structurally all of them. **Found:** the raise pass of 2026-07-27,
