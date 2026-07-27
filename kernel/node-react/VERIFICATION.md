@@ -591,3 +591,44 @@ against a placeholder is a proof about a placeholder.
 ### Gates
 
 Client 65, server 154, docs-lint ok, conformance ok at 69 rows. Non-owed node rows 4 to 6.
+
+### Node Phase A, F3: four rows recorded no mechanism while four mechanisms were binding
+
+TEST-2, TEST-3, HUM-1, TEN-5 and AI-2 all read `owed` with an empty `mechanism` field and a bare `trigger:` line.
+Four of the five triggers had already fired and four mechanisms were present and binding in this tree. Every plant
+below was made here and scored here.
+
+| claim | plant | outcome |
+|-------|-------|---------|
+| HUM-1 | remove the contracts owner from `.github/CODEOWNERS` | red-correct, naming the surface and the claim |
+| TEN-5 | a ledger row with an empty sole-reader cell | red-correct |
+| TEN-5 | a row naming `NightlyNodeSweepIsSoleReader`, which exists nowhere | red-correct |
+| TEN-5 | a second `docs/claims/billing-bypass-ledger.md` | red-correct |
+
+**TEST-3 and HUM-1 move to `latent`**, both on the same half: `gate-check.mjs` is built, its `--self-test` runs in
+this edition's CI, and the READBACK has never executed against a real forge, which needs a token carrying
+repository administration read. That is the arming half, and the claims themselves assign arming to the human and
+verification to the kernel, which is why it is `latent` and not `owed`.
+
+**TEN-5 stays `owed` on one obligation** and in this edition it is trigger-gated twice over: there is no
+sanctioned bypass, and `server/src` has no persistence layer for a cross-tenant read to exist in.
+
+**TEST-2 stays `owed`, and the reason is worth naming because it is buildable.** The row's trigger was "the first
+client data service", which fired long ago. The harness drives the real repository and API client; the smoke boots
+the composed entrypoint; both are npm scripts. Nothing runs either. There is no e2e orchestrator in this edition
+and `ci.yml`'s four jobs invoke neither. So the harness is `latent` (built, never executed against a running
+server here) and the CI obligation is `owed` rather than `latent`, because there is no job to be unexercised
+(E-80). It also bounds TEST-3: one mechanism the catalog names demonstrably does not execute automatically, which
+is why TEST-3's CI obligation is `patterned`.
+
+**AI-2 is the one honest `owed` in the batch**, and it was checked rather than assumed: `server/src` and
+`client-web/src` contain no tool-execution surface, no agent loop and no model call, so there is no
+untrusted-content boundary for the claim to bind to.
+
+One residue recorded rather than repaired: two of node's three declared irreversible surfaces name directories
+that do not exist, which is argued and correct (naming the owner before the first migration lands is the point),
+and which is indistinguishable from a typo until the surface exists (E-81).
+
+### Gates
+
+Client 65, server 154, docs-lint ok, conformance ok at 69 rows. Non-owed node rows 6 to 8.

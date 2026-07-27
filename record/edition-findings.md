@@ -3982,6 +3982,57 @@ stronger form is to make the dotnet scans take their route set as a parameter de
 refusals can be fixture-driven there too. Recorded, not done: it is a refactor of four guards, and the extent
 assertion already closes the specific hole E-72 found.
 
+### E-80. Node's e2e tier is shipped, wired as npm scripts, and started by nothing
+
+**Claims:** TEST-2, and TEST-3 which is supposed to be what starts it. **Found:** 2026-07-27.
+**Measured at 8330742.**
+
+TEST-2's row read `trigger: the first client data service` and recorded no mechanism. Both halves of that are
+wrong. The trigger fired long ago (`client-web/src/data/notesRepo.ts` exists and the harness already imports it),
+and the mechanism is present: `tools/harness/main.ts` drives the real repository and API client against a running
+server, `tools/smoke/composedApp.smoke.ts` boots the composed entrypoint against the same one, and both are npm
+scripts.
+
+Nothing runs either of them.
+
+- This edition has no e2e orchestrator. The sibling has `scripts/e2e.sh`, which brings the database up, boots the
+  server, runs the harness, then the smoke, then tears down. There is no equivalent here.
+- `.github/workflows/ci.yml` has four jobs: server, client, docs-lint, secret-scan. Neither `npm run harness` nor
+  `npm run smoke` appears in any of them.
+
+So the harness is a mechanism that has never been executed against a running server in this tree, which is
+`latent` by the vocabulary, and the CI obligation is `owed` rather than `latent` because there is no job to be
+unexercised. It also bounds TEST-3: that claim's first obligation is that every mechanism the catalog names
+executes automatically, and here one demonstrably does not, which is why TEST-3's CI obligation is `patterned`
+rather than `proven`.
+
+The two obligations need the same thing and it is one artifact: an orchestrator that boots a server and runs both
+tools against it, plus a job that calls it. **Trigger: it is buildable now, and is Phase B work rather than a
+recording gap.** Recorded rather than built here because the server it would boot has no persistence layer, so
+what the harness would exercise end to end is a fraction of what it exercises in the sibling.
+
+### E-81. A CODEOWNERS path that matches nothing is indistinguishable from one that matches nothing YET
+
+**Claim:** HUM-1. **Found:** 2026-07-27. **Measured at 8330742.** **Not a defect; a recorded residue.**
+
+Node declares three irreversible surfaces and two of the three directories do not exist:
+`/server/src/persistence/migrations/` and `/server/src/contracts/`. This looks like a defect and is not one. Both
+the CODEOWNERS header and the docs-lint comment argue it explicitly, and the argument is right: naming the owner
+BEFORE the first migration lands is the point of the claim, and a pattern that matches nothing today matches the
+day the directory appears. Requiring the path to exist would invert the claim into "protect surfaces only after
+they are unprotected once".
+
+The residue is that the allowance and a typo are the same observation. `/server/src/persistence/migrations/` and
+a future reality of `/server/src/db/migrations/` are both green today, and on the day migrations land at the
+second path, HUM-1's protection is zero and every gate still passes. The declaration is checked for being present
+and owned; it is never checked for being WHERE THE SURFACE ACTUALLY IS, because until the surface exists there is
+nothing to compare against.
+
+That is checkable the moment the surface exists, and only then: if a migrations directory exists anywhere in the
+tree and is not at the declared path, the declaration is wrong. **Trigger: the first migration in an edition,
+which is the first moment the comparison has two sides.** Recorded so that the day it lands, the check is a known
+obligation rather than a rediscovery.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

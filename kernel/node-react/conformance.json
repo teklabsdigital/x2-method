@@ -41,8 +41,35 @@
     "TEN-5": {
       "title": "Sanctioned-bypass ledger",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first sanctioned cross-tenant access path."
+      "mechanism": "`docs/claims/tenant-bypass-ledger.md` (empty, v1 by design) plus docs-lint's TEN-5 checks: the ledger must exist, every row must name a sole-reader test, that name must resolve to an identifier in the tree, and it must be the only bypass ledger",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3). Lifted out of a bare `trigger:` line, which recorded no mechanism while four checks were binding in this tree. All four planted here and all four red-correct: an absent ledger, a row with an empty test cell, a row naming `NightlyNodeSweepIsSoleReader` which exists nowhere, and a second `billing-bypass-ledger.md`. The row stays `owed` on one obligation, and in this edition it is trigger-gated twice over: there is no sanctioned bypass AND there is no persistence layer for one to live in. Findings: E-34, E-35, E-77.",
+      "obligations": [
+        {
+          "name": "a committed ledger exists and is where the claim lives",
+          "status": "proven",
+          "text": "Removing it fails docs-lint with a sentence naming TEN-5, not a stack trace."
+        },
+        {
+          "name": "a ledger row that names no sole-reader test fails the build",
+          "status": "proven",
+          "text": "Red-correct in this tree. The parse is keyed on the column NAME rather than position, so an inserted column cannot move the cell out of reach, and a ledger the parser cannot read as a table is a failure rather than an empty pass (E-35 repaired)."
+        },
+        {
+          "name": "the named sole-reader test exists, and is the remedy",
+          "status": "patterned",
+          "text": "Red-correct in this tree for a row naming an identifier that appears in no source file (E-34 repaired). `patterned` on the obligation's second clause: it proves the name resolves to something, not that the something is a test, and nothing checks that the test is the sole reader."
+        },
+        {
+          "name": "one ledger, not several",
+          "status": "patterned",
+          "text": "Red-correct in this tree for a planted `docs/claims/billing-bypass-ledger.md`. `patterned` because the rule is on the file NAME, so a second ledger under another spelling escapes."
+        },
+        {
+          "name": "every sanctioned cross-tenant path appears in the ledger",
+          "status": "owed",
+          "text": "unbuilt, and trigger-gated twice in this edition: there is no sanctioned bypass, and `server/src` has no persistence layer for a cross-tenant read to exist in. Trigger: a persistence layer, then the first sanctioned bypass."
+        }
+      ]
     },
     "TEN-6": {
       "title": "Tenant is minted from membership, never asserted",
@@ -579,14 +606,48 @@
     "TEST-2": {
       "title": "E2E harness",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first client data service."
+      "mechanism": "`client-web/tools/harness/main.ts` drives the real `src/data/notesRepo.ts` and `src/api/client.ts` against a running server and emits NDJSON; `tools/smoke/composedApp.smoke.ts` boots the composed entrypoint against the same server; `redact.ts` scrubs the output",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3). The row said `trigger: the first client data service` and that trigger HAS FIRED: `client-web/src/data/notesRepo.ts` exists and the harness already drives it. What is missing is not the harness, it is a RUNNER. This edition has no e2e orchestrator (the sibling has `scripts/e2e.sh`) and its `ci.yml` has four jobs, none of which invokes the harness or the smoke. So the mechanism is shipped, wired as npm scripts, and started by nothing. Findings: E-80.",
+      "obligations": [
+        {
+          "name": "an out-of-process harness drives the real, unmodified client service layer",
+          "status": "latent",
+          "text": "The harness exists and imports the real repository and client modules rather than reimplementing them. It is `latent` and not `proven` here because nothing in this edition starts it: no orchestrator script boots a server for it and no CI job runs it, so it has never been executed against a running server in this tree (E-80)."
+        },
+        {
+          "name": "the floor is complete: every public method of every client data service has a scenario",
+          "status": "owed",
+          "text": "unbuilt. The scenario list is hand-written, so a repository method added tomorrow is untested by the harness and nothing reports it. Trigger: a completeness assertion comparing the scenario set against the exported surface of the data services."
+        },
+        {
+          "name": "the deterministic tier runs in CI",
+          "status": "owed",
+          "text": "unbuilt. `ci.yml` runs the server suite, the client suite, docs-lint and secret-scan. It contains no harness or smoke step at all, so the e2e tier is not in the loop (E-80). Trigger: an e2e job, which needs the orchestrator the first obligation also needs."
+        },
+        {
+          "name": "harness output redacts secrets",
+          "status": "patterned",
+          "text": "`redact.ts`, three arms, red-correct in this tree when the JWT arm is narrowed to match nothing (F2). Heuristic by shape, so each new secret shape owes its own arm."
+        }
+      ]
     },
     "TEST-3": {
       "title": "CI loop",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first instantiation."
+      "status": "latent",
+      "mechanism": "`.github/workflows/ci.yml` (server, client, docs-lint and secret-scan jobs) plus `tools/gate-check.mjs`, which derives the required check names from the workflow and reads them back against the forge's branch protection",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3). Lifted from `owed`, where the row read `trigger: the first instantiation` and recorded no mechanism, while `ci.yml` and `gate-check.mjs` were both present and the workflow already runs `gate-check --self-test` (6 caught, 7 ignored). `latent` and not higher for the same reason as the sibling, established here rather than inherited: the readback has never run against a real forge, which needs a token carrying repository administration read. Findings: E-24, E-65.",
+      "obligations": [
+        {
+          "name": "every mechanism the catalog names executes automatically in CI on every push and pull request",
+          "status": "patterned",
+          "text": "Four jobs run: the server suite, the client suite, docs-lint and secret-scan, plus the gate-check self-test. It is `patterned` and not `proven` because the loop is not closed over the mechanism set: the e2e tier has no job at all (E-80), so a mechanism can exist in this edition and never run. Each tier owes its own job."
+        },
+        {
+          "name": "the loop gates merges, armed at instantiation, with the arming step carried and verified",
+          "status": "latent",
+          "text": "`gate-check.mjs` derives the required check names from the workflow itself, reads both rulesets and classic protection, catches ruleset evaluate mode (which reports rules and blocks nothing) and requires a pull request. Its `--self-test` runs in this edition's CI. The readback itself has never executed against a real forge, so the half that would prove the gate is ARMED is built and unexercised."
+        }
+      ]
     },
     "TEST-4": {
       "title": "Real-runtime boot proof",
@@ -596,9 +657,21 @@
     },
     "HUM-1": {
       "title": "Irreversible surfaces get a human turn, unconditionally",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first instantiation."
+      "status": "latent",
+      "mechanism": "`edition.json`'s `irreversibleSurfaces` names each surface's path in this edition; `.github/CODEOWNERS` names a human for each; docs-lint fails when a declared surface has no owned CODEOWNERS entry; `gate-check.mjs` reads back whether the forge requires code-owner review",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3). Lifted from `owed`, where the row read `trigger: the first instantiation` and recorded no mechanism, while all three parts were present. Red-correct here: removing the contracts owner from CODEOWNERS fails docs-lint naming the surface and the claim. Two of the three declared directories do not exist in this edition yet, and that is argued rather than accidental: naming the owner before the first migration lands is the point, and a CODEOWNERS pattern matching nothing today matches the day it appears. The residue is recorded in E-81 rather than left implicit. Findings: E-24, E-65, E-81.",
+      "obligations": [
+        {
+          "name": "every irreversible surface is enumerated and declared to require a named human review",
+          "status": "proven",
+          "text": "The surface set is a closed registry in the tool, not a list in the edition, so an edition cannot quietly drop one: docs-lint iterates the three surfaces it knows and fails on any the edition does not declare or CODEOWNERS does not cover. Red-correct in this tree for a removed owner line."
+        },
+        {
+          "name": "the merge gate requires that review, armed at instantiation",
+          "status": "latent",
+          "text": "`gate-check.mjs` is built and reads code-owner review back from the forge. It has never run against a real forge, so the arming half is unexercised. The claim itself assigns arming to the human and verification to the kernel, which is why this is `latent` rather than `owed`."
+        }
+      ]
     },
     "AI-1": {
       "title": "Server-injected identity",
@@ -610,7 +683,7 @@
       "title": "Untrusted content, no authority",
       "status": "owed",
       "mechanism": "",
-      "note": "trigger: the first tool."
+      "note": "trigger: the first tool. CHECKED 2026-07-27 rather than assumed: `server/src` and `client-web/src` contain no tool-execution surface, no agent loop and no model call, so there is no untrusted-content boundary for this claim to bind to. This is the one row in the F3 batch whose trigger has genuinely not fired; the other four recorded no mechanism while their mechanisms were binding."
     },
     "AI-3": {
       "title": "Prompt architecture",
