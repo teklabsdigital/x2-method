@@ -551,3 +551,43 @@ obvious: `edition.json` is at the same relative path in both editions. Recorded 
 
 Server 154, docs-lint ok, conformance ok at 69 rows. Non-owed node rows unchanged at 4; the change is that one of
 them is now honest about being `patterned` and all four state their obligations.
+
+### Node Phase A, F2: five shared-tier rows that read `owed` while their guards were binding
+
+The client tier is composed, so this edition's `client-web` runs the same 65 tests the sibling does. Five rows
+recorded `owed`, which says "no mechanism", while the mechanism ran and passed here on every suite execution.
+That is the understating direction of a dishonest row: it is safe for the reader who trusts it and expensive for
+the reader who acts on it, because building what already exists is the cost it imposes.
+
+Every plant below was made in THIS edition's tree and scored here. Nothing was inferred from the sibling.
+
+| claim | plant | outcome |
+|-------|-------|---------|
+| UI-1 | delete one token from `tokens.ts` | red-correct, `every design-system variable has a matching token` |
+| UI-2 | `style={{ color: '#ff0000', padding: '12px' }}` on a screen | red-correct, two eslint errors, both naming UI-2 |
+| UI-4 | a fabricated `<div data-atom="promo-banner" />` | red-correct, de-fabrication |
+| SEC-6 | narrow the redactor's JWT arm to match nothing | red-correct, `scrubs a JWT-shaped token` |
+| MOD-2 | a `notes-panel.tsx` beside `NotesScreen.tsx` | red-correct, naming and placement |
+
+All reverted; `git status` clean over `client-web`; 65 and 154 restored.
+
+Two rows move off `owed` (UI-1 to `latent`, UI-2 to `patterned`) and three stay `owed` on a weakest obligation
+that is now NAMED rather than standing for the whole row:
+
+- **UI-4** inherits E-68 byte for byte, because the guard is a composed shared file. The de-fabrication assertion
+  collects `[data-atom]`, so its subject is the set of elements that already declare themselves part of the
+  ledger's vocabulary. The plant above is caught because it marks itself; an unmarked `<p>` is invisible.
+- **SEC-6**'s server half is trigger-gated rather than unbuilt, and the distinction is worth the words. `createApp`
+  constructs Fastify with `logger: false`: this server emits no log at all, so there is no logging surface to
+  assert redaction over. The trigger is the first server log statement, not a missing test.
+- **MOD-2** has no server-tree walk at all. That is F4's missing-server-half question, named here so it is not
+  discovered again.
+
+**UI-1 is `latent`, not `proven`, and the reason is the artifact rather than the guard.** The mechanism binds and
+carries a distinct-count floor above 50 so an emptied export cannot pass. What it locks against is kernel filler:
+the export's own header says to replace its values with a real design export at instantiation. A lockstep proof
+against a placeholder is a proof about a placeholder.
+
+### Gates
+
+Client 65, server 154, docs-lint ok, conformance ok at 69 rows. Non-owed node rows 4 to 6.

@@ -181,8 +181,20 @@
     "SEC-6": {
       "title": "Log safety",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "mechanism": "`redact.ts` scrubs Authorization values (JSON and header forms) and JWT-shaped strings from harness output, unit-tested in `__tests__/redact.test.ts`",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F2), not inferred from the sibling. Red-correct: narrowing the JWT arm to a pattern that matches nothing turns `scrubs a JWT-shaped token` red. The row is `owed` on its server half, and that half is trigger-gated rather than merely unbuilt: `createApp` constructs Fastify with `logger: false`, so this server emits no log at all. There is no logging surface to assert redaction over yet, which is a materially different situation from the sibling's and is why the trigger names the first log statement rather than a missing test.",
+      "obligations": [
+        {
+          "name": "secret-shaped values are scrubbed by one redactor",
+          "status": "patterned",
+          "text": "One redactor, three arms (JSON authorization, header authorization, JWT shape), red-correct when an arm is narrowed. Heuristic by shape, so a secret in a form none of the three arms matches escapes; each new secret shape owes its own arm."
+        },
+        {
+          "name": "each logging surface asserts its own redaction",
+          "status": "owed",
+          "text": "The harness output surface is covered. The SERVER emits nothing: `createApp` passes `logger: false`. Trigger: the first server log statement, which creates the surface this obligation is about."
+        }
+      ]
     },
     "SEC-7": {
       "title": "Opaque public identifiers",
@@ -455,8 +467,25 @@
     "MOD-2": {
       "title": "Deterministic naming and placement",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "mechanism": "`namingPlacement.test.ts` walks the client source tree and asserts component files are PascalCase under `components/` or a module; eslint `no-restricted-imports` confines the token import",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F2), not inferred from the sibling. Red-correct: a `notes-panel.tsx` beside `NotesScreen.tsx` turns `component files are PascalCase under components/ or a module` red. Two obligations are unmeasured or unbuilt, and they are named rather than folded into the client half's status.",
+      "obligations": [
+        {
+          "name": "client component files are named and placed deterministically",
+          "status": "proven",
+          "text": "Red-correct for a kebab-cased component file. The walk is recursive over the client source root and exempts the entry point by exact path rather than by suffix, so a `Domain.tsx` is not accidentally exempted."
+        },
+        {
+          "name": "the server tree has its own naming and placement rule",
+          "status": "owed",
+          "text": "unbuilt, and not measured by this round. The client walk stops at `client-web/src`; nothing asserts placement for `server/src`. Trigger: a walk over the server tree, which is F4's missing-server-half question for this claim."
+        },
+        {
+          "name": "artifact kinds form a closed registry, and a new kind is a deliberate kernel edit",
+          "status": "owed",
+          "text": "unbuilt. Nothing enumerates the kinds of artifact a module may contain, so a new kind arrives without a decision. Trigger: an artifact-kind registry the placement walk reads."
+        }
+      ]
     },
     "DOC-1": {
       "title": "Documentation lifecycle",
@@ -472,15 +501,27 @@
     },
     "UI-1": {
       "title": "Token source lockstep",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "status": "latent",
+      "mechanism": "`src/theme/tokens.ts` is the sole token source, transcribed from `design/prototype/_ds/colors_and_type.css`; `tokenCoverage.test.ts` asserts every CSS variable in the export has a matching token and that the export defines more than 50 distinct variables; eslint `no-restricted-imports` plus `namingPlacement.test.ts` confine the import to `src/components`",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F2), not inferred from the sibling. Red-correct: deleting one token turns `every design-system variable has a matching token` red. `latent` rather than `proven` because the artifact it locks against is a KERNEL PLACEHOLDER: the export's own header says to replace its values with a real design export at instantiation. The lockstep mechanism is built and runs; it has never run against a real locked prototype, which is what this claim is about. Trigger: the first design lock in a seeded project."
     },
     "UI-2": {
       "title": "Literal visual values are lint errors",
-      "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "status": "patterned",
+      "mechanism": "eslint `no-restricted-syntax` error-tier rules banning literal visual values in the client, plus `ui2LintExtent.test.ts` asserting what those rules reach",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F2), not inferred from the sibling. Red-correct: a `style={{ color: '#ff0000', padding: '12px' }}` on a screen produces two eslint errors, both naming UI-2, and the lint gates `npm run verify`. The extent test carries 49 cases including FOURTEEN holes held as PASSING controls, so closing one turns that test red and has to be argued rather than discovered silently (E-31). Findings: E-31.",
+      "obligations": [
+        {
+          "name": "error-tier rules ban literal visual values and gate the client verification chain",
+          "status": "proven",
+          "text": "Red-correct with two distinct rule messages (hex colour, raw dimension), and `verify` runs `tsc`, `vitest` and `eslint` so the ban is a gate rather than advice."
+        },
+        {
+          "name": "coverage of every axis and every syntactic form a literal can take",
+          "status": "patterned",
+          "text": "49 extent cases, of which fourteen are holes recorded as PASSING controls: negative literals and several ungated axes. Each new axis or syntactic form owes its own entry, and closing one breaks its control by design (E-31)."
+        }
+      ]
     },
     "UI-3": {
       "title": "Screens compose primitives only",
@@ -491,8 +532,25 @@
     "UI-4": {
       "title": "Fidelity ledger",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "mechanism": "`NotesScreen.fidelity.test.tsx`: a hand-written LEDGER of atoms, rendered across the populated and empty branches, asserted for exhaustiveness (every ledger atom renders) and de-fabrication (nothing renders outside the ledger)",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F2), not inferred from the sibling. Red-correct for a fabricated `<div data-atom=\"promo-banner\" />`. The row stays `owed` on its weakest obligation and the reason is E-68, inherited byte-for-byte because the guard is a composed shared file: the de-fabrication assertion collects `querySelectorAll('[data-atom]')`, so its SUBJECT is the set of elements that already declare themselves part of the ledger's vocabulary. A fabricated `<p>` carrying no marker renders green, and passes tsc and eslint too. This is the guard whose entire stated purpose is catching what an AI invented, and invented markup is the least likely to volunteer a marker. Findings: E-68.",
+      "obligations": [
+        {
+          "name": "every ledger atom renders (exhaustiveness)",
+          "status": "patterned",
+          "text": "Both branches are rendered, populated and empty, so a conditional atom cannot hide. The ledger is hand-written, so each new atom owes its own entry."
+        },
+        {
+          "name": "nothing renders beyond the ledger (de-fabrication)",
+          "status": "owed",
+          "text": "Red-correct only for a fabrication that MARKS ITSELF with `data-atom`. An unmarked element is invisible to the collector and therefore to the claim (E-68). Trigger: a subject drawn from the rendered tree rather than from the marker the code applies to itself."
+        },
+        {
+          "name": "the ledger is exported from the locked prototype, not hand-maintained",
+          "status": "owed",
+          "text": "unbuilt. The LEDGER constant is written by hand in the test, so it records what somebody believed the prototype contained. Trigger: the first design lock, which gives the export something to derive from."
+        }
+      ]
     },
     "UI-5": {
       "title": "Thin UI over tested services, composed entrypoint exercised",
