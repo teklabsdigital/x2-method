@@ -4419,6 +4419,48 @@ The two failures are E-84's second and third blockers exactly, and neither is an
 `service-method-coverage` reporting all four methods driven is also the closing evidence for E-87: the audit that
 row called `unbuilt` not only exists, it is the thing reporting this line.
 
+### E-92. The runtime is a dependency, and it is the one the dependency registry cannot see
+
+**Claim:** DEP-1. **Found:** 2026-07-27. **Measured at 4a18004.** **Repo-wide, both editions. Repaired here.**
+
+Every direct package dependency in this repository is pinned exactly, ledgered with a publish date, and restored
+in locked mode, and docs-lint fails a build where any of that is missing. The runtime was none of those things:
+
+    kernel/shared/client-web/package.json    "node": ">=24"
+    kernel/node-react/server/package.json    "node": ">=24"
+    .github/workflows/kernel.yml             node-version: '24'   (4 jobs)
+    kernel/node-react/.github/workflows/ci.yml    node-version: '24'   (4 jobs)
+    kernel/dotnet-react/.github/workflows/ci.yml  node-version: '24'   (4 jobs)
+
+Twelve CI jobs and two manifests, every one of them resolving whatever 24.x was newest on the day it ran, and no
+row in either edition's ledger. A supply-chain compromise of a Node release, or simply a behaviour change in a
+minor, arrives with no pin to stop it and no ledger entry to notice it by.
+
+**The cause is structural and is the same shape as CFG-1's fourth home.** `edition.json` declares
+`dependencySurfaces`, and every one of them is a package manifest, because that is what a dependency was taken to
+mean. docs-lint reads those surfaces and checks every dependency it finds against the ledger. The runtime is not
+IN a package manifest, so it is not in any declared surface, so the check that would have caught it never had it
+in scope. A registry that enumerates from a list of surfaces is blind to anything that is not on a surface, and
+being blind quietly is the failure mode this repository keeps finding: E-71's dead triggers, E-82's unasked
+producer, and this.
+
+It stopped being a hygiene point today. The node edition's persistence layer is being built on `node:sqlite`,
+which the runtime itself reports as experimental and may change in any release, **so the exact runtime version is
+now load-bearing for correctness and not only for supply chain.** Building on an experimental built-in API with a
+floating runtime would have been negligent in a way that a floating `>=24` for ordinary JavaScript was not.
+
+Repaired at every one of the fourteen sites, plus a `.nvmrc` at each edition root and at the repository root, plus
+a Runtime section in both ledgers with the publish date verified against `nodejs.org/dist/index.json` rather than
+assumed.
+
+**Pinned to 24.13.1 (2026-02-09) and not to 24.18.0 (2026-06-23), which is the newest LTS clearing the 30 day
+window and would otherwise be the right choice.** The reason is this repository's own rule about measurement:
+24.13.1 is the runtime that every result in both VERIFICATION.md files was taken on, and a pin nobody has run the
+suite against is a claim nobody has measured. Advancing it is a named step rather than a bump, and the ledger says
+so: install, run both editions' suites, record the result with its commit, then move the pin and the row together.
+Recorded as a deliberate cost, because a five month old runtime carries five months of unapplied fixes, and the
+honest trade is visible rather than silent.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

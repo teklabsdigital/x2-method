@@ -12,6 +12,26 @@ reference floats or is missing its row below.
 Adding or bumping a dependency: confirm the publish date clears the window, add the row here in the same change,
 and keep the pin exact.
 
+## Runtime
+
+The runtime is a dependency, and it was the one nothing pinned. Until 2026-07-27 the client manifest declared
+`"node": ">=24"` and every job in `.github/workflows/ci.yml` asked for `node-version: '24'`, so each run resolved
+whatever 24.x was newest that day. DEP-1 asks for exact pins with a dated ledger row, and the runtime escaped
+because `edition.json` lists dependency SURFACES and every one of them is a package manifest; the runtime is not
+in a package manifest, so the check that would have caught it never had it in scope (E-92).
+
+| Runtime | Version | Published | Source |
+|---------|---------|-----------|--------|
+| node | 24.13.1 | 2026-02-09 | nodejs.org/dist/index.json |
+
+v24.18.0 (2026-06-23) is the newest LTS release outside the window declared above. It is not pinned here because
+nothing in this repository has been run on it, and a pin nobody has run the suite against is a claim nobody has
+measured. Advancing it is a named step: install the version, run both editions' suites, record the result with its
+commit, then move the pin and this row together.
+
+The .NET SDK is pinned separately in `global.json`, which is the same obligation discharged by the mechanism that
+platform provides.
+
 ## Kernel provenance (DEP-1: the kernel is a dependency)
 
 The kernel this project was seeded from, pinned like any other dependency: the remote names the identity, the

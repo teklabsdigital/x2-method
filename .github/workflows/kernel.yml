@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24.13.1'
       # A hand-edited composed copy fails here rather than drifting quietly (kernel/shared/README.md).
       - run: node kernel/tools/compose.mjs --check
 
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24.13.1'
       # The predicates' own controls run first, for the reason E-11 established and E-28 reproduced one tool
       # over: a lint that walks a clean tree reports ok whether it reaches everything or nothing. Measured
       # 2026-07-27, narrowing the ledger row scrape and the image host allowlist left this job green both times,
@@ -81,7 +81,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24.13.1'
           cache: npm
           cache-dependency-path: kernel/node-react/server/package-lock.json
       - run: npm ci
@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24.13.1'
           cache: npm
           cache-dependency-path: kernel/shared/client-web/package-lock.json
       - run: npm ci

@@ -9,6 +9,32 @@ container image reference floats or is missing its row below.
 Adding or bumping a dependency: confirm the publish date clears the window, add the row here in the same change,
 and keep the pin exact.
 
+## Runtime
+
+The runtime is a dependency, and it was the one nothing pinned. Until 2026-07-27 both manifests declared
+`"node": ">=24"` and eight CI jobs across this repository asked for `node-version: '24'`, so every run resolved
+whatever 24.x was newest that day. DEP-1's sentence is exact pins with a dated ledger row, and the runtime escaped
+it for a structural reason worth naming: `edition.json` lists dependency SURFACES, every one of them a package
+manifest, and the runtime is not in a package manifest. The registry could not see it (E-92).
+
+It matters more than it did last week. The persistence layer is built on `node:sqlite`, which the runtime reports
+as experimental, so the exact runtime is now load-bearing for correctness and not only for supply-chain hygiene.
+
+| Runtime | Version | Published | Source |
+|---------|---------|-----------|--------|
+| node | 24.13.1 | 2026-02-09 | nodejs.org/dist/index.json |
+
+**Why this version and not the newest that clears the window.** v24.18.0 (2026-06-23) is the newest LTS release
+outside the window declared above, and it would be the ordinary choice. It is not pinned here because nothing in
+this repository has been run on it: 24.13.1 is the runtime every measurement, plant and suite result recorded in
+VERIFICATION.md was taken on, and a pin nobody has run the suite against is a claim nobody has measured. Advancing
+it is a named step and not a bump: install the version, run both editions' suites, record the result with its
+commit, then change the pin and this row together.
+
+Pinned in five places, deliberately, because each has to stand alone after an edition is copied out: `.nvmrc` at
+this edition's root, `engines.node` in `server/package.json` and `client-web/package.json`, and `node-version` in
+every job of `.github/workflows/ci.yml`.
+
 ## Kernel provenance (DEP-1: the kernel is a dependency)
 
 The kernel this project was seeded from, pinned like any other dependency: the remote names the identity, the

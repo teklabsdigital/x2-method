@@ -948,3 +948,65 @@ it**, which is the sentence TEN-1's resolution obligation carries as its reason 
 
 Unchanged from the round above: server 236, client 65, conformance ok at 69 rows, docs-lint ok. The server booted
 for this measurement was killed, the log deleted, and `git status --porcelain` confirmed empty afterwards.
+
+## 2026-07-27, pinning the runtime before building on an experimental part of it
+
+Measured at `4a18004`. Prerequisite for G rather than a detour: the persistence layer is being built on
+`node:sqlite`, which the runtime reports as experimental and may change in any release, so the exact runtime
+version became load-bearing for correctness and not only for supply chain.
+
+It was not pinned anywhere. Two manifests declared `"node": ">=24"` and twelve CI jobs across this repository
+asked for `node-version: '24'`, so every run resolved whatever 24.x was newest that day, and neither edition's
+ledger had a row for it.
+
+**The cause is structural, and it is CFG-1's fourth home in a different registry.** `edition.json` declares
+`dependencySurfaces`, every one of them a package manifest, and docs-lint checks the dependencies it finds there
+against the ledger. The runtime is not in a package manifest, so it was never in scope for the check that exists
+precisely to catch this (E-92).
+
+### The version, and why it is not the newest one that clears the window
+
+The window is 30 days and this file's header is where that number lives, so the cutoff is 2026-06-27. Publish
+dates were read from `nodejs.org/dist/index.json` rather than assumed: **v24.18.0 (2026-06-23) is the newest LTS
+outside the window** and would ordinarily be the choice.
+
+Pinned to **24.13.1 (2026-02-09)** instead, because it is the runtime every result in this file was measured on,
+and this repository's rule is that a claim names the thing it was measured against. Installing 24.18.0 to test it
+is a machine change nobody authorised. So advancing the pin is a named step rather than a bump, written into the
+ledger: install, run both editions' suites, record the result with its commit, then move the pin and the row
+together. The cost is real and is recorded rather than hidden: a February runtime carries five months of unapplied
+fixes.
+
+### The pin is in six places, so it needed a check rather than discipline
+
+Each copy has to exist, because an edition must stand alone after it is copied out: `.nvmrc`, `engines.node` in
+two manifests, `node-version` in four CI jobs, and the ledger row. Six copies with nothing comparing them is the
+CFG-1 defect this round would have been creating, so `runtimeAgreementFindings` and `runtimeRangeFindings` were
+added to the shared linter, mirroring the container-image agreement check DEP-1 already had.
+
+The runtime pass enumerates by FILENAME and not by extension, which is E-38's second half arriving at a different
+tool: `.nvmrc` has no extension at all, and a scan keyed on extensions cannot see the files whose whole identity
+is their name.
+
+### Controls, and the difference between the two kinds
+
+Self-test 28 caught / 27 ignored, now **33 / 32**: five new CATCH cases and five new IGNORE cases, including a
+`.nvmrc` written with the conventional `v` prefix and a manifest with no `engines` block, both of which must stay
+silent.
+
+The self-test cannot say whether the WALK reaches the files, which is the E-11 problem one level up, so two live
+plants:
+
+| plant | outcome |
+|---|---|
+| `.nvmrc` set to 24.18.0 | red-correct, and the message names all five other surfaces, which is the extent proof |
+| `engines.node` back to `>=24` | red-correct, reported as a range rather than compared as a version |
+
+The first plant's message is worth more than its redness: it enumerated `.github/workflows/ci.yml`, `VERSIONS.md`,
+`client-web/package.json`, `server/package.json` and `.nvmrc`, so the walk demonstrably reaches every surface
+rather than agreeing with one file it happened to find.
+
+### Gates
+
+Server 236, client 65, shared client 65, docs-lint ok in both editions, self-test 33/32 in both, conformance ok at
+69 rows in both, `compose --check` ok. Both plants restored byte-for-byte, verified by hash, backups deleted.

@@ -387,6 +387,71 @@ export function imageAgreementFindings(sightings) {
   return out;
 }
 
+/// DEP-1, and the surface the dependency registry could not see (E-92). The runtime is a dependency: it has a
+/// version, a publish date and a supply chain, and until 2026-07-27 it had none of an exact pin, a ledger row or
+/// a check. It escaped for a structural reason rather than by oversight, and the reason is worth keeping next to
+/// the repair: `edition.json` declares dependency SURFACES and every one of them is a package manifest, so a
+/// dependency that lives outside a package manifest is outside the scan by construction.
+///
+/// Same shape as the image agreement above and for the same reason: the pin has to exist in several files
+/// because each must stand alone after an edition is copied out, so the copies cannot be removed and the only
+/// thing left to do is make them unable to disagree.
+export function runtimeSighting(rel, text) {
+  const name = rel.split('/').pop();
+  if (name === '.nvmrc') {
+    const value = text.trim();
+    return value.length > 0 ? [{ rel, version: value.replace(/^v/, '') }] : [];
+  }
+  if (name === 'package.json') {
+    let manifest;
+    try {
+      manifest = JSON.parse(text);
+    } catch {
+      return [];
+    }
+    const declared = manifest?.engines?.node;
+    // Only an EXACT pin is a sighting. A range is not a different opinion about the version, it is the absence
+    // of one, and it is reported as its own finding rather than compared against anything.
+    return typeof declared === 'string' && /^\d+\.\d+\.\d+$/.test(declared) ? [{ rel, version: declared }] : [];
+  }
+  if (name.endsWith('.yml') || name.endsWith('.yaml')) {
+    return [...text.matchAll(/node-version:\s*'?"?([^'"\s]+)'?"?/g)].map((match) => ({ rel, version: match[1] }));
+  }
+  return [];
+}
+
+export function runtimeRangeFindings(rel, text) {
+  if (rel.split('/').pop() !== 'package.json') {
+    return [];
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const declared = manifest?.engines?.node;
+  if (typeof declared !== 'string' || /^\d+\.\d+\.\d+$/.test(declared)) {
+    return [];
+  }
+  return [`${rel}: engines.node is '${declared}', which is a range and not a pin, so every install resolves whatever the newest matching release is that day (DEP-1, E-92).`];
+}
+
+export function runtimeAgreementFindings(sightings) {
+  const byVersion = new Map();
+  for (const { rel, version } of sightings) {
+    byVersion.set(version, [...(byVersion.get(version) ?? []), rel]);
+  }
+  if (byVersion.size < 2) {
+    return [];
+  }
+  const detail = [...byVersion]
+    .map(([version, files]) => `'${version}' in ${[...new Set(files)].sort().join(', ')}`)
+    .sort()
+    .join('; ');
+  return [`the runtime is pinned to ${byVersion.size} different versions across the tree: ${detail}. One runtime version across every surface (DEP-1, E-92).`];
+}
+
 /// DEP-1: the cooling-off window number lives in exactly one place.
 ///
 /// The number was asserted independently in six files and read by none of them (E-37), so cutting the window
@@ -478,8 +543,43 @@ const CATCH = [
   // DEP-1: the cooling-off window number lives in exactly one place.
   ['a document restating a window the header does not declare', () => windowFindings('BUILD-BRIEF.md', 'all satisfy the 90-day window as of 2026-07-10', 30)],
   ['the long-hand form of the same drift', () => windowFindings('README.md', 'the cooling-off window is 14 days', 30)],
+  // DEP-1 / E-92: the runtime is a dependency. Every case below is an input a plant fed these predicates on
+  // 2026-07-27 and saw reported by name.
+  ['two surfaces pinning different runtime versions',
+    () => runtimeAgreementFindings([
+      { rel: '.nvmrc', version: '24.13.1' },
+      { rel: '.github/workflows/ci.yml', version: '24.18.0' },
+    ])],
+  ['a workflow floating on a major while everything else pins',
+    () => runtimeAgreementFindings([
+      { rel: '.nvmrc', version: '24.13.1' },
+      { rel: '.github/workflows/ci.yml', version: '24' },
+    ])],
+  ['the ledger row disagreeing with the tree',
+    () => runtimeAgreementFindings([
+      { rel: 'VERSIONS.md', version: '24.13.1' },
+      { rel: 'server/package.json', version: '24.14.0' },
+    ])],
+  ['engines.node declaring a range instead of a pin',
+    () => runtimeRangeFindings('server/package.json', '{"engines":{"node":">=24"}}')],
+  ['a caret range, which is a range wearing a version',
+    () => runtimeRangeFindings('client-web/package.json', '{"engines":{"node":"^24.13.1"}}')],
 ];
 const IGNORE = [
+  // DEP-1 / E-92. The agreement check must stay silent when the tree agrees, including across the three
+  // different file shapes the version is written in, because a check that fires on agreement gets deleted.
+  ['every surface pinning the same runtime version',
+    () => runtimeAgreementFindings([
+      { rel: '.nvmrc', version: '24.13.1' },
+      { rel: 'server/package.json', version: '24.13.1' },
+      { rel: '.github/workflows/ci.yml', version: '24.13.1' },
+      { rel: 'VERSIONS.md', version: '24.13.1' },
+    ])],
+  ['an exact engines.node pin', () => runtimeRangeFindings('server/package.json', '{"engines":{"node":"24.13.1"}}')],
+  ['a package.json with no engines block at all', () => runtimeRangeFindings('tools/package.json', '{"name":"x"}')],
+  ['a manifest that is not valid JSON, which is another check\'s finding and not this one\'s',
+    () => runtimeRangeFindings('server/package.json', '{not json')],
+  ['a .nvmrc carrying the conventional v prefix', () => runtimeSighting('.nvmrc', 'v24.13.1\n').map((sighting) => sighting.version === '24.13.1' ? null : 'prefix not stripped').filter(Boolean)],
   ['a legal root markdown file', () => docLifecycleFindings('README.md', '# anything\n')],
   ['a correct claim document', () => docLifecycleFindings('docs/claims/x.md', '---\nkind: claim\nstatus: authoritative\n---\n')],
   ['a work document carrying a slice id', () => docLifecycleFindings('docs/work/s1.md', '---\nkind: work\nstatus: working\nslice: S1\n---\n')],
@@ -836,6 +936,44 @@ if (typeof declaredImage === 'string' && declaredImage.length > 0) {
 }
 
 for (const message of imageAgreementFindings(imageSightings)) {
+  fail(message);
+}
+
+// DEP-1 / E-92: the runtime is a dependency, and the same agreement discipline applies to it. `.nvmrc` carries no
+// extension and `package.json` is not on the image scan's list of interesting files for this purpose, so the
+// runtime pass enumerates by FILENAME rather than by extension. That is the lesson of E-38's second half arriving
+// at a different tool: a scan keyed on extensions cannot see the files whose whole identity is their name.
+const runtimeSightings = [];
+for (const { file, rel } of allFiles) {
+  const name = rel.split('/').pop();
+  if (rel === 'tools/docs-lint.mjs' || !['.nvmrc', 'package.json'].includes(name) && !/\.(yml|yaml)$/.test(name)) {
+    continue;
+  }
+  // Lockfiles are generated and enormous, and a `package.json` under node_modules belongs to a dependency rather
+  // than to this edition.
+  if (rel.includes('node_modules/')) {
+    continue;
+  }
+  const text = readFileSync(file, 'utf8');
+  for (const message of runtimeRangeFindings(rel, text)) {
+    fail(message);
+  }
+  runtimeSightings.push(...runtimeSighting(rel, text));
+}
+
+// The ledger row is a surface naming the runtime, exactly as it is for an image, and it is the one carrying the
+// publish date every other copy is pinned on the strength of.
+for (const line of versions.split('\n')) {
+  const cells = line.trim().startsWith('|') ? line.split('|').slice(1, -1).map((cell) => cell.trim()) : [];
+  if (cells.length >= 2 && cells[0] === 'node' && /^\d+\.\d+\.\d+$/.test(cells[1])) {
+    runtimeSightings.push({ rel: 'VERSIONS.md', version: cells[1] });
+  }
+}
+
+if (runtimeSightings.length === 0) {
+  fail('no surface pins the Node runtime: no .nvmrc, no exact engines.node, no pinned node-version in any workflow. The runtime is a dependency (DEP-1, E-92).');
+}
+for (const message of runtimeAgreementFindings(runtimeSightings)) {
   fail(message);
 }
 
