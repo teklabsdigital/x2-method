@@ -6,8 +6,8 @@ import { systemClock } from '../platform/clock.ts';
 // realize anything about notes. A scan that has only an anonymous health route to look at proves that it can
 // find no violation in one route it was never going to flag.
 //
-// What this is NOT: no DATA claim is realized here. The store is a module-level Map with no tenancy, no
-// concurrency token and no bounded read, and it is deliberately the least thing that lets a route have a real
+// What this is NOT: no DATA claim is realized here. The store is a module-level Map with no tenancy and no
+// concurrency token, and it is deliberately the least thing that lets a route have a real
 // body contract and a real permission policy. Every DATA and TEN claim except TEN-1's parameter and contract
 // halves stays `owed` in the conformance record, and choosing a real store under DEP-1 is its own pass.
 //
@@ -38,32 +38,68 @@ const NOTE_RESPONSE = {
   },
 } as const;
 
+// CON-2's list contract, and it did not exist until the producer side of the parity check was built. The route
+// declared no response schema at all and returned `{notes: [...]}`, while the client's `NoteList` and the shared
+// fixture both say `{items, nextCursor}`. Two things were wrong and only one of them was the field names: a
+// route that declares no response shape has nothing for a fixture to pin, so the drift was not merely undetected,
+// it was unreadable. E-82's producer half is what asked the question, and the answer was a live violation.
+const NOTE_LIST_RESPONSE = {
+  type: 'object',
+  properties: {
+    items: { type: 'array', items: NOTE_RESPONSE },
+    // Nullable, because "there is no next page" is a value the caller must be able to receive. The client's
+    // `NoteList.nextCursor` is `string | null` and the harness asserts a non-null cursor on a truncated page.
+    nextCursor: { type: ['string', 'null'] },
+  },
+} as const;
+
 export async function registerNotes(app: FastifyInstance): Promise<void> {
   app.get(
     '/notes',
     {
-      config: { policy: POLICIES['notes.read'] },
+      config: { policy: POLICIES['notes.read'], contracts: { 200: 'noteListResponse' } },
       schema: {
         // Closed, so the declared query set IS the accepted set: Fastify validates with `removeAdditional`, so
         // `?email=a@b.com` never reaches the handler. That is what makes SEC-3's scan over this declaration a
         // statement about what arrives rather than about what was written down.
         querystring: {
           type: 'object',
-          properties: { limit: { type: 'integer', minimum: 1, maximum: 100 } },
+          // `cursor` is declared because the client sends it. It was absent, and absent here does not mean
+          // rejected: `removeAdditional` STRIPPED it before the handler ran, so every paged read the client
+          // issued silently returned page one. A closed surface makes an undeclared field disappear quietly,
+          // which is the right answer for a field nobody should send and the wrong one for a field the contract
+          // requires.
+          properties: {
+            cursor: { type: 'string' },
+            limit: { type: 'integer', minimum: 1, maximum: 100 },
+          },
           additionalProperties: false,
         },
+        response: { 200: NOTE_LIST_RESPONSE },
       },
     },
     async (request) => {
-      const { limit = 20 } = request.query as { limit?: number };
-      return { notes: [...notes.values()].slice(0, limit) };
+      const { cursor, limit = 20 } = request.query as { cursor?: string; limit?: number };
+      // Keyset over insertion order, which is what a Map gives and is the whole of what is claimed. No DATA or
+      // TEN row moves on this: the store still has no tenancy, no concurrency token, and no ordering guarantee a
+      // real engine would have to provide. The paging exists because `nextCursor` is a field in the contract and
+      // a field in a contract has to mean something; returning a constant null while `limit` silently dropped
+      // rows would have been the same class of quiet answer as stripping the cursor.
+      const all = [...notes.values()];
+      const found = cursor === undefined ? 0 : all.findIndex((note) => note.id === cursor);
+      // An unknown cursor points past everything rather than restarting at the top. `findIndex` returns -1 and
+      // `-1 + 1` is 0, so the arithmetic alone would have answered page one to a caller holding a stale cursor.
+      const from = cursor === undefined ? 0 : found < 0 ? all.length : found + 1;
+      const items = all.slice(from, from + limit);
+      const nextCursor = from + limit < all.length && items.length > 0 ? items[items.length - 1].id : null;
+      return { items, nextCursor };
     },
   );
 
   app.get(
     '/notes/:noteId',
     {
-      config: { policy: POLICIES['notes.read'] },
+      config: { policy: POLICIES['notes.read'], contracts: { 200: 'noteResponse' } },
       schema: {
         querystring: NO_QUERY,
         params: { type: 'object', properties: { noteId: { type: 'string' } }, additionalProperties: false },
@@ -83,7 +119,10 @@ export async function registerNotes(app: FastifyInstance): Promise<void> {
   app.post(
     '/notes',
     {
-      config: { policy: POLICIES['notes.write'] },
+      config: {
+        policy: POLICIES['notes.write'],
+        contracts: { body: 'createNoteRequest', 201: 'noteResponse' },
+      },
       schema: {
         querystring: NO_QUERY,
         // The contract carries what the caller owns and nothing else. `id`, `tenantId`, `createdBy` and

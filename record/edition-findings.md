@@ -4113,6 +4113,129 @@ rows in this edition have not been checked for the same defect.
 Not repaired here. Fixing it is Phase B work on the server (an error handler plus an opaque id at the store
 boundary), and the store is what G is for.
 
+### E-84. "Buildable now" named the artifact and not the outcome, and the work list inherited the error
+
+**Claims:** TEST-2, TEST-3. **Found:** 2026-07-27. **Measured at 5dedb47.** **A correction to E-80 and to the
+record built on it.**
+
+E-80 closed with **trigger: it is buildable now**, meaning the orchestrator and the CI job that starts node's
+harness and smoke. The handover carried that forward as "the smallest real build item", and it was the next thing
+on the list.
+
+It is not buildable now in any sense that matters. Measured, by booting the composed server and running the two
+tools against it rather than by reading them:
+
+    harness   1 of 7 scenarios green (health). The other six fail 401 on create-note, and
+              service-method-coverage fails as a cascade: list, get and remove were never driven.
+    smoke     red. The composed entrypoint's first list call throws `expected status 200, got 401`.
+
+`authorization.ts` ships `noCredential`, a seam that returns null by construction because minting a credential is
+SEC-4 and TEN-6 and both are owed. Every gated route therefore answers 401, and that is deliberate and recorded.
+So an orchestrator built today boots a server, runs two tools against it, and is red on every run forever.
+
+**The artifact was buildable; the green run was not, and a trigger that cannot distinguish those two is worse than
+no trigger.** A red gate does not sit there being honest. It gets skipped, then disabled, then deleted, and the
+edition ends up with a job-shaped hole where a job used to be. E-39 is the same repository learning that a CI
+exclusion outlives its argument; this is the inverse and cheaper to prevent: **an `owed` obligation whose trigger
+claims buildability owes a statement of what would be GREEN, not of what would exist.**
+
+Three separate things block it, and only the third is what the work list assumed:
+
+1. the credential mint (SEC-4, TEN-6), which is not persistence work and is buildable independently
+2. contract shape: the client sends `DELETE /notes/:id` and this server has no delete route at all
+3. a store worth driving end to end, which is G
+
+Ordering consequence, recorded because the ordering was wrong and not merely incomplete: E-80 sits DOWNSTREAM of
+the mint and of G, not upstream of them. It is the last item of that group, not the first.
+
+### E-85. A declaration and an emission are two different objects here, and the guard that reads one cannot see them disagree
+
+**Claim:** CON-2. **Found:** 2026-07-27. **Measured at 5dedb47.** **Structural, and the sibling does not have it.**
+
+The producer-side parity scan built this round reads each route's declared schema and pins its field set to the
+shared fixture. That is what CON-2 asks for and it binds: renaming `items` to `notes` in `NOTE_LIST_RESPONSE`
+turns exactly one test red with the right message, and nothing else in the suite notices.
+
+It is also only half the property, and the missing half was measured with a control. Leaving the schema declaring
+`items` and changing the handler's one line to `return { notes: items, nextCursor }`:
+
+    the parity scan       GREEN. It reads the declaration, and the declaration is still correct.
+    tsc, eslint           clean.
+    what the server sent  {"nextCursor":null}. The list is GONE from the wire.
+
+Fastify's response serializer emits only what the schema names, so a handler that disagrees with its own
+declaration does not produce a wrong field, it produces a missing one, silently, on a route whose contract every
+gate says is correct.
+
+**The sibling edition cannot have this defect, and not through diligence.** Its handler returns the typed record
+that IS the contract, so declaration and emission are one object and there is nothing to disagree. Here they are a
+value beside a function. This is E-79's finding running the other way: node's route table is passable to a pure
+predicate and dotnet's is not, and dotnet's contract is a type where node's is data. **Neither edition is simply
+stronger; each is structurally blind where the other is structurally safe, and the conformance rows for one claim
+in two editions can be honestly different for reasons no amount of care would change.**
+
+Closed here by five request-level tests that assert what the server EMITS against the same fixture. They are also
+the first tests in this edition ever to pass a credential: `CreateAppSeams.authenticate` has existed since the
+composition root was written, every test took the default, and the whole authenticated path (`satisfies`, the 403
+for an insufficient credential, `request.credential`) was code nothing had run.
+
+### E-86. The exemplar store's two costs, both of which arrive with the first delete route
+
+**Claims:** CON-1, TEST-1. **Found:** 2026-07-27. **Measured at 5dedb47.** **No live instance; both are armed.**
+
+`routes/notes.ts` holds a module-level `Map` and the module is loaded once per test process, so it is shared by
+every test in the run. Two consequences, found by writing tests against it rather than by reading it:
+
+**Cross-test accumulation.** A paging test that created three notes and asserted two pages failed on the fourth
+note, because earlier tests in the same file had already created some. The failure reads as a paging bug and is
+not one. Rewritten to compare the cursor walk against the unpaged read, which is independent of what else ran and
+is the stronger assertion anyway; recorded because the next person to write a test here will hit it, and because
+the honest fix is a store with a lifetime, which is G.
+
+**`String(notes.size + 1)` collides after any delete.** E-83 recorded this as a dense sequential counter and
+scored it against CON-1's opacity clause, which is correct and is not the sharp end. Delete note 2 of 3 and the
+size is 2, so the next create mints id 3, which already exists, and `notes.set` overwrites a live note with no
+error anywhere. There is no delete route today, so nothing is broken. **The client's `NotesRepo.remove` and the
+harness's `delete-note` scenario both already exist and both already call it**, which means the id generator is
+unsound the moment E-84's second blocker is closed. Whoever adds `DELETE /notes/:id` has to replace the generator
+in the same change, not after it.
+
+### E-87. An obligation whose status is right and whose reason is false, and why five audit passes could not see it
+
+**Claim:** TEST-2. **Found:** 2026-07-27. **Measured at 5dedb47.** **Repaired here.**
+
+Node's TEST-2 carried this obligation:
+
+    the floor is complete: every public method of every client data service has a scenario
+    status: owed
+    text:   unbuilt. The scenario list is hand-written, so a repository method added tomorrow is
+            untested by the harness and nothing reports it.
+
+The mechanism it calls unbuilt is in the file the same row's `mechanism` field points at. `main.ts` enumerates
+`Object.getOwnPropertyNames(NotesRepo.prototype)`, wraps every method to record what actually ran, diffs the two
+sets and emits `service-method-coverage` as its own scenario line that fails the run. That is the claim's own
+sentence, nearly word for word: "the harness self-audits (it enumerates the service methods, diffs them against
+what actually ran, and fails on an uncovered method)". It was watched doing it, reporting
+`uncovered service methods: list, get, remove`.
+
+**`owed` is nonetheless the right status**, and that is the whole finding. The sibling's row says so for the real
+reason: the audit reads one class's prototype, so a second data service is invisible and a class-field arrow
+method never enters the diffed set (E-67). Same shared file, same limitation, and node's row named a different,
+false defect instead.
+
+The two failure modes this repository hunts are a row that OVERSTATES and a row that UNDERSTATES, and both are
+detected by comparing a status against a mechanism. This row's status matches its mechanism. What does not match
+is its stated reason, and no status-level audit can see that: F1 through F5 re-measured 49 triggers and 19
+understating rows by asking "does the status describe the mechanism", which this row passes.
+
+**A false reason costs what a false status costs.** Someone acting on this row builds a completeness audit that
+already exists, and does not build the enumeration fix that is actually owed. The trigger pointed at the wrong
+work, which is E-83's defect relocated from the trigger to the text beside it.
+
+Repaired here, both halves. Recorded as a gap in the audit protocol rather than as one bad row: **an obligation
+audit has to read the text against the mechanism, not only the status against the mechanism**, and the other rows
+lifted in F1 through F5 have not been checked that way.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

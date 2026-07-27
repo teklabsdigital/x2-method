@@ -408,18 +408,33 @@
     "CON-2": {
       "title": "Contract parity fixture",
       "status": "owed",
-      "mechanism": "`client-web/src/data/__fixtures__/note-contract.fixture.json` is the shared property-name fixture; `noteContract.test.ts` asserts the client's `CreateNote`, `Note` and `NoteList` types against it",
-      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F4). Lifted out of a bare `trigger:` line. The trigger, `the first hand-mirrored contract`, HAS fired: the client hand-mirrors the server's shapes and the fixture and its consumer test both exist and run. What is missing is the other side. The fixture's own comment says it is `the same fixture the server's ContractParityTests links to`, and that test is the SIBLING's; nothing in this edition's `server/src` reads the fixture at all. A parity fixture read by one side is not parity, it is a second copy of the client's own beliefs, and it will agree with itself forever. Findings: E-82.",
+      "mechanism": "`client-web/src/data/__fixtures__/note-contract.fixture.json` is the one physical fixture; `noteContract.test.ts` asserts the client's `CreateNote`, `Note` and `NoteList` types against it, and `server/src/architecture/contractParity.ts` plus its test assert the server's declared route schemas and its emitted responses against the same file",
+      "note": "Producer half built 2026-07-27. E-82 recorded that nothing in `server/src` read the fixture, so the client was asserting against a second copy of its own beliefs; asking the server was the whole of the work and the answer was a live violation. `GET /notes` declared NO response schema at all and returned `{notes: [...]}` while the fixture and the client both say `{items, nextCursor}`, so the drift was not merely undetected, it was unreadable: a route that declares no response shape has nothing for a fixture to pin. Repaired in the same pass, with `cursor` added to the query schema because `removeAdditional` had been silently stripping the one the client sends, so every paged read answered page one. Findings: E-82, E-85, E-86.",
       "obligations": [
+        {
+          "name": "exactly one corpus, physically one file",
+          "status": "proven",
+          "text": "One fixture file inside the edition, read by the client test natively and by the server test through a relative path derived from `import.meta.dirname`. No copy exists inside the edition, so the claim's primary mechanism class holds here and the sanctioned materializer alternative is not needed: the precondition (both consumers under one root that travels together) is satisfied, because a seeded project's root holds both. Planted 2026-07-27 at 5dedb47 by removing the fixture: the server test file fails to load with ENOENT, so the read cannot go vacuous. Between EDITIONS the file is shared-tier and `compose.mjs --check` is the drift check, which is the alternative and is a different question from this one."
+        },
         {
           "name": "the consumer side asserts its types against the committed fixture",
           "status": "proven",
           "text": "`noteContract.test.ts` reads the fixture off disk and checks every property name of the three client contract types against it, so a rename on the client fails the client build."
         },
         {
-          "name": "the producer side asserts its contracts against the same fixture",
+          "name": "the producer side asserts its declared contracts against the same fixture",
+          "status": "patterned",
+          "text": "`contractParityFindings` is a pure function over the fixture and the composed route table, so eleven refusal tests assert that a defect is REPORTED rather than that the shipped tree is clean (the E-79 shape). Planted 2026-07-27 at 5dedb47: renaming `items` to `notes` in the list response turns exactly one test red naming both field sets, and nothing else in the suite notices. Every contract in the fixture must be bound by some route, so a corpus entry the server never answers for is red; that is half of what the sibling's equivalent obligation records as owed under E-60, and it flows back. Per-seam and not proven, measured the same day: because `noteResponse` is bound by two routes, DELETING the binding from `GET /notes/:noteId` leaves all 172 tests green, so a route can stop being pinned without anything reporting it. Trigger for the last of it: a rule deciding which response schemas MUST carry a binding, which needs a way to say that `/health` and the 404 shape are not hand-mirrored contracts."
+        },
+        {
+          "name": "what the server emits matches what it declares",
+          "status": "patterned",
+          "text": "Five request-level tests drive the composed app through `CreateAppSeams.authenticate` and assert the emitted field sets against the same fixture, plus the cursor walk's totality and the 403 for an insufficient credential. Built because the scan above pins the declaration only, and here a declaration and an emission are two objects: planted 2026-07-27 at 5dedb47, changing the handler's `return { items, nextCursor }` to `return { notes: items, nextCursor }` left the parity scan, tsc and eslint all clean while the server sent `{\"nextCursor\":null}` with the list gone from the wire (E-85). Per-seam: each new route carrying a mirrored contract owes its own emission test. The sibling has no equivalent obligation and does not need one, because its handler returns the typed record the contract IS."
+        },
+        {
+          "name": "every hand-mirrored contract is pinned by the corpus",
           "status": "owed",
-          "text": "unbuilt, and this is the missing server half F4 exists to find. Node's route schemas are declared inline in `src/routes/notes.ts` and nothing compares them with the fixture, so a rename on the SERVER passes every gate in this edition while the client keeps asserting the old name against a fixture the server no longer matches (E-82). Trigger: a server-side test reading the same fixture, which is buildable today because the schemas are values on the routes."
+          "text": "The fixture-to-route direction binds (a corpus entry nothing answers for is reported), and the route-to-fixture direction does not: a fourth hand-mirrored contract added to both sides and never written into the fixture is invisible to every test in both trees, because a register cannot report what was never written into it. Trigger: a rule that decides membership of `hand-mirrored contract` from the code rather than from the register, which is the same trigger the sibling's row carries and is unbuilt in both editions."
         }
       ]
     },
@@ -761,22 +776,22 @@
       "title": "E2E harness",
       "status": "owed",
       "mechanism": "`client-web/tools/harness/main.ts` drives the real `src/data/notesRepo.ts` and `src/api/client.ts` against a running server and emits NDJSON; `tools/smoke/composedApp.smoke.ts` boots the composed entrypoint against the same server; `redact.ts` scrubs the output",
-      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3). The row said `trigger: the first client data service` and that trigger HAS FIRED: `client-web/src/data/notesRepo.ts` exists and the harness already drives it. What is missing is not the harness, it is a RUNNER. This edition has no e2e orchestrator (the sibling has `scripts/e2e.sh`) and its `ci.yml` has four jobs, none of which invokes the harness or the smoke. So the mechanism is shipped, wired as npm scripts, and started by nothing. Findings: E-80.",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F3), obligations 1 and 2 corrected the same day after the harness was RUN rather than read (E-84, E-87). The row said `trigger: the first client data service` and that trigger HAS FIRED: `client-web/src/data/notesRepo.ts` exists and the harness already drives it. What is missing is not the harness, it is a RUNNER. This edition has no e2e orchestrator (the sibling has `scripts/e2e.sh`) and its `ci.yml` has four jobs, none of which invokes the harness or the smoke. So the mechanism is shipped, wired as npm scripts, and started by nothing. Findings: E-80, E-84, E-87.",
       "obligations": [
         {
           "name": "an out-of-process harness drives the real, unmodified client service layer",
           "status": "latent",
-          "text": "The harness exists and imports the real repository and client modules rather than reimplementing them. It is `latent` and not `proven` here because nothing in this edition starts it: no orchestrator script boots a server for it and no CI job runs it, so it has never been executed against a running server in this tree (E-80)."
+          "text": "The harness exists and imports the real repository and client modules rather than reimplementing them. `latent` here means built and started by nothing: no orchestrator boots a server for it and no CI job runs it, so nothing re-runs it and any regression merges. It HAS now been executed once by hand, 2026-07-27 at 5dedb47, which is a measurement and not something the loop does: 1 of 7 scenarios green, the other six failing 401 because the credential mint is owed (SEC-4, TEN-6) and every gated route answers 401 by construction. The previous text said it had never been executed against a running server in this tree, and that is what running it corrected (E-84)."
         },
         {
           "name": "the floor is complete: every public method of every client data service has a scenario",
           "status": "owed",
-          "text": "unbuilt. The scenario list is hand-written, so a repository method added tomorrow is untested by the harness and nothing reports it. Trigger: a completeness assertion comparing the scenario set against the exported surface of the data services."
+          "text": "The previous text read `unbuilt. The scenario list is hand-written`, and that was false about a file this edition ships: `main.ts` enumerates `Object.getOwnPropertyNames(NotesRepo.prototype)`, wraps every method to record what actually ran, and emits `service-method-coverage` as its own failing scenario line. It was watched doing exactly that on 2026-07-27, reporting `uncovered service methods: list, get, remove`. The status was right and the reason was wrong, which is E-87. Still `owed`, for the reason the sibling's row already carried and this one did not: the audit reads ONE class's prototype, so a second data service is invisible and a method declared as a class-field arrow function never enters the diffed set (E-67). Trigger: enumerate the class exports under `src/data/` rather than naming one, and enumerate instance members as well as prototype members."
         },
         {
           "name": "the deterministic tier runs in CI",
           "status": "owed",
-          "text": "unbuilt. `ci.yml` runs the server suite, the client suite, docs-lint and secret-scan. It contains no harness or smoke step at all, so the e2e tier is not in the loop (E-80). Trigger: an e2e job, which needs the orchestrator the first obligation also needs."
+          "text": "unbuilt. `ci.yml` runs the server suite, the client suite, docs-lint and secret-scan. It contains no harness or smoke step at all, so the e2e tier is not in the loop (E-80). Restated so it names a run that could pass rather than an artifact that could exist (E-84). trigger: a harness run that can be GREEN, which needs the credential mint (SEC-4, TEN-6) so the gated routes stop answering 401, and `DELETE /notes/:id`, which the client's `NotesRepo.remove` and the harness's `delete-note` scenario both already call and this server does not serve. Adding the job before those exists is a gate that is red on every run, and a red gate gets disabled rather than fixed."
         },
         {
           "name": "harness output redacts secrets",

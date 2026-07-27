@@ -744,3 +744,88 @@ is built and is an npm script, and nothing in this edition starts it.
 ### Gates
 
 Client 65, server 154, lint clean, docs-lint ok, conformance ok at 69 rows. All plants reverted, no source diff.
+
+## 2026-07-27, CON-2's producer half, and what asking the server for the first time returned
+
+Measured at `5dedb47`, tree clean before and after every plant. Server suite 154 before, 172 after.
+
+E-82 recorded that this edition's `server/src` did not read the contract fixture at all, so parity was a
+statement about the client agreeing with itself. Its trigger, a server-side test reading the same fixture, was
+correct and had fired. Building it was the work. What it returned was not a clean pass.
+
+### The live violation, and what actually hid it
+
+`GET /notes` served `{notes: [...]}` while the fixture and the client's `NoteList` both say `{items, nextCursor}`.
+That much was a rename. The reason nothing could have caught it is the part worth keeping: **the route declared no
+`response` schema at all**, so there was no declaration for a fixture to be compared with. The first run of the
+new guard did not report drift, it reported
+
+    GET /notes: config.contracts.200 claims to realize 'noteListResponse' but the route declares
+    no schema at that surface, so there is nothing for the fixture to pin (CON-2).
+
+A missing declaration and a wrong declaration read the same from the outside, and only one of them is visible to a
+comparison. Repaired: the list response is declared, and `cursor` is declared on the query surface because it was
+absent, and absent is not rejected here. `removeAdditional` had been STRIPPING the cursor the client sends, so
+every paged read the client ever issued silently answered page one.
+
+### Where the bindings live, and why not in the test
+
+A route declares which fixture contract each of its surfaces realizes, in `config`, beside its policy. A map
+inside the scan would have been a third copy of the same beliefs maintained by whoever remembers the scan exists,
+and the route author is the one who knows. `config` already travels on every route table entry by reference, so
+the binding rides the same enumeration every other claim guard in this edition stands on.
+
+### Four plants, each scored
+
+| plant | outcome |
+|---|---|
+| remove the fixture file | red-correct. The test file fails to load with ENOENT, so the producer-side read cannot go vacuous. |
+| rename `items` to `notes` in the declared list response | red-correct. Exactly one test, message naming both field sets, `Missing: items. Unpinned: notes.` Nothing else in the suite noticed. |
+| leave the declaration and change the handler to `return { notes: items, nextCursor }` | **scan GREEN, tsc and eslint clean, and the server sent `{"nextCursor":null}` with the list gone from the wire.** E-85. |
+| delete one route's binding, leaving `noteResponse` bound by the other route | **green, all 172.** A route can stop being pinned with nothing reporting it, which is why the producer obligation is `patterned` and not `proven`. |
+
+The third is the one that changed the row's shape. A declaration and an emission are two objects in this stack,
+and the response serializer emits only what the schema names, so a handler that contradicts its own declaration
+produces a MISSING field rather than a wrong one. The sibling cannot have this defect: its handler returns the
+typed record the contract is. Closed here with five request-level tests, which are also the first tests in this
+edition ever to pass a credential. `CreateAppSeams.authenticate` has existed since the composition root was
+written, every test took the default, and the entire authenticated path had never run.
+
+The fourth is the one that stopped an overstatement. Without it the producer obligation would have read `proven`
+on the strength of the second plant.
+
+### The row did not move, and that is the answer
+
+CON-2 stays `owed`, because a row is its weakest obligation and `every hand-mirrored contract is pinned by the
+corpus` is unbuilt in BOTH editions: the register cannot report a contract that was never written into it. Three
+obligations gained mechanism and two of them are proven. **Non-owed counts are unchanged at 8, and the honest
+reading of this round is in the obligations, not in the count.**
+
+Half of the sibling's equivalent owed obligation did close here and flows back: a fixture entry that no route
+binds is now red, where E-60 measured that adding a fixture key nothing consumes was green on both sides.
+
+### Two facts measured before the work, which reordered what comes next
+
+The harness and the smoke were run against the composed server rather than read. Harness: 1 of 7 scenarios green.
+Smoke: red on the first list call. Every gated route answers 401 by construction, because the credential mint is
+owed. So E-80's orchestrator would be red on every run forever, and E-84 records that its trigger described an
+artifact that could exist rather than a run that could pass.
+
+### One row corrected on the way past, and it is a new kind
+
+Running the harness meant reading TEST-2's row, and its second obligation said `unbuilt. The scenario list is
+hand-written`. The mechanism it calls unbuilt is in the file the same row's `mechanism` field points at: `main.ts`
+enumerates the repository prototype, wraps every method, diffs the sets and emits `service-method-coverage` as a
+failing scenario line. It was watched doing it.
+
+`owed` is still the right status, for the reason the sibling's row gives and this one did not: the audit reads one
+class's prototype, so a second data service is invisible (E-67). **The status was right and the reason was false.**
+That is a defect no status-level audit can see, and F1 through F5 were status-level audits: they asked whether the
+status describes the mechanism, and this row passes that question. Recorded as E-87, with the protocol gap named,
+because the other rows lifted in those passes have not been read the same way.
+
+### Gates
+
+Server 172, client 65, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, docs-lint `--self-test`
+28 caught / 27 ignored, `compose --check` ok at 39 shared files. All plants restored byte-for-byte, verified by
+hash, and every backup deleted in this round (E-59).
