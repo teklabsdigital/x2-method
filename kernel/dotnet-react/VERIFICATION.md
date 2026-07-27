@@ -1504,3 +1504,55 @@ needs a carve-out register with a justification field, which is a decision, not 
 
 Architecture 200, unit 58, integration 4 skipped, conformance ok at 69 rows, docs-lint ok, gate-check self-test
 6 caught 7 ignored, secret-scan self-test 11 caught 13 ignored. Non-owed dotnet rows 17 to 18.
+
+## 2026-07-27, section D part 3: DEP-1's three buildable obligations, and two guards that caught their author
+
+DEP-1 carried four `owed` obligations. Three were buildable and are built; the fourth needs a registry lookup this
+tool does not make and stays `owed`, which keeps the ROW at `owed` under the weakest-obligation rule even though
+three obligations moved to `proven`. Baseline: **1e3f274**, docs-lint self-test 14 caught / 11 ignored.
+
+| obligation | plant | outcome |
+|------------|-------|---------|
+| one image value across every surface | change the digest in `db-up.sh` and nowhere else | red-correct: names the repository, both values, the four surfaces holding one and the one holding the other |
+| a transitive pin carries its own ledger row | move the shared tier's `postcss` override off its ledgered version | red-correct by name and version |
+| the window number lives in exactly one place | a second number in `BUILD-BRIEF.md` | red-correct |
+
+All three reverted with `cp`, re-composed, `git diff` empty over the three files.
+
+The image-agreement check is `proven` rather than `patterned` for a specific reason: it holds no registry and
+needs no entry per surface. It compares whatever it finds against whatever else it finds, so a sixth surface is
+covered the day somebody writes it. The ledger's own row is in the comparison, reconstructed from its two cells,
+because the row keeps repo:tag and the digest in separate columns and the reference regex alone would read the
+ledger as disagreeing with every pinned copy in the tree by construction.
+
+### Both new guards caught a live defect on their first real run, and the self-test could not have
+
+**node-react's VERSIONS.md asserted two different windows.** Its header declares the current number and a
+paragraph below named the superseded one as a live window. True as history, wrong as a rule, in the file whose own
+header claims to be the one place the number lives. The check does not ban restating the number, which would
+falsify dated records; it makes restating it unable to drift. Repaired by citing rather than restating.
+
+**The E-38 image widening read English as container images.** A Dockerfile `FROM` line is the unambiguous place
+to recognise Docker Hub shorthand, and the first version was not gated on the file being a Dockerfile:
+
+    VERIFICATION.md: container image 'reflection' floats; pin an exact tag plus digest
+    VERIFICATION.md: container image 'the' floats; pin an exact tag plus digest
+
+Two sentences beginning a line with the word "from". The self-test passed before and after, 22 caught and 17
+ignored, because **every case in it was a Dockerfile line**. A control set drawn from the shape you are trying to
+catch cannot report what else you caught. This is the false-positive twin of E-30, and the prose case is a control
+now (E-76).
+
+### And then the window check failed its own author, twice
+
+This round's conformance note described the defect by quoting it, which made the note a second statement of the
+superseded number, and docs-lint refused it. Reworded to name the window without restating it, the same quotation
+survived in an obligation text, and it refused that too. Then this section described the first two refusals by
+quoting the offending phrase a third time, and it refused that. The check that a number lives in one place is a
+check on the record-keeper as much as on the record, and prose about a defect is not exempt from being the defect.
+
+### Gates
+
+Both docs-lints ok, both conformance records ok at 69 rows, both self-tests 22 caught / 18 ignored (from 14 / 11),
+compose 78 files / 2 editions, architecture 200, unit 58. Non-owed rows unchanged at 18: DEP-1's publish-date
+obligation is genuinely unbuilt, so the row does not move and should not.

@@ -181,10 +181,38 @@ export function bypassLedgerFindings(text) {
   return out;
 }
 
+/// A `FROM` line in a Dockerfile, whatever the registry host. This is the E-38 closure and it is deliberately
+/// narrow: the four-host allowlist above cannot see Docker Hub shorthand (`node:22-alpine`), which is the
+/// obligation's own stated violation shape, and widening the allowlist to bare `name:tag` would match every
+/// `key: value` in the tree.
+///
+/// It is gated on the file being a Dockerfile, and that gate was added because the first version was not. Run
+/// against the real tree, an ungated pattern reported `container image 'reflection' floats` and `container image
+/// 'the' floats`, from two English sentences in VERIFICATION.md that happen to begin a line with the word "from".
+/// The self-test passed both before and after, because every case in it was a Dockerfile line: a control set
+/// drawn only from the shape you are trying to catch cannot tell you what else you caught.
+const dockerFrom = /^\s*FROM\s+(?:--\S+\s+)*(\S+)/gim;
+const isDockerfile = (rel) => {
+  const name = rel.split('/').pop();
+  return name === 'Dockerfile' || name.startsWith('Dockerfile.');
+};
+
 export function imageFindings(rel, text, hasLedgerRow) {
   const out = [];
-  for (const match of text.matchAll(imageRef)) {
-    const ref = match[0];
+  const refs = [...text.matchAll(imageRef)].map((match) => match[0]);
+
+  // A Dockerfile's FROM lines, added to whatever the host allowlist already found. Deduplicated, because an
+  // `mcr.microsoft.com` image on a FROM line matches both patterns and one defect is one message.
+  if (isDockerfile(rel)) {
+    for (const match of text.matchAll(dockerFrom)) {
+      const ref = match[1];
+      if (!refs.includes(ref) && ref.toLowerCase() !== 'scratch') {
+        refs.push(ref);
+      }
+    }
+  }
+
+  for (const ref of refs) {
     const digestSplit = ref.split('@sha256:');
     const repoAndTag = digestSplit[0];
     const hasDigest = digestSplit.length === 2;
@@ -198,6 +226,70 @@ export function imageFindings(rel, text, hasLedgerRow) {
     }
     if (!hasLedgerRow(repoAndTag.toLowerCase())) {
       out.push(`VERSIONS.md: no ledger row for container image '${repoAndTag}' (DEP-1 / INV-05).`);
+    }
+  }
+  return out;
+}
+
+/// DEP-1: one image value across every surface naming an image.
+///
+/// The per-file check above asks whether each reference is pinned and ledgered. It cannot ask the question this
+/// obligation is about, because that question is not about any one file: five surfaces name the SQL Server image
+/// in this edition (the ledger row, the Testcontainers fixture, the runbook, `db-up.sh` and the CI workflow), and
+/// every one of them was individually pinned, individually ledgered, and individually green while nothing
+/// compared them to each other (E-37, E-64). Bumping the engine in four places and missing the fifth produces
+/// three tiers running two different builds, with the whole DEP-1 mechanism reporting success.
+///
+/// Keyed by repository, so two tags of one repository are a disagreement and need an argued exemption. That is
+/// the direction the obligation's own trigger names, and the strict one: a build image and a runtime image from
+/// the same repository is a real pattern, and it is rare enough to be worth stating out loud when it happens.
+export function imageAgreementFindings(sightings) {
+  const byRepo = new Map();
+
+  for (const { rel, ref } of sightings) {
+    const repo = ref.split('@')[0].split(':')[0];
+    const values = byRepo.get(repo) ?? new Map();
+    values.set(ref, [...(values.get(ref) ?? []), rel]);
+    byRepo.set(repo, values);
+  }
+
+  const out = [];
+  for (const [repo, values] of byRepo) {
+    if (values.size > 1) {
+      const detail = [...values]
+        .map(([ref, files]) => `'${ref}' in ${[...new Set(files)].sort().join(', ')}`)
+        .sort()
+        .join('; ');
+      out.push(`container image '${repo}' is named with ${values.size} different values across the tree: ${detail}. One image value across every surface (DEP-1 / INV-05).`);
+    }
+  }
+  return out;
+}
+
+/// DEP-1: the cooling-off window number lives in exactly one place.
+///
+/// The number was asserted independently in six files and read by none of them (E-37), so cutting the window
+/// would have left five stale statements of the old number, each reading as current. The check does not ban
+/// restating it, which would falsify dated historical records that legitimately name the window in force at the
+/// time; it makes restating it unable to DRIFT. A cut to the window turns every restatement red, and whoever
+/// makes the cut then decides site by site whether each one is history to be reworded or a live rule to be
+/// corrected. That decision is the point.
+const WINDOW_ASSERTION = /(\d+)[\s-]day(?:\s+cooling[\s-]off)?\s+window|cooling[\s-]off\s+window\s+is\s+(\d+)\s*days?/gi;
+
+export function declaredWindow(versionsText) {
+  const match = /cooling[\s-]off\s+window\s+is\s+(\d+)\s*days?/i.exec(versionsText);
+  return match ? Number(match[1]) : null;
+}
+
+export function windowFindings(rel, text, declared) {
+  const out = [];
+  if (declared === null) {
+    return out;
+  }
+  for (const match of text.matchAll(WINDOW_ASSERTION)) {
+    const stated = Number(match[1] ?? match[2]);
+    if (stated !== declared) {
+      out.push(`${rel}: states a ${stated}-day cooling-off window; the VERSIONS.md header declares ${declared}. The number lives in that header and every other mention agrees with it or cites it (DEP-1).`);
     }
   }
   return out;
@@ -224,6 +316,31 @@ const CATCH = [
   ['an image with no tag at all', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server', () => true)],
   ['a tagged image with no digest', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server:2022-CU12', () => true)],
   ['a pinned image with no ledger row', () => imageFindings('x.sh', `mcr.microsoft.com/mssql/server:2022-CU12${SELF_TEST_DIGEST}`, () => false)],
+  // E-38's first half, closed. This case was an IGNORE marked KNOWN GAP until 2026-07-27; moving it here is the
+  // argument the register exists to force, and the argument is that a FROM line is unambiguous where a bare
+  // `name:tag` anywhere in the tree is not.
+  ['Docker Hub shorthand on a Dockerfile FROM line', () => imageFindings('Dockerfile', 'FROM node:22-alpine\n', () => true)],
+  ['a FROM line with no tag at all', () => imageFindings('Dockerfile', 'FROM node\n', () => true)],
+  ['a multi-stage FROM with a build alias', () => imageFindings('Dockerfile', 'FROM --platform=$BUILDPLATFORM node:22-alpine AS build\n', () => true)],
+  // DEP-1: one image value across every surface.
+  ['the same repository pinned to two different digests',
+    () => imageAgreementFindings([
+      { rel: 'db-up.sh', ref: `mcr.microsoft.com/mssql/server:2022-CU14${SELF_TEST_DIGEST}` },
+      { rel: 'ci.yml', ref: `mcr.microsoft.com/mssql/server:2022-CU14@sha256:${'b'.repeat(64)}` },
+    ])],
+  ['the same repository pinned to two different tags',
+    () => imageAgreementFindings([
+      { rel: 'db-up.sh', ref: `mcr.microsoft.com/mssql/server:2022-CU14${SELF_TEST_DIGEST}` },
+      { rel: 'VERSIONS.md', ref: `mcr.microsoft.com/mssql/server:2022-CU15${SELF_TEST_DIGEST}` },
+    ])],
+  ['a surface naming the image without the digest the ledger records',
+    () => imageAgreementFindings([
+      { rel: 'runbook.md', ref: 'mcr.microsoft.com/mssql/server:2022-CU14' },
+      { rel: 'VERSIONS.md', ref: `mcr.microsoft.com/mssql/server:2022-CU14${SELF_TEST_DIGEST}` },
+    ])],
+  // DEP-1: the cooling-off window number lives in exactly one place.
+  ['a document restating a window the header does not declare', () => windowFindings('BUILD-BRIEF.md', 'all satisfy the 90-day window as of 2026-07-10', 30)],
+  ['the long-hand form of the same drift', () => windowFindings('README.md', 'the cooling-off window is 14 days', 30)],
 ];
 const IGNORE = [
   ['a legal root markdown file', () => docLifecycleFindings('README.md', '# anything\n')],
@@ -239,8 +356,26 @@ const IGNORE = [
     () => bypassLedgerFindings('| Path | Owner | Justification | Test |\n|--|--|--|--|\n| /billing | @a | invoicing | |\n')],
   ['KNOWN GAP (E-35): a row is a line starting with a pipe, so a reformatted ledger has no rows at all',
     () => bypassLedgerFindings('- Path: /billing\n- Justification: invoicing\n- Test: none\n')],
-  ['KNOWN GAP (E-38): the host allowlist has four entries, so Docker Hub shorthand is invisible',
-    () => imageFindings('Dockerfile.md', 'FROM node:22-alpine', () => false)],
+  ['a scratch base, which names no image to pin', () => imageFindings('Dockerfile', 'FROM scratch\n', () => false)],
+  // The false positive the real tree found and this control set did not. Every Dockerfile case above is a line
+  // shaped like the thing being caught, so none of them could report that ordinary English beginning a line with
+  // "from" was being read as a base image. It is a control now.
+  ['prose beginning a line with the word from', () => imageFindings('VERIFICATION.md', 'measured\nfrom reflection, not from the record\n', () => false)],
+  ['one repository named identically on five surfaces',
+    () => imageAgreementFindings(['VERSIONS.md', 'db-up.sh', 'ci.yml', 'runbook.md', 'SqlServerFixture.cs']
+      .map((rel) => ({ rel, ref: `mcr.microsoft.com/mssql/server:2022-CU14${SELF_TEST_DIGEST}` })))],
+  ['two different repositories, which are two different dependencies',
+    () => imageAgreementFindings([
+      { rel: 'ci.yml', ref: `mcr.microsoft.com/mssql/server:2022-CU14${SELF_TEST_DIGEST}` },
+      { rel: 'ci.yml', ref: `ghcr.io/some/other:1.2.3${SELF_TEST_DIGEST}` },
+    ])],
+  ['a document restating the window the header declares', () => windowFindings('BUILD-BRIEF.md', 'all satisfy the 30-day window as of 2026-07-10', 30)],
+  ['a vendored component naming its own internal window, which is not this one',
+    () => windowFindings('VERSIONS.md', 'the teklabs engine uses 15 for its own development', 30)],
+  ['no VERSIONS.md header to compare against, which is reported once rather than at every mention',
+    () => windowFindings('BUILD-BRIEF.md', 'the 90-day window', null)],
+  ['KNOWN GAP (E-38): a bare `name:tag` outside a Dockerfile FROM line is still invisible',
+    () => imageFindings('compose.yml', '  image: node:22-alpine\n', () => false)],
 ];
 
 if (invokedDirectly && selfTest) {
@@ -326,12 +461,23 @@ const READERS = {
       name: /\bInclude="([^"]*)"/.exec(m[0])?.[1],
       version: /\bVersion="([^"]*)"/.exec(m[0])?.[1],
     })),
-  // npm manifest: runtime and development dependencies are both direct.
+  // npm manifest: runtime and development dependencies are both direct, and so are overrides.
+  //
+  // Overrides are here because of what DEP-1's advisory rule made them. The rule says a pin taken because an
+  // advisory outranks the window carries its own ledger row "whether the dependency is direct or transitive",
+  // and the way a transitive pin is taken in npm is an `overrides` entry. VERSIONS.md has an advisory-rule
+  // section, `ledgerPins` parsed it, and nothing ever queried it, because an override reached the tree through
+  // no dependency surface (E-37). An override is the most deliberate pin in the file: it overrules what a
+  // dependency asked for, which is exactly the act that needs a dated row.
   'npm-package-json': (text) => {
     const pkg = JSON.parse(text);
-    return [...Object.entries(pkg.dependencies ?? {}), ...Object.entries(pkg.devDependencies ?? {})].map(
-      ([name, version]) => ({ name, version }),
-    );
+    const flat = [...Object.entries(pkg.dependencies ?? {}), ...Object.entries(pkg.devDependencies ?? {})];
+    // npm allows a nested form (`{"vite": {"postcss": "8.5.18"}}`) scoping an override to one parent, so the
+    // walk is recursive and the LEAF names the package being pinned.
+    const overrides = (node) =>
+      Object.entries(node ?? {}).flatMap(([name, spec]) =>
+        typeof spec === 'string' ? [[name, spec]] : overrides(spec));
+    return [...flat, ...overrides(pkg.overrides)].map(([name, version]) => ({ name, version }));
   },
   // dotnet local tools are a real direct-dependency surface (dotnet-ef lives here).
   'dotnet-tools': (text) =>
@@ -462,11 +608,53 @@ if (edition) {
 // pinned tag-plus-digest form (the tag documents, the digest pins) and must have a VERSIONS.md row keyed by
 // repo:tag. A floating tag (:latest or tagless) fails outright: three tiers reach the engine, and a float means
 // they may not run the same build. VERSIONS.md itself and this tool are excluded (the ledger names the image).
+const imageSightings = [];
 for (const { file, rel } of allFiles) {
-  if (!IMAGE_SCAN_EXTENSIONS.some((ext) => rel.endsWith(ext)) || rel === 'VERSIONS.md' || rel === 'tools/docs-lint.mjs') {
+  const name = rel.split('/').pop();
+  // Extensionless `Dockerfile` and `Dockerfile.debug` matched no extension pattern, which is the second half of
+  // E-38: the tool could not read the one file type whose entire purpose is naming a base image.
+  const scanned = IMAGE_SCAN_EXTENSIONS.some((ext) => rel.endsWith(ext)) || name === 'Dockerfile' || name.startsWith('Dockerfile.');
+  if (!scanned || rel === 'tools/docs-lint.mjs') {
     continue;
   }
-  for (const message of imageFindings(rel, readFileSync(file, 'utf8'), (key) => ledgerNames.has(key))) {
+  const text = readFileSync(file, 'utf8');
+  if (rel !== 'VERSIONS.md') {
+    for (const message of imageFindings(rel, text, (key) => ledgerNames.has(key))) {
+      fail(message);
+    }
+    for (const match of text.matchAll(imageRef)) {
+      imageSightings.push({ rel, ref: match[0] });
+    }
+  }
+}
+
+// The ledger's own row is a surface naming the image, and it is the surface most worth comparing: it carries the
+// digest every other surface is supposed to match. It is read from the table rather than by the reference regex
+// because the row keeps repo:tag and the digest in SEPARATE cells, so the regex alone reads the ledger as naming
+// a different value from every pinned copy in the tree and every surface disagrees with the ledger by
+// construction. Reconstructing the pinned form from the two cells is what makes ledger-versus-code drift visible.
+const wholeImageRef = new RegExp(`^${imageRef.source}$`);
+for (const line of versions.split('\n')) {
+  const cells = line.trim().startsWith('|') ? line.split('|').slice(1, -1).map((cell) => cell.trim()) : [];
+  if (cells.length >= 2 && wholeImageRef.test(cells[0]) && /^sha256:[a-f0-9]{64}$/.test(cells[1])) {
+    imageSightings.push({ rel: 'VERSIONS.md', ref: `${cells[0]}@${cells[1]}` });
+  }
+}
+
+for (const message of imageAgreementFindings(imageSightings)) {
+  fail(message);
+}
+
+// DEP-1: the cooling-off window number lives in exactly one place, and the VERSIONS.md header is that place.
+const coolingWindow = declaredWindow(versions);
+if (existsSync(versionsFile) && coolingWindow === null) {
+  fail('VERSIONS.md: the header states no cooling-off window; it is the one place the number lives and every other mention agrees with it (DEP-1).');
+}
+for (const { file, rel } of allFiles) {
+  if (!IMAGE_SCAN_EXTENSIONS.some((ext) => rel.endsWith(ext)) || rel === 'tools/docs-lint.mjs') {
+    continue;
+  }
+  for (const message of windowFindings(rel, readFileSync(file, 'utf8'), coolingWindow)) {
     fail(message);
   }
 }

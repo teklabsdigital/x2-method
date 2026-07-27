@@ -48,11 +48,13 @@ appear in both sections at different pins. Where the versions differ the reason 
 These pins diverged from the client's deliberately, not by drift. This tree was first installed at the client's
 pins (eslint 9.27.0, vitest 3.1.4) and `npm audit` reported one critical and eleven high advisories:
 GHSA-5xrq-8626-4rwp against vitest below 3.2.6, and the brace-expansion chain GHSA-mh99-v99m-4gvg reaching eslint
-below 10. The versions above are the oldest ones that cleared both the then-current 90-day window and those
-advisories, and at them this tree installs with zero advisories reported.
+below 10. The versions above are the oldest ones that cleared both the window then in force and those advisories,
+and at them this tree installs with zero advisories reported.
 
-The window pass (2026-07-26) cut the window to 30 days, which does not obligate any pin here to move: a shorter
-window is strictly more permissive and every version above still clears it.
+The window pass (2026-07-26) cut the window from 90 to the number in the header above, which does not obligate any
+pin here to move: a shorter window is strictly more permissive and every version above still clears it. The
+paragraph above used to restate the old number as a window of its own, which is how a document ends up asserting
+two different windows at once; the number lives in the header and everything else cites it (DEP-1, E-76).
 
 **The client caught up on 2026-07-26 (the flow-back pass, E-3), so "ahead of the client" no longer describes the
 gap and the direction is now mixed.** The client is at eslint 10.4.1 and typescript-eslint 8.60.1, both newer than

@@ -3846,6 +3846,48 @@ the two values the literals used to state.
   first shipped file outside the two globs that carries a real duplication.** This is why the obligation is
   `patterned` and not `proven`.
 
+### E-76. Node's ledger asserted two different cooling-off windows, and a control set drawn from the target shape cannot see what else it catches
+
+**Claim:** DEP-1. **Found:** 2026-07-27. **Measured at 1e3f274.** **Live instance, repaired in the same round.**
+
+Three of DEP-1's seven obligations were built this round, and two of them found something on their first run
+against a real tree. Both are worth recording for the same reason: the self-test passed before and after.
+
+**The window number.** E-37 recorded that the cooling-off window number is "asserted independently in at least
+eight files and read by none of them". The new check parses the number from the VERSIONS.md header and compares
+every other assertion of it. It does NOT ban restating the number, which would falsify dated records that
+legitimately name the window in force at the time; it makes restating it unable to drift.
+
+dotnet-react was clean. **node-react's own VERSIONS.md stated a 90-day window** while its header declared 30. The
+sentence was true history ("the then-current 90-day window", with the cut recorded two paragraphs later), which is
+exactly the case that makes this obligation harder than it looks: the number was accurate as history and wrong as
+a live rule, in the file whose header claims to be the one place the number lives. Repaired by citing rather than
+restating; the history is unchanged and still names its date. The residue is stated rather than carved out: a
+future dated record naming a superseded window will fail this check, and the escape is to cite the header rather
+than restate the number.
+
+**The `FROM` gate, which is the more general lesson.** E-38's first half is that the image check's four-host
+allowlist cannot see Docker Hub shorthand, "the obligation's own stated violation shape". Closing it by widening
+the allowlist to bare `name:tag` would match every `key: value` in the tree, so the closure recognises the shape
+where it is unambiguous: a Dockerfile `FROM` line.
+
+The first version was not gated on the file being a Dockerfile. Its self-test passed, 22 caught and 17 ignored.
+Run against the real tree it reported:
+
+    VERIFICATION.md: container image 'reflection' floats; pin an exact tag plus digest
+    VERIFICATION.md: container image 'the' floats; pin an exact tag plus digest
+
+Two English sentences that happen to begin a line with the word "from". **Every case in the control set was a
+Dockerfile line**, because the cases were written from the shape being caught, so no control could report what
+else was caught. This is the false-positive twin of E-30: an extent assertion proves a predicate reaches far
+enough and says nothing about it reaching too far, and a control set drawn only from the target shape cannot tell
+you the difference. Gated, and the prose case is a control now.
+
+**Also built in the same round, both clean on first run:** one image value across every surface (the SQL Server
+image is named on five, and nothing had ever compared them, E-37 and E-64), and a reader for `package.json`
+overrides, which is how a transitive pin taken under DEP-1's advisory rule actually reaches the tree. The
+advisory-rule section had been parsed into `ledgerPins` and never queried. Both planted red-correct.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
