@@ -3698,6 +3698,43 @@ What was not visible is that the row-level trigger check reads `note` and the ob
 obligation-level triggers and all four are live. The record was machine-checked and the machine was checking the
 other field.
 
+### E-72. SEC-1's four scans share one enumeration, and nothing asserted the enumeration
+
+**Claims:** SEC-1, and TEN-1 which reads the same method. **Found:** 2026-07-27. **Measured at fa65974.**
+
+`EndpointSpineTests` is the strongest guard in this edition. The anonymous register carries a justification floor,
+scopes a carve-out to one verb on one URL, and fails a stale entry. The fallback is resolved from the provider the
+middleware actually consults and evaluated against both an anonymous and a fully authenticated principal. Every
+one of those was earned by a finding.
+
+All of it loops over one private helper, and nothing asserted what that helper returns.
+
+Planted: narrow `RouteEndpoints()` to the routes whose pattern contains `health`. Result, 157 tests:
+
+| test | claim | result |
+|------|-------|--------|
+| `Every_endpoint_is_permission_gated_or_allowlisted_anonymous` | SEC-1 | green |
+| `No_endpoint_exposes_a_tenant_or_pii_parameter` | TEN-1 | green |
+| `No_endpoint_binds_a_tenant_or_pii_header` | TEN-1 | green |
+| `No_endpoint_binds_a_body_type_carrying_server_controlled_fields` | SEC-2 | **red** |
+
+One test noticed, and it belongs to a third claim. Its message is "The SEC-2 body scan enumerated no body type at
+all, so its green result says nothing", which names neither the narrowing nor the two claims that just went blind.
+A guard carrying another claim's load with a message naming neither is E-22, and this is its third instance in
+this edition after E-48 and E-50.
+
+The stale-carve-out check gets an honourable mention: if the enumeration were emptied entirely rather than
+narrowed, it would fail, because `/health` would stop matching its allowlist entry. That is a real accidental
+guard and it is why the plant had to leave one route standing to find the hole.
+
+**Repaired in the same round.** `The_endpoint_enumeration_is_every_route_the_host_maps` compares the scanned count
+against the framework's own unfiltered table, then checks a named floor of the three routes this edition ships.
+Both halves are needed: the count catches a filter inside the helper, and the floor catches a filter applied to
+both expressions. Control: the same plant with the assertion in place turns it red naming SEC-1, alongside SEC-2's.
+
+SEC-1's row was flat, a single `proven` with no obligations, which is how four separate things came to be carried
+by one status. It now carries all four.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

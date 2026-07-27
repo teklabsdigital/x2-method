@@ -151,8 +151,30 @@
     "SEC-1": {
       "title": "Every endpoint gated",
       "status": "proven",
-      "mechanism": "deny-by-default fallback policy (a deny, not `RequireAuthenticatedUser`, so a metadata-free endpoint is unreachable rather than open to every authenticated caller) + cached `PermissionPolicyProvider`; `EndpointSpineTests` resolves the fallback from `IAuthorizationPolicyProvider`, which is what the middleware consults, and EVALUATES it against an anonymous principal and a fully-permissioned authenticated one; it also allowlists `/health` and requires a permission policy per endpoint; the `sv`/tenant gates run after routing and exempt allowlisted-anonymous endpoints",
-      "note": "The anonymous allowlist is a `(Method, Pattern, Why)` record array as of 2026-07-26 (E-8): keyed on method AND pattern so an anonymous GET no longer pre-authorizes a POST on the same URL, carrying a mandatory justification, matched case-insensitively, and failing on an entry that matches no endpoint. All four proven red separately. The fallback applies to unmatched URLs too, so an unknown route answers 403 rather than 404. The HUM-1 half of E-8 stays open: there is nowhere to declare this surface such that the shared tool VERIFIES an owner exists, which is an adjudication ruling. Findings: E-7 (repaired), E-8 (SEC-1 half repaired, HUM-1 half open)."
+      "mechanism": "`EndpointSpineTests` over the composed host's route table: every endpoint names a non-empty perm policy or matches a justified, method-specific anonymous carve-out; the fallback policy is resolved the way the middleware resolves it and EVALUATED; and the enumeration itself is asserted to be every route the host maps",
+      "note": "four obligations, all proven, and the fourth was added because a narrowed enumeration left the other three green",
+      "obligations": [
+        {
+          "name": "every endpoint names a permission or is a reviewed anonymous carve-out",
+          "status": "proven",
+          "text": "The scan walks the composed host's own route table and requires a `perm:`-prefixed, non-empty policy. Bare authentication is refused at the endpoint, which is what the claim asks for and what the realization had accepted as its floor until E-7."
+        },
+        {
+          "name": "the anonymous allowlist is reviewed rather than accumulated",
+          "status": "proven",
+          "text": "`AnonymousCarveOut` carries method, pattern and a justification with a 40-character floor, so an entry is scoped to one verb on one URL rather than pre-authorizing every method on it (E-8). A carve-out matching no endpoint fails as stale, which is what stops the register becoming a hole waiting for a URL. An endpoint with no method metadata answers every method and is reported as `*`, so it can never match a specific entry."
+        },
+        {
+          "name": "the fallback denies by default, evaluated rather than inspected",
+          "status": "proven",
+          "text": "Resolved from `IAuthorizationPolicyProvider`, which is what `AuthorizationMiddleware` consults, and then run against two principals: an anonymous one and an authenticated one carrying tenant, session version and both perms. The earlier version read `IOptions<AuthorizationOptions>` and asserted a requirement was present, which is a different object and could not see that returning null from the provider opened every metadata-free endpoint (E-7 round 4). A `DenyAnonymousAuthorizationRequirement` is satisfied by any authenticated caller, so the authenticated case is the one the old assertion could never have expressed."
+        },
+        {
+          "name": "the enumeration reaches every route the host maps",
+          "status": "proven",
+          "text": "Added 2026-07-27. Every assertion above is a loop over one shared `RouteEndpoints()`, and a loop over a narrowed set passes while saying nothing. Measured: narrowing it to routes whose pattern contains `health` left all three assertions above green, and the only test that noticed was SEC-2's body scan, whose message names neither the narrowing nor SEC-1 (E-72, and E-22's third instance here). The assertion compares the scanned count against the framework's own unfiltered table and then checks a named floor of this edition's three routes, because non-emptiness alone would not have caught a plant that left one route standing. TEN-1's route, query and header scans read the same method, so they inherit it."
+        }
+      ]
     },
     "SEC-2": {
       "title": "Anti mass-assignment",

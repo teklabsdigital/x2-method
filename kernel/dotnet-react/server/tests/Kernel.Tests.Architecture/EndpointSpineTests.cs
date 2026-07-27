@@ -85,6 +85,39 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
     private IReadOnlyList<RouteEndpoint> RouteEndpoints() =>
         factory.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>().ToList();
 
+    /// <summary>
+    /// The extent of the set the four scans below iterate. Every one of them is a loop over `RouteEndpoints()`,
+    /// and a loop over a narrowed set passes while saying nothing.
+    ///
+    /// Measured on 2026-07-27: narrowing `RouteEndpoints()` to the routes whose pattern contains "health" left
+    /// all three of SEC-1's own assertions green. The only test that noticed was SEC-2's body scan, whose message
+    /// reads "The SEC-2 body scan enumerated no body type at all" and names neither the narrowing nor SEC-1. A
+    /// guard carrying another claim's load with a message naming neither is E-22, and this is its third instance
+    /// in this edition.
+    ///
+    /// Both halves matter. Non-emptiness alone would not have caught that plant, because one route survived it;
+    /// what catches it is the count agreeing with the framework's own unfiltered table. The named floor after it
+    /// is the case where both expressions acquire the same filter.
+    /// </summary>
+    [Fact]
+    public void The_endpoint_enumeration_is_every_route_the_host_maps()
+    {
+        var mapped = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>().ToList();
+        Assert.True(mapped.Count > 0, "The host maps no routes at all, so every SEC-1 and TEN-1 scan below would pass without looking at anything.");
+
+        var scanned = RouteEndpoints();
+        Assert.True(scanned.Count == mapped.Count,
+            $"The endpoint scans iterate {scanned.Count} of the {mapped.Count} routes this host maps, so {mapped.Count - scanned.Count} are ungated by anything here (SEC-1).");
+
+        // An independently written floor: the routes this edition ships, named rather than derived, so a filter
+        // applied to both expressions above still fails here.
+        foreach (var pattern in new[] { "/health", "/notes", "/notes/{id:guid}" })
+        {
+            Assert.True(scanned.Any(e => "/" + (e.RoutePattern.RawText ?? string.Empty).TrimStart('/') == pattern),
+                $"Route '{pattern}' is not in the enumerated set, so nothing here gates it (SEC-1).");
+        }
+    }
+
     [Fact]
     public void Every_endpoint_is_permission_gated_or_allowlisted_anonymous()
     {

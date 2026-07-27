@@ -1350,3 +1350,32 @@ CFG-1's own finding, so the README was still describing the anti-pattern the cod
 
 Architecture 157, unit 58, integration 4 skipped, client 65, both docs-lints ok, both conformance records ok at
 69 rows, dash scans 0 and 0.
+
+## 2026-07-27, section C: the prose plants, and what was already executable
+
+The back-fill list was TEN-1, SEC-1, SEC-2, SEC-5, UI-1 and UI-2. Checked before assuming: five of the six already
+carry their plants as executable tests, and the counts are the evidence rather than the claim.
+
+| claim | the executable form its plants already have |
+|-------|---------------------------------------------|
+| TEN-1 | `NameComparisonTests`, 28 fixture cases over the comparison, both directions |
+| SEC-2 | the same 28, plus `BodyMemberWalk`'s depth and cycle test and the binder-corpus agreement test |
+| SEC-5 | `SecretConfigShapeTests`, 15 fixture cases, plus `secret-scan.mjs --self-test` |
+| UI-2 | `ui2LintExtent.test.ts`, 49 cases, including fourteen holes carried as PASSING controls |
+| UI-1 | `latent`, because the design export is kernel filler; nothing to back-fill until the first lock |
+
+SEC-1 was the one that was not, and the gap was not where the list said to look. Its plants had landed; what had
+not is any assertion about the set they all iterate.
+
+| plant | outcome |
+|-------|---------|
+| `RouteEndpoints()` narrowed to routes whose pattern contains `health` | SEC-1's three assertions green, TEN-1's two green, caught only by SEC-2's body scan, E-72 |
+| the same plant with `The_endpoint_enumeration_is_every_route_the_host_maps` in place | red, naming SEC-1 |
+
+SEC-1's row was flat, one `proven` carrying four separate obligations. It now carries four, all `proven`, and the
+fourth exists because the other three could be made vacuous without any of them noticing.
+
+### Gates
+
+Architecture 158, unit 58, integration 4 skipped, client 65, both conformance records ok at 69 rows, both
+docs-lints ok, dash scans 0 and 0.
