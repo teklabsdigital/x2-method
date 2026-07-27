@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { checkAgainstCatalog, checkTable, load } from './conformance.mjs';
 
 // DOC-1 documentation lifecycle gate, plus the TEN-5 ledger coupling, the DEP-1 ledger-completeness check,
@@ -8,7 +8,21 @@ import { checkAgainstCatalog, checkTable, load } from './conformance.mjs';
 // decision-provenance check, the conformance-record check (every catalog claim owes a status row, and the
 // README table is generated from it), and the standing-constraint dash check (MET-08). Plain node, no
 // dependencies. Runs from anywhere; paths resolve relative to the edition root.
+//
+// Usage:
+//   node tools/docs-lint.mjs              lint the edition and exit non-zero on any failure
+//   node tools/docs-lint.mjs --self-test  run the predicates against their own controls and exit
+//
+// `--self-test` exists for a measured reason (E-28). A lint that walks a clean tree reports ok whether its
+// predicates reach everything or nothing, so a green run is evidence about the tree and none at all about the
+// guard. Measured 2026-07-27: narrowing the ledger row scrape so it could match no line left every gate green,
+// a real violation planted underneath included, and the change was made the way the build brief says to change
+// a shared file. `compose --check` compares the copies and cannot see that all three stopped working. The answer
+// is the one `secret-scan.mjs` already carries: the predicates are isolated from the filesystem, and their
+// extent is asserted rather than described.
 const editionRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+const selfTest = process.argv.includes('--self-test');
+const invokedDirectly = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 const errors = [];
 const notes = [];
 const fail = (message) => errors.push(message);
@@ -79,6 +93,180 @@ function frontMatter(text) {
   return parsed;
 }
 
+// ---------------------------------------------------------------------------------------------------------
+// The predicates, isolated from the filesystem so `--self-test` drives exactly what the scan drives. Each takes
+// the text (and the path, where placement is part of the rule) and returns the messages it would report. The
+// scans above are a loop over files and these functions and nothing else, which is the property that makes the
+// controls below worth anything: a narrowing that silences the scan silences these too, and they are asserted.
+
+const IMAGE_SCAN_EXTENSIONS = ['.md', '.yml', '.yaml', '.sh', '.cs', '.mjs', '.ts', '.tsx', '.json'];
+const imageRef = /(?:mcr\.microsoft\.com|docker\.io|ghcr\.io|quay\.io)\/[A-Za-z0-9._/-]+(?::[A-Za-z0-9._-]+)?(?:@sha256:[a-f0-9]{64})?/g;
+
+export function docLifecycleFindings(rel, text) {
+  const out = [];
+  const parts = rel.split('/');
+
+  if (parts.length === 1) {
+    if (!ROOT_MARKDOWN.has(parts[0])) {
+      out.push(`${rel}: markdown at the edition root must be one of ${[...ROOT_MARKDOWN].join(', ')} (DOC-1).`);
+    }
+    return out;
+  }
+
+  // The governed design/ files carry their own kinds (a deliberate registry addition, DOC-1).
+  if (parts[0] === 'design') {
+    const design = designRule(rel);
+    const fm = frontMatter(text);
+    if (!fm) {
+      out.push(`${rel}: missing front matter (DOC-1).`);
+      return out;
+    }
+    if (fm.kind !== design.kind) {
+      out.push(`${rel}: kind '${fm.kind ?? ''}' should be '${design.kind}' (DOC-1).`);
+    }
+    if (!STATUSES.has(fm.status)) {
+      out.push(`${rel}: status '${fm.status ?? ''}' must be authoritative, working, or archived (DOC-1).`);
+    }
+    if (design.slice && !fm.slice) {
+      out.push(`${rel}: fidelity ledgers must carry a slice id (DOC-1).`);
+    }
+    return out;
+  }
+
+  if (parts[0] !== 'docs') {
+    out.push(`${rel}: markdown is outside docs/ and is not an allowed root file (DOC-1).`);
+    return out;
+  }
+
+  const expectedKind = FOLDER_KIND[parts[1]];
+  if (!expectedKind) {
+    out.push(`${rel}: docs/${parts[1]}/ is not a legal documentation root (DOC-1).`);
+    return out;
+  }
+
+  const fm = frontMatter(text);
+  if (!fm) {
+    out.push(`${rel}: missing front matter (DOC-1).`);
+    return out;
+  }
+  if (fm.kind !== expectedKind) {
+    out.push(`${rel}: kind '${fm.kind ?? ''}' should be '${expectedKind}' for docs/${parts[1]}/ (DOC-1).`);
+  }
+  if (!STATUSES.has(fm.status)) {
+    out.push(`${rel}: status '${fm.status ?? ''}' must be authoritative, working, or archived (DOC-1).`);
+  }
+  if (parts[1] === 'work' && !fm.slice) {
+    out.push(`${rel}: work docs must carry a slice id (DOC-1).`);
+  }
+  // DEC-1 (upward link): a decision names the story, epic, or claim it serves. Code traces to a decision,
+  // a decision traces to what it serves; a D-0xx without provenance is the unrecorded-decision failure.
+  if (parts[1] === 'decisions' && !fm.provenance) {
+    out.push(`${rel}: decisions must carry a provenance field naming the story, epic, or claim served (DEC-1).`);
+  }
+  return out;
+}
+
+export function bypassLedgerFindings(text) {
+  const out = [];
+  const rows = text
+    .split('\n')
+    .filter((line) => line.trim().startsWith('|'))
+    .slice(2); // skip the header and separator rows
+  for (const row of rows) {
+    const test = (row.split('|')[3] ?? '').trim();
+    if (test.length === 0) {
+      out.push('tenant-bypass-ledger.md: a bypass row names no sole-reader test (TEN-5).');
+    }
+  }
+  return out;
+}
+
+export function imageFindings(rel, text, hasLedgerRow) {
+  const out = [];
+  for (const match of text.matchAll(imageRef)) {
+    const ref = match[0];
+    const digestSplit = ref.split('@sha256:');
+    const repoAndTag = digestSplit[0];
+    const hasDigest = digestSplit.length === 2;
+    const tag = repoAndTag.includes(':') ? repoAndTag.split(':').pop() : null;
+    if (tag === null || tag === 'latest' || tag.endsWith('-latest')) {
+      out.push(`${rel}: container image '${ref}' floats; pin an exact tag plus digest (DEP-1 / INV-05).`);
+      continue;
+    }
+    if (!hasDigest) {
+      out.push(`${rel}: container image '${ref}' has no @sha256 digest; the pinned form is tag@digest (DEP-1 / INV-05).`);
+    }
+    if (!hasLedgerRow(repoAndTag.toLowerCase())) {
+      out.push(`VERSIONS.md: no ledger row for container image '${repoAndTag}' (DEP-1 / INV-05).`);
+    }
+  }
+  return out;
+}
+
+// Controls. Every CATCH case is an input a plant fed these predicates on 2026-07-27 and saw reported by name;
+// every IGNORE case is a shape a widening would break. The IGNORE cases marked KNOWN GAP are ones the same round
+// measured as passing when the claim wants them caught, and they are written down as PASSING rather than wished
+// away, exactly as SecretConfigShapeTests records the cost of token matching. Each is an `owed` obligation with a
+// named trigger in conformance.json, so closing it breaks this test and has to be argued, not discovered.
+const SELF_TEST_DIGEST = `@sha256:${'a'.repeat(64)}`;
+const CATCH = [
+  ['a kind that does not match its folder', () => docLifecycleFindings('docs/claims/notes-scratch.md', '---\nkind: notes\nstatus: working\n---\n')],
+  ['a claim kind inside docs/decisions/', () => docLifecycleFindings('docs/decisions/ai-trust-tiers.md', '---\nkind: claim\nstatus: authoritative\nprovenance: x\n---\n')],
+  ['markdown outside docs/ and not an allowed root file', () => docLifecycleFindings('server/handover.md', '# Handover\n')],
+  ['an unlisted file at the edition root', () => docLifecycleFindings('NOTES.md', '# Notes\n')],
+  ['no front matter at all', () => docLifecycleFindings('docs/claims/x.md', '# no front matter\n')],
+  ['a status outside the enum', () => docLifecycleFindings('docs/claims/x.md', '---\nkind: claim\nstatus: bogus\n---\n')],
+  ['a documentation root that does not exist', () => docLifecycleFindings('docs/description/x.md', '---\nkind: claim\nstatus: authoritative\n---\n')],
+  ['a work document with no slice id', () => docLifecycleFindings('docs/work/s1-notes.md', '---\nkind: work\nstatus: working\n---\n')],
+  ['a decision with no provenance (DEC-1)', () => docLifecycleFindings('docs/decisions/d-001.md', '---\nkind: decision\nstatus: authoritative\n---\n')],
+  ['a bypass row whose sole-reader cell is empty', () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | |\n')],
+  ['an image on a floating :latest tag', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server:latest', () => true)],
+  ['an image with no tag at all', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server', () => true)],
+  ['a tagged image with no digest', () => imageFindings('x.sh', 'mcr.microsoft.com/mssql/server:2022-CU12', () => true)],
+  ['a pinned image with no ledger row', () => imageFindings('x.sh', `mcr.microsoft.com/mssql/server:2022-CU12${SELF_TEST_DIGEST}`, () => false)],
+];
+const IGNORE = [
+  ['a legal root markdown file', () => docLifecycleFindings('README.md', '# anything\n')],
+  ['a correct claim document', () => docLifecycleFindings('docs/claims/x.md', '---\nkind: claim\nstatus: authoritative\n---\n')],
+  ['a work document carrying a slice id', () => docLifecycleFindings('docs/work/s1.md', '---\nkind: work\nstatus: working\nslice: S1\n---\n')],
+  ['a decision carrying provenance', () => docLifecycleFindings('docs/decisions/d-001.md', '---\nkind: decision\nstatus: authoritative\nprovenance: claim SEC-1\n---\n')],
+  ['an empty ledger, which is v1 by design', () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n')],
+  ['a ledger row naming a test', () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | BillingSweepIsSoleReader |\n')],
+  ['a fully pinned and ledgered image', () => imageFindings('x.sh', `mcr.microsoft.com/mssql/server:2022-CU12${SELF_TEST_DIGEST}`, () => true)],
+  ['KNOWN GAP (E-34): the named test is never resolved, so a row naming nothing that exists passes',
+    () => bypassLedgerFindings('| Path | Justification | Test |\n|--|--|--|\n| /billing | invoicing | NoSuchTestAnywhere |\n')],
+  ['KNOWN GAP (E-35): the test cell is read at index 3, so an inserted column moves it out of reach',
+    () => bypassLedgerFindings('| Path | Owner | Justification | Test |\n|--|--|--|--|\n| /billing | @a | invoicing | |\n')],
+  ['KNOWN GAP (E-35): a row is a line starting with a pipe, so a reformatted ledger has no rows at all',
+    () => bypassLedgerFindings('- Path: /billing\n- Justification: invoicing\n- Test: none\n')],
+  ['KNOWN GAP (E-38): the host allowlist has four entries, so Docker Hub shorthand is invisible',
+    () => imageFindings('Dockerfile.md', 'FROM node:22-alpine', () => false)],
+];
+
+if (invokedDirectly && selfTest) {
+  const failures = [];
+  for (const [why, probe] of CATCH) {
+    if (probe().length === 0) {
+      failures.push(`MISSED  ${why}`);
+    }
+  }
+  for (const [why, probe] of IGNORE) {
+    const hits = probe();
+    if (hits.length > 0) {
+      failures.push(`FALSE POSITIVE  ${why} -> ${JSON.stringify(hits)}`);
+    }
+  }
+  if (failures.length > 0) {
+    console.error('docs-lint --self-test FAILED:');
+    for (const f of failures) {
+      console.error(`  ${f}`);
+    }
+    process.exit(1);
+  }
+  console.log(`docs-lint --self-test ok: ${CATCH.length} caught, ${IGNORE.length} ignored.`);
+  process.exit(0);
+}
+
 // Two views of the tree, and the difference is deliberate.
 //
 // `allFiles` is the governed set: the authored files the documentation and dash checks apply to, with imported
@@ -100,66 +288,10 @@ const MANIFEST_SHAPES = [
   { match: (rel) => rel === 'package.json' || rel.endsWith('/package.json'), kind: 'npm-package-json' },
 ];
 
-// DOC-1: placement, front matter, and slice ids.
+// DOC-1: the rule is `docLifecycleFindings`, defined below with the other predicates; this is the file walk.
 for (const { file, rel } of allFiles.filter(({ rel }) => rel.endsWith('.md'))) {
-  const parts = rel.split('/');
-
-  if (parts.length === 1) {
-    if (!ROOT_MARKDOWN.has(parts[0])) {
-      fail(`${rel}: markdown at the edition root must be one of ${[...ROOT_MARKDOWN].join(', ')} (DOC-1).`);
-    }
-    continue;
-  }
-
-  // The governed design/ files carry their own kinds (a deliberate registry addition, DOC-1).
-  const design = parts[0] === 'design' ? designRule(rel) : null;
-  if (parts[0] === 'design') {
-    const fm = frontMatter(readFileSync(file, 'utf8'));
-    if (!fm) {
-      fail(`${rel}: missing front matter (DOC-1).`);
-      continue;
-    }
-    if (fm.kind !== design.kind) {
-      fail(`${rel}: kind '${fm.kind ?? ''}' should be '${design.kind}' (DOC-1).`);
-    }
-    if (!STATUSES.has(fm.status)) {
-      fail(`${rel}: status '${fm.status ?? ''}' must be authoritative, working, or archived (DOC-1).`);
-    }
-    if (design.slice && !fm.slice) {
-      fail(`${rel}: fidelity ledgers must carry a slice id (DOC-1).`);
-    }
-    continue;
-  }
-
-  if (parts[0] !== 'docs') {
-    fail(`${rel}: markdown is outside docs/ and is not an allowed root file (DOC-1).`);
-    continue;
-  }
-
-  const expectedKind = FOLDER_KIND[parts[1]];
-  if (!expectedKind) {
-    fail(`${rel}: docs/${parts[1]}/ is not a legal documentation root (DOC-1).`);
-    continue;
-  }
-
-  const fm = frontMatter(readFileSync(file, 'utf8'));
-  if (!fm) {
-    fail(`${rel}: missing front matter (DOC-1).`);
-    continue;
-  }
-  if (fm.kind !== expectedKind) {
-    fail(`${rel}: kind '${fm.kind ?? ''}' should be '${expectedKind}' for docs/${parts[1]}/ (DOC-1).`);
-  }
-  if (!STATUSES.has(fm.status)) {
-    fail(`${rel}: status '${fm.status ?? ''}' must be authoritative, working, or archived (DOC-1).`);
-  }
-  if (parts[1] === 'work' && !fm.slice) {
-    fail(`${rel}: work docs must carry a slice id (DOC-1).`);
-  }
-  // DEC-1 (upward link): a decision names the story, epic, or claim it serves. Code traces to a decision,
-  // a decision traces to what it serves; a D-0xx without provenance is the unrecorded-decision failure.
-  if (parts[1] === 'decisions' && !fm.provenance) {
-    fail(`${rel}: decisions must carry a provenance field naming the story, epic, or claim served (DEC-1).`);
+  for (const message of docLifecycleFindings(rel, readFileSync(file, 'utf8'))) {
+    fail(message);
   }
 }
 
@@ -170,15 +302,8 @@ const bypassLedgerFile = join(editionRoot, 'docs/claims/tenant-bypass-ledger.md'
 if (!existsSync(bypassLedgerFile)) {
   fail('docs/claims/tenant-bypass-ledger.md is missing; the sanctioned-bypass ledger is where TEN-5 lives.');
 } else {
-  const ledgerRows = readFileSync(bypassLedgerFile, 'utf8')
-    .split('\n')
-    .filter((line) => line.trim().startsWith('|'))
-    .slice(2); // skip the header and separator rows
-  for (const row of ledgerRows) {
-    const test = (row.split('|')[3] ?? '').trim();
-    if (test.length === 0) {
-      fail('tenant-bypass-ledger.md: a bypass row names no sole-reader test (TEN-5).');
-    }
+  for (const message of bypassLedgerFindings(readFileSync(bypassLedgerFile, 'utf8'))) {
+    fail(message);
   }
 }
 
@@ -337,28 +462,12 @@ if (edition) {
 // pinned tag-plus-digest form (the tag documents, the digest pins) and must have a VERSIONS.md row keyed by
 // repo:tag. A floating tag (:latest or tagless) fails outright: three tiers reach the engine, and a float means
 // they may not run the same build. VERSIONS.md itself and this tool are excluded (the ledger names the image).
-const IMAGE_SCAN_EXTENSIONS = ['.md', '.yml', '.yaml', '.sh', '.cs', '.mjs', '.ts', '.tsx', '.json'];
-const imageRef = /(?:mcr\.microsoft\.com|docker\.io|ghcr\.io|quay\.io)\/[A-Za-z0-9._/-]+(?::[A-Za-z0-9._-]+)?(?:@sha256:[a-f0-9]{64})?/g;
 for (const { file, rel } of allFiles) {
   if (!IMAGE_SCAN_EXTENSIONS.some((ext) => rel.endsWith(ext)) || rel === 'VERSIONS.md' || rel === 'tools/docs-lint.mjs') {
     continue;
   }
-  for (const match of readFileSync(file, 'utf8').matchAll(imageRef)) {
-    const ref = match[0];
-    const digestSplit = ref.split('@sha256:');
-    const repoAndTag = digestSplit[0];
-    const hasDigest = digestSplit.length === 2;
-    const tag = repoAndTag.includes(':') ? repoAndTag.split(':').pop() : null;
-    if (tag === null || tag === 'latest' || tag.endsWith('-latest')) {
-      fail(`${rel}: container image '${ref}' floats; pin an exact tag plus digest (DEP-1 / INV-05).`);
-      continue;
-    }
-    if (!hasDigest) {
-      fail(`${rel}: container image '${ref}' has no @sha256 digest; the pinned form is tag@digest (DEP-1 / INV-05).`);
-    }
-    if (!ledgerNames.has(repoAndTag.toLowerCase())) {
-      fail(`VERSIONS.md: no ledger row for container image '${repoAndTag}' (DEP-1 / INV-05).`);
-    }
+  for (const message of imageFindings(rel, readFileSync(file, 'utf8'), (key) => ledgerNames.has(key))) {
+    fail(message);
   }
 }
 

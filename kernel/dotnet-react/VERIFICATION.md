@@ -613,3 +613,63 @@ Not repaired in this round: E-28 and E-30 (the two missing self-tests), E-31 (th
 ungated axes), E-32 through E-37 (the unbuilt halves, each now an `owed` obligation with a named trigger), E-38,
 and E-39. E-39 is the one to read first: this repository's CI runs no dotnet at all, so the neutered-guard probes
 in this round would not have been reported by any continuous process, only by a human choosing to look.
+
+## Round: docs-lint gains the self-test its sibling already had (2026-07-27)
+
+E-28's repair, and nothing else. The batch 1 round measured that every one of five guards could be reduced to
+reaching nothing while every gate stayed green, and that the probe worked through the edit path the build brief
+tells you to use. This round closes that for `docs-lint.mjs`, which carried the locally testable half of four
+claims and had no fixture behind any of it.
+
+The repair is a port, not a design. `tools/secret-scan.mjs` has shipped `--self-test` since E-11, and CI has run
+it as its own step ahead of the scan for the same reason. `docs-lint.mjs` is the same shape and did not get the
+same treatment, so it got it now.
+
+### What moved
+
+Three predicates are lifted out of the file walk into pure functions of their input: `docLifecycleFindings(rel,
+text)`, `bypassLedgerFindings(text)`, `imageFindings(rel, text, hasLedgerRow)`. The three scans became loops over
+files and those functions and nothing else. That is the load-bearing part, and it is worth saying why: if the
+controls drove a copy of the rule rather than the rule, a narrowing could silence the scan while the controls
+stayed green, which is the defect one level up. The rule has one home and both callers use it.
+
+Fourteen CATCH controls, eleven IGNORE controls, both editions: `docs-lint --self-test ok: 14 caught, 11
+ignored`. Wired as its own CI step ahead of the lint in this repo's `kernel.yml` and in both editions' template
+`ci.yml`.
+
+### The control, which is the point
+
+| state | mechanism | probe | `compose --check` | `docs-lint` | `--self-test` |
+|-------|-----------|-------|-------------------|-------------|----------------|
+| the hole | pre-repair | ledger row scrape matches no line | ok | **ok** | (did not exist) |
+| repaired | post-repair | same probe | ok | **ok** | **red**, 1 missed |
+| repaired | post-repair | image host allowlist matches nothing | ok | **ok** | **red**, 4 missed |
+| repaired | post-repair | folder-kind map emptied | ok | red | red, 3 false positives |
+| repaired | post-repair | no probe, shipped tree | ok | ok | **ok**, 14 caught, 11 ignored |
+
+The first three rows are the finding and its closure in one table. Two narrowings are invisible to the scan and
+now visible to the controls. The third was never invisible, and it is in the table so that the mode is not
+credited with catching something that was already caught.
+
+### Four gaps are asserted as PASSING controls
+
+E-34's unresolved test name, E-35's positional row parse in both its forms, and E-38's Docker Hub blindness are
+each written into the IGNORE set, marked KNOWN GAP, with the finding id in the reason. They are recorded as
+passing rather than omitted, because an omitted case is indistinguishable from one nobody thought of. Each is an
+`owed` obligation with a named trigger, so closing one breaks this test and has to be argued. That is the device
+`SecretConfigShapeTests` uses to record the cost of token matching, pointed at a gap instead of a false positive.
+
+### Status
+
+No row moves. This repair closes a vacuity, and vacuity was never what any of these statuses rested on: DOC-1,
+TEN-5 and DEP-1 are `owed` because obligations are unbuilt, and that is still true. What changed is that the
+parts which ARE built can no longer be switched off without something saying so. DOC-1, TEN-5 and DEP-1 each
+gained a sentence recording it. Tally unchanged at 16/7/2/44, non-`owed` 25.
+
+Still open, and named so a green run is not read as more than it is: E-30, the same defect in the shared eslint
+config. It is not a node script and has no fixture surface, so its repair is a vitest suite driving ESLint's API
+rather than a flag, and it is a build rather than a port.
+
+Baselines: .NET architecture 113 of 113, node server 154 of 154, node client-web 16 of 16, dotnet client-web 16
+of 16, `compose --check` 36 shared files across 2 editions, both editions' `docs-lint`, `docs-lint --self-test`
+and `conformance --check` ok, literal em-dash and en-dash scans zero.

@@ -50,6 +50,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      # The predicates' own controls run first, the same ordering and the same reason as the secret scan below
+      # (E-11, reproduced at this tool by E-28): a lint over a clean tree reports ok whether its predicates reach
+      # everything or nothing, so the reach is asserted rather than assumed.
+      - name: Assert what docs-lint catches (DOC-1, TEN-5, DEP-1)
+        run: node tools/docs-lint.mjs --self-test
       - run: node tools/docs-lint.mjs
 
   secret-scan:

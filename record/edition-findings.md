@@ -2487,8 +2487,35 @@ copy, which is the mistake the brief already forbids. It compares the two copies
 observe whether any of the three still does anything. So the mechanism that looks like it guards the guard
 guards only the disallowed edit path, and the allowed one is open.
 
-**Not repaired in this round.** The remedy is a `--self-test` mode over known-bad fixtures, following
-`secret-scan.mjs` exactly, and it is a shared-tier build, not a verification-round edit.
+**Repaired, 2026-07-27, with three controls.** `docs-lint.mjs` gained a `--self-test` mode, following
+`secret-scan.mjs` exactly. Three predicates are lifted out of the file walk and into pure functions of their
+input, `docLifecycleFindings(rel, text)`, `bypassLedgerFindings(text)` and `imageFindings(rel, text,
+hasLedgerRow)`, and the scans became loops over files and those functions and nothing else. That last part is
+what makes the controls worth anything: a narrowing that silences the scan silences the predicate the controls
+drive, so it cannot be silenced in one place and asserted in another.
+
+Fourteen CATCH controls and eleven IGNORE controls, both editions, `docs-lint --self-test ok: 14 caught, 11
+ignored`. It runs as its own CI step ahead of the lint, in this repo's `kernel.yml` and in both editions'
+template `ci.yml`, which is the ordering `secret-scan.mjs` already had.
+
+| control | `compose --check` | `docs-lint` | `docs-lint --self-test` |
+|---------|-------------------|-------------|--------------------------|
+| ledger row scrape narrowed to match no line | ok | **ok** | **FAILED**, 1 missed |
+| image host allowlist narrowed to a registry that does not exist | ok | **ok** | **FAILED**, 4 missed |
+| folder-kind map emptied | ok | red | FAILED, 3 false positives |
+
+The first two are the E-28 shape exactly: the scan cannot see its own narrowing, and now something can. The
+third is included because it is the case that was never the problem, a narrowing loud enough for the scan itself
+to catch, and it is worth knowing which of the three the new mode was actually needed for.
+
+**Four known gaps are asserted as PASSING controls, not silently left out.** E-34's unresolved test name, E-35's
+positional row parse in both its forms, and E-38's Docker Hub blindness are each written into the IGNORE set with
+the finding id in the reason. Each is an `owed` obligation with a named trigger in `conformance.json`, so closing
+one breaks this test and has to be argued rather than discovered by a red build. That is the device
+`SecretConfigShapeTests` uses to record the cost of token matching, applied to a gap instead of a false positive.
+
+**Still open:** E-30, the same defect in the shared eslint config, which has no fixture surface and is not a node
+script, so it needs a vitest suite driving ESLint's API rather than a `--self-test` flag.
 
 ### E-29. CFG-1's registry can be reduced to reaching nothing with all 100 tests green
 

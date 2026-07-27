@@ -42,6 +42,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      # The predicates' own controls run first, for the reason E-11 established and E-28 reproduced one tool
+      # over: a lint that walks a clean tree reports ok whether it reaches everything or nothing. Measured
+      # 2026-07-27, narrowing the ledger row scrape and the image host allowlist left this job green both times,
+      # and `compose --check` cannot see it because all three copies agree about doing nothing.
+      - name: Assert what docs-lint catches (DOC-1, TEN-5, DEP-1)
+        run: node tools/docs-lint.mjs --self-test
+        working-directory: kernel/${{ matrix.edition }}
       # docs-lint carries the conformance check: a catalog claim with no row, a row naming no claim, a
       # realized claim naming no mechanism, an owed claim naming no trigger, or a stale generated table all
       # fail here. A catalog pass therefore cannot complete while an edition stays silent about a new claim.
