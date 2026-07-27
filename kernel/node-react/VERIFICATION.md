@@ -901,3 +901,50 @@ Non-owed rows: 8 to 9. Three rows gained substantial mechanism and one of them m
 Server 236, client 65, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, docs-lint `--self-test`
 28 caught / 27 ignored, secret-scan ok with 2 justified exceptions, `compose --check` ok. All plants restored
 byte-for-byte, verified by hash, every backup deleted in this round (E-59).
+
+## 2026-07-27, running the harness against the wired server: 1 of 7 to 5 of 7
+
+Measured at `88e066c`, by booting the composed server with `KERNEL_AUTH_SIGNING_KEY` set to a value that exists
+only for the duration of the measurement, and running the real tool against it.
+
+    health                    ok
+    create-note               ok
+    list-notes-paged          ok
+    cross-tenant-404          FAILS   tenant B could read tenant A note
+    get-note                  ok
+    delete-note               FAILS   unexpected status 403
+    service-method-coverage   ok      all 4 NotesRepo methods driven through the real transport
+
+`list-notes-paged` is green because of the CON-2 round at 1302d7a, not because of this one. It asserts a bounded
+page AND a non-null cursor, which the list route could not have answered at all three days of work ago: it served
+`{notes}` with no cursor field and stripped the cursor the client sent.
+
+`service-method-coverage` reporting four methods driven is the closing evidence for E-87. The obligation that
+called that audit `unbuilt` was corrected by reading the file; this is the audit itself, running, reporting.
+
+### The thing that only running it could have found
+
+Before the harness ran at all, a single request found E-91. The same server, the same key, two tokens differing by
+one character per permission:
+
+    perm = notes.read, notes.write     GET /notes -> 403
+    perm = notes:read, notes:write     GET /notes -> 200
+
+`notes.read` is what the sibling's `scripts/e2e.sh` mints, and it is the only orchestrator either edition has.
+Node's policy table maps the policy NAME `notes.read` to the PERMISSION `notes:read`. So a token minted the shared
+way authenticates cleanly and then fails authorization on every gated route, and nothing anywhere compares the
+strings an edition requires against the strings anything mints. Third instance of the E-75 family. Not repaired,
+because the repair is a choice this round has no standing to settle and it lands with node's orchestrator.
+
+### What the two failures are
+
+Both are E-84's remaining blockers, and neither is incidental. `delete-note` gets 403 rather than 404 because
+there is no `DELETE /notes/:id` at all, so SEC-1's deny-by-default fallback answers a URL with no route behind it;
+that is the correct fail-closed answer and is exactly why the scenario cannot pass until the route exists.
+`cross-tenant-404` fails because the store has no tenancy: **the credential now carries a tenant and nothing reads
+it**, which is the sentence TEN-1's resolution obligation carries as its reason for reading `patterned`.
+
+### Gates
+
+Unchanged from the round above: server 236, client 65, conformance ok at 69 rows, docs-lint ok. The server booted
+for this measurement was killed, the log deleted, and `git status --porcelain` confirmed empty afterwards.

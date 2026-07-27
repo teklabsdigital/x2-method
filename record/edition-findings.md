@@ -4342,6 +4342,63 @@ Repaired by rewriting the test to claim only what it proves, which is SEC-1's se
 reachability and not SEC-4's about the mint. The load it was believed to carry is carried by the three
 success-asserting tests, which is where it now says it lives.
 
+### E-91. The two editions disagree about the permission strings on the wire, and the shared minter serves both
+
+**Claims:** SEC-1, CFG-1. **Found:** 2026-07-27. **Measured at 88e066c.** **Live, and it blocks the e2e tier.**
+
+With the verifier wired and a real signing key set, the same server was asked the same question with two tokens
+that differ in one character per permission:
+
+    perm = notes.read, notes.write     GET /notes -> 403
+    perm = notes:read, notes:write     GET /notes -> 200
+
+`notes.read` is what the sibling's `scripts/e2e.sh` mints, on both tokens, and it is the only orchestrator either
+edition has. Node's `POLICIES` maps the policy NAME `notes.read` to the PERMISSION `notes:read`, and `satisfies`
+compares permissions, so a token minted by the shared convention authenticates cleanly and then fails
+authorization on every gated route.
+
+The pieces are all shared and the disagreement is invisible to each of them:
+
+- `mintToken.mjs` is a shared-tier file, byte-identical in both editions, and it passes the permission strings
+  through untouched. It is right to: it cannot know either edition's vocabulary.
+- The orchestrator that supplies them is edition-specific and exists only in the sibling.
+- Nothing compares the strings an edition's policies require against the strings anything mints.
+
+**This is E-75 and E-78's family, and the third instance now.** A value has to agree across a boundary, it is
+written down on both sides, and the only thing keeping the copies equal is that one person wrote both. The
+distinctive part here is that the shared file is blameless: the duplication is between an edition's policy table
+and an edition's orchestrator, and the shared minter is merely the pipe they disagree through.
+
+Not repaired here, deliberately, because the repair is a choice between two things this round has no standing to
+settle: either node adopts the dot form, or the orchestrator reads the permission strings from the edition rather
+than carrying them. The second is the CFG-1 answer and is the one to prefer, and it lands with node's
+orchestrator, which E-84 puts downstream of G. **Trigger: node's e2e orchestrator, which is the first thing that
+would mint a token for this server and therefore the first thing that has to know which vocabulary it speaks.**
+
+### E-84's blockers, re-measured at 88e066c
+
+The verifier moved the harness from **1 of 7 scenarios green to 5 of 7**, measured by booting the composed server
+with a real signing key and running the real tool against it:
+
+    health                    ok
+    create-note               ok
+    list-notes-paged          ok      (the CON-2 paging repair at 1302d7a is what earned this one)
+    cross-tenant-404          FAILS   tenant B could read tenant A note
+    get-note                  ok
+    delete-note               FAILS   unexpected status 403
+    service-method-coverage   ok      all 4 NotesRepo methods driven through the real transport
+
+The two failures are E-84's second and third blockers exactly, and neither is an accident:
+
+- **`delete-note` answers 403, not 404.** There is no `DELETE /notes/:id` route, so SEC-1's deny-by-default
+  fallback answers a URL with no route behind it. The client cannot tell "no such note" from "no such endpoint",
+  which is the correct fail-closed answer and is also why the scenario cannot pass until the route exists.
+- **`cross-tenant-404` fails because the store has no tenancy at all.** The credential now carries a tenant and
+  nothing reads it, which is precisely why TEN-1's resolution obligation is `patterned` and not `proven`.
+
+`service-method-coverage` reporting all four methods driven is also the closing evidence for E-87: the audit that
+row called `unbuilt` not only exists, it is the thing reporting this line.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
