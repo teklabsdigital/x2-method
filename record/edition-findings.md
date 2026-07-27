@@ -3010,6 +3010,108 @@ TEN-3's unmarked-data obligation now rests on precisely the registry and compari
 on. The two stand or fall together, which is the intended consequence and is better than two registries
 disagreeing quietly.
 
+### E-52. TEN-4's write-provenance half has no mechanism, no obligation, and a row that reads `proven`
+
+**Claim:** TEN-4. **Found:** 2026-07-27. **Measured at 38ea5c9.**
+
+TEN-4's mechanism class names seven unit tests. Four are provenance: stamp-provenance-on-create,
+stamp-provenance-on-modify, overwrite-caller-supplied-stamp, throw-on-unset-actor. None exists, and none can:
+`Note` carries `TenantId`, `Id`, `Title`, `Body` and `CreatedAtUtc` and no actor field at all, and
+`KernelDbContext.GuardTenancy` stamps `TenantId` and nothing else. `CreatedAtUtc` is stamped by `NoteService`,
+not by the pipeline, which is the opposite of what the claim asks: "stamps are assigned by the pipeline
+unconditionally: values already present on the object graph are overwritten".
+
+The tenancy half is real and binds. Removing `GuardTenancy()` from the synchronous `SaveChanges` turns
+`TenantGuardTests` red, and making the guard skip when scope is unset turns
+`Save_without_a_scope_throws_for_tenant_owned_rows` red, which is precisely the anti-pattern the claim's harm
+paragraph describes.
+
+**The defect is where the honest fact was written.** The row carries the free-text note "the write-provenance
+stamps are owed (trigger: next edition build pass)", and carries no obligation for them. `conformance.mjs` rolls
+up obligations, not notes, so the status reads `proven` and the tally counts a proven row. Someone seeding from
+the record sees `proven`; someone reading the prose sees `owed`. This is the overstating row in its purest form,
+and it is worse than the ordinary kind because the correct information was already known and written down.
+
+### E-53. AI-1's server-owned key registry is a sixth hand-written list, and its comment claims a parity it does not have
+
+**Claim:** AI-1. **Found:** 2026-07-27. **Measured at 38ea5c9.**
+
+`ToolExecutor.ServerOwnedKeys` is a `HashSet<string>` with `OrdinalIgnoreCase`, twenty-one entries, matched by
+equality. Eleven identity-shaped keys measured against it, five survived into the tool arguments:
+
+```
+rejected   tenantId  TENANTID  tenant_id  orgId  organizationId  userId
+survived   workspaceId  accountId  workspaceSlug  tenantIdentifier  actorId
+```
+
+The registry's own comment says it carries "the tenant synonyms (org*) the URL and EF-model guards also reject".
+After E-51 those guards read `ForbiddenTenantParams`, which includes `workspace` and `account`. So the comment
+asserts a parity that is now measurably false, and the claim's harm is exactly the vector: "a tool schema
+mirroring an IdP's or a tenant's claim vocabulary is the realistic confused-deputy vector", which is what
+`workspaceId` and `accountId` are.
+
+This is E-9's comparison a sixth time and E-51's second instance, and the first one in production code rather
+than in a test. `NameComparison` lives in the test assembly, so the repair is not a one-line swap: either the
+comparison moves into the App assembly where the runtime chokepoint can read it, or AI-1 keeps a registry that
+provably disagrees with the guards it claims to match.
+
+### E-54. SEC-4's algorithm pinning is proven by one sample and is blind to the list widening
+
+**Claim:** SEC-4. **Found:** 2026-07-27. **Measured at 38ea5c9.**
+
+`A_token_signed_with_a_different_algorithm_is_rejected` mints an HS384 token over the same key and asserts 401.
+That proves HS384 is excluded. It says nothing about what the list contains. Adding `SecurityAlgorithms.RsaSha256`
+to `ValidAlgorithms` leaves all twelve `HostSecurityTests` green, so the configuration can stop being pinned to
+exactly one algorithm without anything reporting it.
+
+The claim's statement is "pins the exact expected signing algorithm". Exact is a property of the whole list and
+nothing reads the whole list. The repair is the same one this register now carries three times: assert the
+configured `TokenValidationParameters.ValidAlgorithms` equals `[HS256]`, read off the host, and keep the
+behavioural test beside it.
+
+### E-55. SEC-4's RequireSignedTokens is entirely unguarded
+
+**Claim:** SEC-4. **Found:** 2026-07-27. **Measured at 38ea5c9.**
+
+Setting `RequireSignedTokens = false` leaves all twelve `HostSecurityTests` green. The claim's statement names it
+in the same sentence as algorithm pinning: "pins the exact expected signing algorithm and requires signed
+tokens".
+
+`Tampered_signature_is_unauthorized` does not cover it: a tampered signature is a signature that fails to
+validate, which is a different question from whether a signature is required at all. The row read `proven` on an
+obligation whose second half nothing had ever fed a violating input to.
+
+### E-56. SEC-6's dotnet row cites a client-side TypeScript redactor for a server-side claim
+
+**Claim:** SEC-6. **Found:** 2026-07-27. **Measured at 38ea5c9.**
+
+The dotnet edition's SEC-6 row records its mechanism as "`redact.ts` scrubs Authorization and JWT-shaped strings;
+`redact.test.ts`", and marks the obligation "secret-shaped values are scrubbed by one redactor" as `proven`.
+Those files are `client-web/tools/harness/redact.ts` and its test. They are the harness output surface, on the
+client, in TypeScript.
+
+The claim's mechanism class names three surfaces: "hub/realtime logging, harness output, error handlers". Of the
+three, only harness output is covered, and the dotnet **server** has no log-safety mechanism at all: `ILogger`,
+`Serilog` and any redaction helper return zero occurrences across `server/src`. `app.UseExceptionHandler()` is
+wired, so the framework logs unhandled exceptions, and nothing asserts what those entries contain.
+
+A row that satisfies a server-side claim with a client-side file is the shape a reader cannot catch by reading,
+because the file names look plausible and the claim's own vocabulary ("harness output") appears in both.
+
+### E-57. A new tool can declare itself read-only while writing, and nothing notices
+
+**Claim:** AI-2. **Found:** 2026-07-27. **Measured at 38ea5c9.**
+
+`ListNotesToolReadOnlyTests` binds: making `ListNotesTool` write turns it red. Adding a SECOND `ITool` whose
+`IsReadOnly` returns true and whose `InvokeAsync` creates a note leaves both suites green, because nothing
+enumerates tools.
+
+AI-2 is a per-seam claim and its weakening note says so, so the row reading `patterned` is honest and this
+finding does not lower it. It is recorded because the per-seam obligation is mechanizable and currently is not
+mechanized: a check that every `ITool` implementation is named with its trust tier, and that every one declaring
+`IsReadOnly` has a guard test, converts "each new tool owes its own test" from review debt into a gate. That is
+the same move `EndpointSpineTests` already makes for SEC-1's endpoints, in the same edition.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

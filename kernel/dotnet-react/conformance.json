@@ -88,9 +88,9 @@
     },
     "TEN-4": {
       "title": "Save-time guard and write provenance",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`KernelDbContext.GuardTenancy` on both SaveChanges variants; `TenantGuardTests`; integration cross-tenant modify; `BulkWriteBanTests` bans the write paths that bypass the save pipeline (EF set-based, raw SQL, raw ADO)",
-      "note": "the write-provenance stamps are owed (trigger: next edition build pass); the tenancy guard is what is proven here",
+      "note": "the tenancy guard is proven; the write-provenance half has no mechanism (E-52)",
       "obligations": [
         {
           "name": "foreign-tenant writes are refused at save",
@@ -101,6 +101,11 @@
           "name": "no write path bypasses the save pipeline",
           "status": "proven",
           "text": "`BulkWriteBanTests` bans the EF set-based, raw SQL and raw ADO operators, which is what makes the guard above total rather than typical."
+        },
+        {
+          "name": "the pipeline stamps write provenance on create and modify",
+          "status": "owed",
+          "text": "Four of the seven unit tests TEN-4's mechanism class names are provenance, and none exists or can: `Note` carries no actor field and `GuardTenancy` stamps `TenantId` only. `CreatedAtUtc` is stamped by `NoteService`, not by the pipeline, which is the opposite of the claim's \"assigned by the pipeline unconditionally, values already present are overwritten\". This was recorded in the row's free-text note and not as an obligation, so the roll-up read `proven` (E-52). trigger: the actor field and a pipeline stamp, or the next edition build pass."
         }
       ]
     },
@@ -202,19 +207,24 @@
     },
     "SEC-4": {
       "title": "JWT hardening and revocation",
-      "status": "proven",
-      "mechanism": "pinned HS256, `RequireSignedTokens`, `SessionVersionMiddleware`; `HostSecurityTests` rejects a wrong-algorithm token and a missing-sv token",
-      "note": "EF-backed session store owed (trigger: first identity slice)",
+      "status": "owed",
+      "mechanism": "pinned HS256, `RequireSignedTokens`, `SessionVersionMiddleware`; `HostSecurityTests` covers a tampered signature, an HS384 token, a missing `sv` and a bumped `sv`",
+      "note": "revocation is proven; the two halves of the token-validation sentence are not (E-54, E-55)",
       "obligations": [
         {
-          "name": "the signing algorithm is pinned and tokens must be signed",
-          "status": "proven",
-          "text": "pinned HS256 plus `RequireSignedTokens`; `HostSecurityTests` rejects a wrong-algorithm token rather than asserting the option is set."
+          "name": "the signing algorithm is pinned to exactly one",
+          "status": "patterned",
+          "text": "`A_token_signed_with_a_different_algorithm_is_rejected` mints HS384 over the same key and asserts 401, which proves HS384 is excluded and nothing about what the list contains. Adding `RsaSha256` to `ValidAlgorithms` leaves all twelve tests green (E-54). trigger: assert the configured `ValidAlgorithms` equals `[HS256]`, read off the host, beside the behavioural test."
+        },
+        {
+          "name": "tokens must be signed",
+          "status": "owed",
+          "text": "Setting `RequireSignedTokens = false` leaves all twelve tests green. `Tampered_signature_is_unauthorized` does not cover it: a signature that fails to validate is a different question from whether one is required (E-55). trigger: assert the flag off the host, and plant an unsigned token."
         },
         {
           "name": "revocation is immediate through a server-side session version",
           "status": "proven",
-          "text": "`SessionVersionMiddleware` plus the missing-`sv` rejection test. The v1 version store is process-local, so an EF-backed store is this mechanism's named upgrade and not a second obligation: the claim asks that revocation be immediate, which it is."
+          "text": "`SessionVersionMiddleware` plus the bumped-`sv` and missing-`sv` tests; removing the middleware from the pipeline turns both red. The v1 store is process-local, so an EF-backed store is this mechanism's named upgrade rather than a second obligation. No TTL cache exists, so the claim's cache-window obligation has no surface here."
         }
       ]
     },
@@ -238,19 +248,19 @@
     },
     "SEC-6": {
       "title": "Log safety",
-      "status": "patterned",
-      "mechanism": "`redact.ts` scrubs Authorization and JWT-shaped strings; `redact.test.ts`",
-      "note": "v1 surfaces tested; hub log-safety owed (trigger: realtime)",
+      "status": "owed",
+      "mechanism": "`client-web/tools/harness/redact.ts` scrubs Authorization headers and JWT-shaped strings; `redact.test.ts`",
+      "note": "the harness output surface is covered, on the client; the dotnet server has no log-safety mechanism (E-56)",
       "obligations": [
         {
           "name": "secret-shaped values are scrubbed by one redactor",
-          "status": "proven",
-          "text": "`redact.ts` scrubs Authorization headers and JWT-shaped strings; `redact.test.ts` proves the scrub on both."
+          "status": "patterned",
+          "text": "`redact.ts` scrubs Authorization headers and JWT-shaped strings and `redact.test.ts` proves both. It is `client-web/tools/harness/redact.ts`: the harness output surface, on the client, in TypeScript. It does not run in the server (E-56). trigger: a redactor on the server side, or a slice that gives the server a logging surface."
         },
         {
           "name": "each logging surface asserts its own redaction",
-          "status": "patterned",
-          "text": "the v1 surfaces carry their tests; every new logging surface owes one, and the hub is the next (trigger: realtime)."
+          "status": "owed",
+          "text": "The claim's mechanism class names three surfaces: hub/realtime logging, harness output, error handlers. Only harness output is covered. `ILogger`, `Serilog` and any redaction helper return zero occurrences across the dotnet `server/src`, while `app.UseExceptionHandler()` is wired, so the framework logs unhandled exceptions and nothing asserts what those entries contain (E-56). trigger: a named test for the exception handler, and one per logging surface a slice adds; the hub is still owed on realtime."
         }
       ]
     },
@@ -770,9 +780,26 @@
     },
     "AI-1": {
       "title": "Server-injected identity",
-      "status": "proven",
-      "mechanism": "`ToolExecutor` reject-then-inject + throw-on-unset, rejecting server-owned keys recursively through nested objects and lists; `ToolExecutorTests` incl. a nested-payload case",
-      "note": "nested dictionaries/lists stripped; `JsonElement`-typed nesting remains a per-tool review item"
+      "status": "patterned",
+      "mechanism": "`ToolExecutor` reject-then-inject + throw-on-unset, rejecting a twenty-one entry server-owned key set recursively through nested objects and lists; `ToolExecutorTests` incl. a nested-payload case",
+      "note": "the chokepoint and its recursion hold; the key set is an equality-matched list that disagrees with the guards it claims parity with (E-53)",
+      "obligations": [
+        {
+          "name": "actor-supplied identity, tenant and scope are rejected before any merge",
+          "status": "patterned",
+          "text": "Rejection is case-insensitive and recurses nested dictionaries and lists, both covered by `ToolExecutorTests`. The reach is `ServerOwnedKeys`, twenty-one entries matched by equality: measured, five of eleven identity-shaped keys survived, `workspaceId`, `accountId`, `workspaceSlug`, `tenantIdentifier` and `actorId`, while the registry's own comment claims parity with the URL and EF-model guards, which reject `workspace` and `account` (E-53). trigger: move `NameComparison` where the runtime chokepoint can read it, or assert this set's extent and accept that it differs."
+        },
+        {
+          "name": "server context is injected unconditionally",
+          "status": "proven",
+          "text": "`arguments[\"tenantId\"] = tenantId` runs after sanitizing, on every call, with no branch that can skip it."
+        },
+        {
+          "name": "an unset context throws rather than proceeding unscoped",
+          "status": "proven",
+          "text": "`tenantScope.Current` is read before the tool is reached and throws when unset; `ToolExecutorTests.Invocation_without_a_scope_throws` covers it and turns red when the accessor is made to fail open."
+        }
+      ]
     },
     "AI-2": {
       "title": "Untrusted content, no authority",

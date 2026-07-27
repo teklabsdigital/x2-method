@@ -1023,3 +1023,108 @@ Architecture 150, unit 19 to 28, node server 154, both client-webs 65. `compose 
 2 editions. Both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok at 14 caught and 11
 ignored. Integration still 4 failures, environment-blocked on Docker, and now carrying less weight than it did.
 Literal em dash and en dash scans, 0 and 0.
+
+## Round: batch 3, and a row that had already written down the truth it did not record (2026-07-27)
+
+TEN-4, AI-1, AI-2, SEC-4, SEC-6. Measured at `38ea5c9`, baselines 150 architecture and 28 unit. Four of the five
+had never been planted; AI-2 and SEC-6 read `patterned`, the other three `proven`.
+
+### The matrix
+
+| # | claim | plant | expected | outcome |
+|---|-------|-------|----------|---------|
+| 1 | TEN-4 | `GuardTenancy()` removed from the sync `SaveChanges` | red | red, `TenantGuardTests` |
+| 2 | TEN-4 | the guard skips when scope is unset | red | red, the fail-closed test by name |
+| 3 | TEN-4 | provenance stamps | a mechanism | **none exists, and none can** |
+| 4 | AI-1 | actor supplies `tenantId`, `tenant_id`, `orgId`, `userId` | rejected | rejected |
+| 5 | AI-1 | actor supplies `workspaceId`, `accountId`, `workspaceSlug`, `tenantIdentifier`, `actorId` | rejected | **all five survived** |
+| 6 | AI-2 | `ListNotesTool` writes | red | red, names the tool |
+| 7 | AI-2 | a second tool declares read-only and writes | red | **green, 150 and 28** |
+| 8 | SEC-4 | `ValidAlgorithms` widened to include RS256 | red | **green, 12 of 12** |
+| 9 | SEC-4 | `RequireSignedTokens = false` | red | **green, 12 of 12** |
+| 10 | SEC-4 | `SessionVersionMiddleware` removed | red | red, two tests |
+| 11 | SEC-6 | a server-side redactor | a mechanism | **none exists** |
+
+### Number 3, which is the one to read twice
+
+TEN-4's mechanism class names seven unit tests. Four are provenance and none exists. `Note` has no actor field,
+`GuardTenancy` stamps `TenantId` and nothing else, and `CreatedAtUtc` is stamped by `NoteService` rather than by
+the pipeline, which is the opposite of the claim's "assigned by the pipeline unconditionally, values already
+present are overwritten".
+
+That is an ordinary gap. What makes it worth a heading is where the honest fact was written. The row already
+carried the note "the write-provenance stamps are owed (trigger: next edition build pass)". It carried no
+obligation for them. `conformance.mjs` rolls up obligations and not notes, so the row read `proven`, the tally
+counted a proven row, and the correct information sat two fields away in prose.
+
+Every other overstating row this project has found was a case of nobody knowing. This one was known, written
+down, and recorded in the field nothing reads.
+
+### Numbers 8 and 9, on a security claim
+
+SEC-4 read `proven` on "pins the exact expected signing algorithm and requires signed tokens". Both halves can be
+switched off with every test green.
+
+The algorithm test mints HS384 over the same key and asserts 401. That proves HS384 is excluded. Exact pinning is
+a property of the whole list and nothing reads the whole list, so widening it to accept RS256 as well is silent.
+`RequireSignedTokens` has no test at all; `Tampered_signature_is_unauthorized` is a different question, because a
+signature that fails to validate is not the same as a signature that is not required.
+
+Revocation, the other half of the claim, is properly proven: removing the middleware turns two tests red.
+
+### Number 5, E-51's second instance, this time in production code
+
+`ToolExecutor.ServerOwnedKeys` is twenty-one entries matched by equality, and its comment says it carries "the
+tenant synonyms (org*) the URL and EF-model guards also reject". Since E-51 those guards read
+`ForbiddenTenantParams`, which includes `workspace` and `account`. The comment now asserts a parity that is
+measurably false, and `workspaceId` and `accountId` are precisely the "tool schema mirroring a tenant's claim
+vocabulary" the claim's harm paragraph names.
+
+The repair is not a one-line swap, and that is worth stating before the next round attempts it.
+`NameComparison` lives in the test assembly. Either it moves somewhere the runtime chokepoint can read it, or
+AI-1 keeps a registry that provably disagrees with the guards it claims to match. That is a real design decision
+about where a shared comparison belongs, not a tidy-up.
+
+### Number 11
+
+SEC-6's dotnet row cites `redact.ts` and `redact.test.ts`. They are `client-web/tools/harness/redact.ts`: the
+harness output surface, on the client, in TypeScript. The claim names three surfaces and that is one of them. The
+dotnet server has no log-safety mechanism at all, `ILogger` and `Serilog` returning zero occurrences across
+`server/src`, while `app.UseExceptionHandler()` is wired and nothing asserts what the framework logs.
+
+A server-side claim satisfied by a client-side file is hard to catch by reading, because the filenames are
+plausible and the claim's own word, harness, appears on both sides.
+
+### Number 7, recorded without lowering anything
+
+A second tool declaring `IsReadOnly` while writing passes everything, because nothing enumerates tools. AI-2 is
+per-seam and its row already said so, so this changes no status. It is recorded because the obligation is
+mechanizable and is not mechanized, and `EndpointSpineTests` already makes exactly that move for SEC-1's
+endpoints in this same edition.
+
+### Tally movement
+
+| | before | after |
+|---|---|---|
+| proven | 15 | 12 |
+| patterned | 7 | 7 |
+| latent | 2 | 2 |
+| owed | 45 | 48 |
+| non-owed rows | 24 | 21 |
+
+TEN-4 and SEC-4 `proven` to `owed`, AI-1 `proven` to `patterned`, SEC-6 `patterned` to `owed`, AI-2 unchanged.
+Six findings, E-52 through E-57.
+
+### One process failure, recorded because it nearly landed
+
+Restoring `Program.cs` from a scratch backup taken during batch 2 silently reverted E-45's repair, and the
+symptom appeared three plants later as three unexplained failures attributed at first to the plant in hand. The
+backup was stale, not wrong: it predated a commit. Caught by reading the diff against HEAD rather than by any
+test, corrected by re-applying the edit rather than by a git restore, and the batch-2 backups were then deleted.
+The git-safety hook does not cover this, because a stale `cp` is not a git command.
+
+### Gates
+
+Architecture 150, unit 28, node server 154, both client-webs 65. `compose --check` ok, 38 shared files in 2
+editions. Both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok at 14 caught and 11
+ignored. Integration 4 failures, environment-blocked on Docker. Literal em dash and en dash scans, 0 and 0.
