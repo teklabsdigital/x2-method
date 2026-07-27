@@ -23,13 +23,13 @@ import type { Violation } from './endpointSpine.ts';
 // rather than missed (see `notLiteral` below). That is the same choice `configurationSurface.ts` makes and for
 // the same reason: what a test can import is what one code path produced.
 
-export const TENANT_COLUMN = 'tenant_id';
+const TENANT_COLUMN = 'tenant_id';
 
 // The name IS the registry, and that is deliberate rather than incidental. The chokepoint only holds if every
 // query lives in an object a scan can find, so the object has a fixed name and the prepare-site check below
 // refuses SQL that reaches the engine any other way. A second store declares its own `STATEMENTS` and is scanned
 // the day it is written, without this file changing.
-export const STATEMENT_SET_NAME = 'STATEMENTS';
+const STATEMENT_SET_NAME = 'STATEMENTS';
 
 // The two files permitted to hand the engine something that is not a `STATEMENTS` member, each with the reason,
 // in the carve-out discipline SEC-1's anonymous allowlist and the endpoint spine's registries already use. A
@@ -225,15 +225,6 @@ export function declaredStatements(
   return Object.freeze(found);
 }
 
-export function assertStatementSurface(): void {
-  const violations = scanStatementSurface();
-  if (violations.length > 0) {
-    throw new Error(
-      `the statement surface violates ${new Set(violations.map((violation) => violation.claim)).size} claim(s):\n` +
-        violations.map((violation) => `  ${violation.claim} ${violation.at}: ${violation.message}`).join('\n'),
-    );
-  }
-}
 
 function notLiteralViolation(relative: string, name: string): Violation {
   return {

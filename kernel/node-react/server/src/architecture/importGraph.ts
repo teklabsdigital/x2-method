@@ -103,15 +103,6 @@ export function scanImportGraph(root: string = path.join(EDITION_ROOT, 'server',
   return Object.freeze(violations);
 }
 
-export function assertImportGraph(): void {
-  const violations = scanImportGraph();
-  if (violations.length > 0) {
-    throw new Error(
-      `the import graph violates DATA-1 in ${violations.length} place(s):\n` +
-        violations.map((violation) => `  ${violation.at}: ${violation.message}`).join('\n'),
-    );
-  }
-}
 
 // The graph, exposed, because a green scan cannot say which edges it read. A rule set that permits more than the
 // tree uses is not wrong, but it is also not proven by silence, and this is what a test names its expectations

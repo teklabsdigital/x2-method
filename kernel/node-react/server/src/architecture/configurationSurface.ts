@@ -228,15 +228,6 @@ export function scannedFiles(surfaces: readonly Surface[] = SURFACES): readonly 
   return Object.freeze(enumerate(surfaces).map((entry) => entry.relative));
 }
 
-export function assertConfigurationSurface(): void {
-  const violations = scanConfigurationSurface();
-  if (violations.length > 0) {
-    throw new Error(
-      `the configuration surface violates ${new Set(violations.map((violation) => violation.claim)).size} claim(s):\n` +
-        violations.map((violation) => `  ${violation.claim} ${violation.at}: ${violation.message}`).join('\n'),
-    );
-  }
-}
 
 // SEC-5. A secret-shaped key in a committed file may hold the empty string and nothing else. This is the closed
 // rule rather than the heuristic the claim's wording invites: "non-placeholder value" has no definition in the

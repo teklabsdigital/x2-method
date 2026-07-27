@@ -37,7 +37,7 @@ export type ContractFixture = Readonly<Record<string, unknown>>;
 // what it is for, which is worth more to a reader than a filename, and a convention is cheaper than a second file.
 const isContractName = (key: string): boolean => !key.startsWith('_');
 
-export const FIXTURE_PATH = path.resolve(
+const FIXTURE_PATH = path.resolve(
   import.meta.dirname,
   '..',
   '..',

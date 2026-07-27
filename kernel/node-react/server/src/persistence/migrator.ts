@@ -10,7 +10,7 @@ import type { Database } from './database.ts';
 // database and cannot read a file. Nothing in the request path imports this module: the migrate script does, and
 // test fixtures do.
 
-export const MIGRATIONS_DIRECTORY = path.resolve(import.meta.dirname, 'migrations');
+const MIGRATIONS_DIRECTORY = path.resolve(import.meta.dirname, 'migrations');
 
 // The applied-migrations table is created here rather than by a migration, because a migration that creates the
 // table recording which migrations ran cannot record itself.
@@ -19,7 +19,7 @@ const APPLIED = `CREATE TABLE IF NOT EXISTS applied_migrations (
   applied_utc TEXT NOT NULL
 ) STRICT`;
 
-export function migrationFiles(directory: string = MIGRATIONS_DIRECTORY): string[] {
+function migrationFiles(directory: string = MIGRATIONS_DIRECTORY): string[] {
   // Sorted by name, which is what makes the numeric prefix load-bearing rather than decorative. Readdir order is
   // filesystem order and differs between machines, and a migration set applied in two different orders is two
   // different schemas.

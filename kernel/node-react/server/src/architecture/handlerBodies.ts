@@ -124,15 +124,6 @@ export function handlersIn(root: string = path.join(EDITION_ROOT, 'server', 'src
   return Object.freeze(found);
 }
 
-export function assertHandlerBodies(): void {
-  const violations = scanHandlerBodies();
-  if (violations.length > 0) {
-    throw new Error(
-      `route handlers violate DATA-1 or TEN-2 in ${violations.length} place(s):\n` +
-        violations.map((violation) => `  ${violation.at}: ${violation.message}`).join('\n'),
-    );
-  }
-}
 
 // A binding is a parameter whose declared TYPE is imported from `app/`, which is the layer that owns the
 // services. Derived rather than named, so a second service under a second parameter is covered the day it is

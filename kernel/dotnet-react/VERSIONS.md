@@ -22,12 +22,14 @@ in a package manifest, so the check that would have caught it never had it in sc
 
 | Runtime | Version | Published | Source |
 |---------|---------|-----------|--------|
-| node | 24.13.1 | 2026-02-09 | nodejs.org/dist/index.json |
+| node | 24.18.0 | 2026-06-23 | nodejs.org/dist/index.json |
 
-v24.18.0 (2026-06-23) is the newest LTS release outside the window declared above. It is not pinned here because
-nothing in this repository has been run on it, and a pin nobody has run the suite against is a claim nobody has
-measured. Advancing it is a named step: install the version, run both editions' suites, record the result with its
-commit, then move the pin and this row together.
+**Advanced 2026-07-28 by the named step, not by a bump.** This row read 24.13.1 and said that v24.18.0 was not
+pinned because nothing here had been run on it, and that a pin nobody has run the suite against is a claim nobody
+has measured. The step was performed in that order at ad00662, on the owner's ruling: install the version, run
+every suite, record the result with its commit, then move the pin and this row together. Measured on v24.18.0
+before the pin moved: this edition's client-web 65, and the node edition's server 306 with its e2e tier green.
+The .NET tiers are unaffected by the node runtime and were re-run afterwards regardless.
 
 The .NET SDK is pinned separately in `global.json`, which is the same obligation discharged by the mechanism that
 platform provides.

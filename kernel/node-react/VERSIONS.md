@@ -22,14 +22,20 @@ as experimental, so the exact runtime is now load-bearing for correctness and no
 
 | Runtime | Version | Published | Source |
 |---------|---------|-----------|--------|
-| node | 24.13.1 | 2026-02-09 | nodejs.org/dist/index.json |
+| node | 24.18.0 | 2026-06-23 | nodejs.org/dist/index.json |
 
-**Why this version and not the newest that clears the window.** v24.18.0 (2026-06-23) is the newest LTS release
-outside the window declared above, and it would be the ordinary choice. It is not pinned here because nothing in
-this repository has been run on it: 24.13.1 is the runtime every measurement, plant and suite result recorded in
-VERIFICATION.md was taken on, and a pin nobody has run the suite against is a claim nobody has measured. Advancing
-it is a named step and not a bump: install the version, run both editions' suites, record the result with its
-commit, then change the pin and this row together.
+**Advanced 2026-07-28, by the named step rather than by a bump.** This row read 24.13.1 (2026-02-09) and said
+why: v24.18.0 was the newest LTS clearing the window and was NOT pinned, because nothing here had been run on it,
+and a pin nobody has run the suite against is a claim nobody has measured. The step it described was then
+performed in that order at ad00662, on the owner's ruling: install the version, run every suite, record the
+result with its commit, then move the pin and this row together.
+
+Measured on v24.18.0 at ad00662, before the pin moved: node server 306, node client-web 65, dotnet client-web 65,
+shared client-web 65, and the node e2e tier green end to end. The checksum was verified at install by nvm.
+
+24.18.0 is 35 days old at the time of pinning, which clears the 30-day window declared above. That window and the
+owner's standing package policy now agree on 30 days; they disagreed until this pass, and the version that
+exposed the disagreement is this one.
 
 Pinned in five places, deliberately, because each has to stand alone after an edition is copied out: `.nvmrc` at
 this edition's root, `engines.node` in `server/package.json` and `client-web/package.json`, and `node-version` in

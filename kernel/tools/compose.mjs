@@ -38,6 +38,12 @@ const MANIFEST = [
   'tools/docs-lint.mjs',
   'tools/gate-check.mjs',
   'tools/secret-scan.mjs',
+  // The UserPromptSubmit hook that injects the MET-05 ledger reminder on every human turn. Shared rather than
+  // per-edition, and moved here 2026-07-28: the sibling shipped it, this edition shipped nothing, and
+  // `skills/seed` step 4 tells the builder to "verify the hook file survived instantiation" in both. A seed from
+  // the edition that lacked it kept only the CLAUDE.md rule, which PC-10 measured decaying under long sessions.
+  // The file names no edition and never did, so two copies were two chances to drift; one composed copy is one.
+  '.claude/settings.json',
 ];
 
 // Never composed: build output and installed dependencies are not shared-tier content.

@@ -1569,3 +1569,50 @@ point, because it puts the whole property on one line. And "the tenant argument"
 which holds because every `NoteService` method takes its `TenantId` first.
 
 Server tier 292 to 306. Rows: 5 proven, 4 patterned, 3 latent, 57 owed.
+
+## 2026-07-28, three owner rulings executed: the runtime, the hook, and the thirteen exports
+
+### The runtime advanced to 24.18.0, by the named step
+
+`VERSIONS.md` said advancing the runtime is a named step and not a bump: install the version, run every suite,
+record the result with its commit, then move the pin and the row together. Performed in that order. v24.18.0
+published 2026-06-23, verified against `nodejs.org/dist/index.json` rather than assumed, checksum verified by nvm
+at install, 35 days old at pinning.
+
+Measured on 24.18.0 at ad00662 BEFORE the pin moved: node server 306, node client-web 65, dotnet client-web 65,
+shared client-web 65, node e2e green end to end. Then eleven surfaces moved together, and docs-lint's
+cross-surface agreement check is what would have caught a missed one.
+
+The window that permitted it: the repo declared 30 days and the owner's standing package policy said 3 months,
+and they disagreed. The owner ruled 30 and changed the policy, so the two now agree and the version that exposed
+the disagreement is the one that moved.
+
+`Temporal` is still absent on 24.18.0, which matters because TIME-1's row rests on it and a test asserts it. That
+assertion is why this was a measurement: a runtime that shipped `Temporal` would have turned the test red rather
+than quietly changing what the claim rests on.
+
+### The prompt-submit hook moved to the shared tier
+
+This edition shipped no `.claude/` at all while `skills/seed` step 4 told the builder to verify the hook survived
+instantiation, so a seed from here had nothing to verify and kept only the CLAUDE.md rule that PC-10 measured
+decaying under long sessions. The file names no edition and never did, so two copies would have been two chances
+to drift. One composed copy is one: 40 shared files now, `compose --check` holds them equal, and part A of this
+edition's manifest names it.
+
+### The thirteen exports, and the check that turned out to be unnecessary
+
+E-113 recorded thirteen values exported and imported by nothing, and proposed an export-reachability check. The
+ruling was to un-export them instead. **That made the compiler the mechanism.** `tsc --noUnusedLocals` reported
+five of the thirteen as declared and never read the moment they stopped being exported, and all five were the
+`assert*` wrappers that read as the enforcement path and were called by nothing. Deleted. The other eight are
+used inside their own modules and are now module-private.
+
+The instrument was in the build the whole time. What hid it was the `export` keyword: an export is a promise that
+somebody outside might call this, and the compiler cannot disprove a promise. TEST-3's residual is correspondingly
+smaller, and its remaining half is the client tiers and the sibling's C#.
+
+### Gates
+
+Everything on 24.18.0: node server 306, three client tiers 65 each, node e2e green, both editions docs-lint ok at
+37/40 and conformance ok at 69 rows, compose ok at 40 shared files, loop-check ok, secret-scan ok in both, dash
+scan 0 with a live control.

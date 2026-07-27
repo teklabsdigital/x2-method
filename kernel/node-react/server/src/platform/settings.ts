@@ -97,7 +97,7 @@ export const SECRET_STORE = path.join(homedir(), '.x2-kernel', 'secrets.json');
 // `architecture/configurationSurface.ts` can exempt this one literal by identity rather than by pattern: a
 // secret-shaped literal anywhere else in the server is a violation, and this one is the sanctioned exception
 // with its reason written next to it, in the SEC-1 carve-out discipline.
-export const RELAXED_ENVIRONMENTS: ReadonlySet<string> = Object.freeze(new Set(['development', 'test']));
+const RELAXED_ENVIRONMENTS: ReadonlySet<string> = Object.freeze(new Set(['development', 'test']));
 export const DEVELOPMENT_RELAXATION = 'development-only-value-not-a-secret';
 
 export type SettingsSources = Readonly<{
@@ -166,7 +166,7 @@ export function resolveSettings(sources: SettingsSources = defaultSources()): Se
 
 // The prefix, named once. It is exported because the closure check below has to recognize a variable that was
 // MEANT for this channel, and a second copy of the letters would be the duplication this whole file is about.
-export const ENVIRONMENT_PREFIX = 'KERNEL_';
+const ENVIRONMENT_PREFIX = 'KERNEL_';
 
 // The environment variable name a key may be overridden by. Derived, never invented, so the env channel cannot
 // carry a key the spec does not declare.

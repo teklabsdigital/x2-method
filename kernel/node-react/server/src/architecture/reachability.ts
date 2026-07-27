@@ -115,15 +115,6 @@ export function scanReachability(tier: string = path.join(EDITION_ROOT, 'server'
   return Object.freeze(violations);
 }
 
-export function assertReachability(): void {
-  const violations = scanReachability();
-  if (violations.length > 0) {
-    throw new Error(
-      `TEST-3: ${violations.length} module(s) are shipped and unreachable:\n` +
-        violations.map((violation) => `  ${violation.at}: ${violation.message}`).join('\n'),
-    );
-  }
-}
 
 // Exposed so a test can name what it expects to be reached, rather than trusting a green scan to have walked
 // anything (E-92). The set is tier-relative paths.

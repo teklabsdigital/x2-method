@@ -4,7 +4,7 @@
     "comment": "DB2: the database engine is a PROJECT choice, and this is the one place it is declared. A project switching engines edits this block first. This edition declares node:sqlite, the runtime's own embedded engine, which adds no dependency and therefore no supply-chain surface: the engine's version IS the runtime version, which is why VERSIONS.md now carries a Runtime row and six surfaces pin it (E-92). The runtime reports this module as experimental, so the pin is load-bearing for correctness here and not only for hygiene. There is no image, no container and no port, because the engine is in-process; docs-lint's DEP-1 image agreement check reads `image` and correctly finds nothing to compare.",
     "name": "sqlite",
     "module": "node:sqlite",
-    "runtime": "24.13.1",
+    "runtime": "24.18.0",
     "experimental": true,
     "file": "server/.data/kernel.db",
     "migrations": "server/src/persistence/migrations"

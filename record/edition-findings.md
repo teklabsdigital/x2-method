@@ -5172,11 +5172,19 @@ The honest thirteen, all real, all value exports nothing in the edition imports:
     FIXTURE_PATH, TENANT_COLUMN, STATEMENT_SET_NAME, MIGRATIONS_DIRECTORY, migrationFiles,
     RELAXED_ENVIRONMENTS, ENVIRONMENT_PREFIX
 
-**So the check is buildable and is not shipped, deliberately.** Thirteen red items on the day it lands is a
-permanently red gate, and E-84 records what those become: a job somebody skips, then disables, then deletes. The
-work is not the check, it is ruling on the thirteen, and that ruling is not the check's to make: a kernel's
-exported constants are part of what a seeded project extends, so deleting them is a decision about the offered
-surface rather than a cleanup. trigger: that ruling, then the check in the same change so it lands green.
+**Resolved 2026-07-28 by the owner's ruling, and the check was never needed.** The ruling was to un-export all
+thirteen: nothing imports them, and re-exporting one later is a single word if a seeded project ever needs it.
+Doing that made `tsc --noUnusedLocals` the mechanism, immediately and for free. It reported five of the thirteen
+as declared and never read, and all five were the `assert*` wrappers: once a function is module-private, "nothing
+calls it" is a COMPILE ERROR rather than a question needing a scan. They are deleted. The other eight are used
+inside their own modules, so the compiler is silent about them and correct to be.
+
+**That is a better answer than the check, and worth the entry on its own.** The instrument was already in the
+build; what hid it was the `export` keyword, because an export is a promise that somebody outside might call
+this, and the compiler cannot disprove a promise. The class returns only by exporting something for no reason,
+and that is now a visible diff rather than a silent widening. E-113's own two corrections, first the wrong reason
+(symbol resolution) and then the wrong remedy (a new scan), are the shape of the finding: the gap was in what the
+code claimed about itself, not in what the toolchain could see.
 
 ### E-109. A test asserted against the placeholder the manifest tells you to change, so it failed when the rename was done right
 
