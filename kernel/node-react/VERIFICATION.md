@@ -489,3 +489,65 @@ advisory outranks the window above the 7-day floor), recomposed here, with the f
 section in `VERSIONS.md`. Measured: `npm audit` reports **0 vulnerabilities** in this edition's composed client
 tree, down from 1 high. The lockfile diff touches nothing but that package; the server tree is untouched and
 `npm run verify` passes on it unchanged.
+
+## 2026-07-27, node Phase A: re-measuring the four proven rows
+
+Baseline: **7921bf1**, server 154 tests, 6 files. The four rows read `proven` and each was FLAT, one status with
+no obligations, which is the shape E-72 found in the sibling: several separate things carried by one word.
+
+### The vacuity probe, run first because it covers three rows at once
+
+Narrowed `scanEndpointSpine`'s own loop to match nothing. The sibling's equivalent narrowing left five assertions
+across two claims green. Here: **23 tests failed**, across SEC-1, SEC-2, SEC-3 and the composition-wiring proof,
+each naming its claim.
+
+The difference is structural, not diligence, and the distinction is the whole point (E-79). This scan is a pure
+function over a route table passed IN, so every refusal is a fixture test asserting a specific violation is
+reported, and narrowing the loop makes 23 of them return nothing. A scan that reads the host it is hosted by
+cannot be handed a violating surface at all, so its only available assertion is "the shipped surface is clean",
+which passes equally when the scan reaches nothing.
+
+Reverted; `git diff` empty over `server/src`; 154 restored.
+
+### What the three security rows actually have
+
+Measured rather than assumed, and the result is that they hold:
+
+- The route table records REFERENCES at `onRoute` and materializes at `onReady`, then reconciles against
+  Fastify's own `printRoutes()` and refuses to boot on a disagreement in either direction.
+- The registries are extent-asserted in both directions, and their false positives are ASSERTED rather than
+  described: `fileName` and `tenantName` match the PII registry and are accepted as the cost; `filename`,
+  `namespace`, `mailbox` and `voicemail` do not.
+- `createApp` refuses at REGISTRATION any schema keyword the body walk cannot descend, and requires every object
+  schema in a scanned surface to close itself. The sibling has no equivalent.
+- SEC-3's undeclared-parameter obligation is genuinely CLOSED here (`removeAdditional` strips it before the
+  handler runs) and reads `owed` in the sibling. Each edition measured on its own mechanism, not against the other.
+
+All three keep `proven`, and each now carries its obligations so the status states what it covers rather than
+standing for it.
+
+### CFG-1 is lowered, and its own note said why before this round did
+
+The row read `proven` while its note admitted the duplication check "skips values shorter than eight characters".
+A status that contradicts its own note is the overstatement this re-measurement exists to find.
+
+| plant | outcome |
+|-------|---------|
+| a literal `'kernel-api'` in `client-web/tools/harness/main.ts` | red-correct, naming the file and the key it duplicates |
+
+So the check binds. The candidate set is what fails: values are filtered by an eight-character floor AND by a
+`typeof === 'string'` test. `http.port` is 5080, a number, so it is excluded twice, and the second exclusion is a
+consequence of the type test rather than an argued decision.
+
+Two live instances under it, both in the shared client tier, both silent defaults, both defaulting to a
+hardcoded port that duplicates `config/settings.json`.
+
+Not repaired: both are COMPOSED SHARED files, and this is the second instance of one cause. The sibling's
+`mintToken.mjs` carries the same shape for the same reason (E-75), and the reason is that a shared file cannot
+read an edition's committed configuration because the path is edition-specific. DB2 has since made the repair
+obvious: `edition.json` is at the same relative path in both editions. Recorded as E-78 with that trigger.
+
+### Gates
+
+Server 154, docs-lint ok, conformance ok at 69 rows. Non-owed node rows unchanged at 4; the change is that one of
+them is now honest about being `patterned` and all four state their obligations.

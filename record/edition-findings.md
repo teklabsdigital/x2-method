@@ -3916,6 +3916,72 @@ written, the claim reads as though the scan is always available. Not repaired he
 from the register. The obligation's trigger now names the chokepoint as a precondition rather than restating the
 scan.
 
+### E-78. The shared client tier carries edition configuration as silent defaults, in both editions, for the same structural reason
+
+**Claim:** CFG-1, and DATA-5 which it also touches. **Found:** 2026-07-27. **Measured at 7921bf1.**
+**Live instances in both editions.**
+
+E-75 recorded that `mintToken.mjs` falls back to `?? 'kernel'` for the JWT issuer and audience, duplicating the
+sibling's committed appsettings, and left it unrepaired because the file is a COMPOSED SHARED file and teaching
+it to read a .NET config path would be wrong for node. That reasoning was right and the conclusion was
+incomplete, because it read as a one-off. Re-measuring node's CFG-1 found the same shape again, independently:
+
+    client-web/tools/harness/main.ts:8   const baseUrl = process.env.HARN_BASE_URL  ?? 'http://localhost:5080'
+    client-web/tools/smoke/composedApp.smoke.ts:9  const baseUrl = process.env.VITE_API_BASE_URL ?? 'http://localhost:5080'
+
+`config/settings.json` declares `http.port` as 5080. Both lines duplicate it, and both do so as a silent default,
+which is the pair of defects CFG-1's own statement names in one sentence: a value duplicated into a script, and
+the ambient-environment read "almost always written with the silent default DATA-5 forbids one claim over".
+
+Two instances, two editions, one cause: **a shared file cannot read an edition's committed configuration, because
+the path to that configuration is edition-specific.** So the shared tier has no choice but to carry the value or
+demand it, and carrying it is the path of least resistance every time.
+
+Node's own scan cannot see these, for a second reason worth separating. Its duplication check filters candidate
+values twice: strings shorter than eight characters are excluded by a stated argument (a check that fires on
+`info` is a check somebody deletes), and non-string JSON values are never candidates at all. `http.port` is a
+NUMBER, so it is excluded twice over, and the second exclusion is a consequence of the type test rather than an
+argued decision. A port is exactly the value class that produced a real defect in the sibling (E-26: eight sites
+documented 5080 and nothing bound it).
+
+**The repair is now obvious and was not before.** DB2 established `edition.json` as the edition declaration, and
+it sits at the same relative path in both editions, which is precisely what a shared tool needs. A `harness` or
+`configSurface` block naming the committed config file and the keys the shared tooling reads would let both
+editions' shared tools resolve a value instead of defaulting to one. Not built here: it changes the shared client
+tier in both editions and is a design decision, not a mechanical fix. **Trigger: the first shared-tier read of
+edition configuration.** It is why node's CFG-1 is lowered from `proven` to `patterned`.
+
+### E-79. The same vacuity probe that blinded five assertions in one edition fails 23 tests in the other, and the difference is structural
+
+**Claims:** SEC-1, SEC-2, SEC-3. **Found:** 2026-07-27. **Measured at 7921bf1.** **Flows back to the sibling.**
+
+E-72 recorded that narrowing `RouteEndpoints()` in the dotnet edition left SEC-1's three assertions and TEN-1's
+two green, caught only by SEC-2's body scan with a message naming neither. The same probe was run against node,
+narrowing `scanEndpointSpine`'s own loop to match nothing:
+
+| edition | result |
+|---------|--------|
+| dotnet-react | 5 assertions across 2 claims stayed green; 1 test noticed, belonging to a third claim |
+| node-react | **23 tests failed**, across SEC-1, SEC-2, SEC-3 and the composition-wiring proof, each naming its claim |
+
+The difference is not diligence, and saying so matters because the wrong lesson here is "node was tested more
+carefully". It is one architectural choice: **node's scan is a pure function over a route table passed in, and
+dotnet's reads the live host directly.**
+
+A pure function can be handed a violating surface, so every refusal is a fixture test that asserts a specific
+violation is REPORTED. Narrowing the loop makes those fixtures return nothing and 23 assertions fail immediately.
+A scan that reads the host it is hosted by cannot be handed anything: the composed app is by construction the one
+with no violations in it, so the only available assertion is "the shipped surface is clean", which passes just as
+well when the scan reaches nothing. Node hit this too and named it: `composeApp` takes a `surfaces` parameter
+solely so a violating surface can be passed in, after an audit deleted the `assertEndpointSpine` call and its
+import and watched the suite stay green.
+
+**What flows back to the sibling.** dotnet's repair for E-72 was an extent assertion comparing the scanned count
+against `EndpointDataSource`, which is correct and is a narrower fix than the shape node demonstrates. The
+stronger form is to make the dotnet scans take their route set as a parameter defaulting to the live host, so the
+refusals can be fixture-driven there too. Recorded, not done: it is a refactor of four guards, and the extent
+assertion already closes the specific hole E-72 found.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
