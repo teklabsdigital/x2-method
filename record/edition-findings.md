@@ -3229,6 +3229,130 @@ assertions passed happily against an empty log, and the guard that asserts the s
 The vacuity guards in this edition are there to catch a guard that reaches nothing; this is the first time one
 caught a measurement that reached nothing.
 
+### E-60. CON-2's corpus pins the three contracts someone remembered, and neither consumer enumerates anything
+
+**Claim:** CON-2. **Found:** 2026-07-27. **Measured at 58d13de.**
+
+The fixture is genuinely one physical file, linked into the server test project with `None Include` + `Link`, so
+the mechanism class's actual sentence is satisfied and no copy exists to rot. What is not satisfied is the
+statement's first word, "Every".
+
+| plant | result |
+|-------|--------|
+| rename `NextCursor` to `NextPageCursor` on `NoteListResponse` | red, `ContractParityTests` |
+| add a fourth hand-mirrored contract (`RenameNoteRequest`) with no fixture entry | **green, 157 of 157** |
+| add a fixture key (`archiveNoteRequest`) that neither side consumes | **green on both sides** |
+| add an optional field to the client's `Note` interface | **green** |
+
+Three hand-written lists, not one corpus: the C# consumer names its three types in `[InlineData]`, the client
+consumer names its three in three `it(...)` blocks, and the fixture names three keys. Any one of them can grow or
+shrink without the other two noticing, in either direction.
+
+The fourth plant is the subtler one. The client consumer builds a literal typed as the contract type and reads
+`Object.keys` off the literal, so it sees the fields the literal happens to set. A required field added to the
+interface fails compilation, which is why this looks safe; an OPTIONAL field does not, and an optional field is
+exactly how a wire contract grows.
+
+**Repair, and it is small.** Server side: enumerate every public type under `Kernel.Contracts` and assert each has
+a fixture key, which closes the "every contract" direction totally rather than by list. Both sides: assert every
+fixture key has a consumer, which closes the stale direction. Client side: derive the key set from the type
+rather than from a literal, or accept the limit in the row.
+
+### E-61. DATA-5 fails all three of its own completeness obligations while reading `proven`
+
+**Claim:** DATA-5. **Found:** 2026-07-27. **Measured at 58d13de.**
+
+DATA-5 is unusual in the catalog: it spells out its completeness obligation in three named parts, **when**,
+**closure** and **remedy**. Each was planted separately.
+
+| obligation | plant | result |
+|------------|-------|--------|
+| when: validation at startup, structurally | four keys, one blanked at a time | red per key, and the reads feed the JWT options and the DbContext, so the serving surface genuinely cannot be built without them |
+| closure, over every key the application declares mandatory | add a fifth `Required("Webhook:Secret")` and satisfy it in both factories | **green, 157 of 157** |
+| closure, over every key a committed document declares that the application does not | add `Webhook:Secretz` to `appsettings.json` | **green** |
+| remedy, names every failing key rather than the first | blank three keys at once | **names one**: `Jwt:Issuer` |
+
+The "when" half holds and is the half the row was written about. The other two do not, and the claim anticipated
+both in its own words: the closure obligation says the undeclared direction is "the direction that is easy to
+miss", and the remedy obligation says a validator that stops at the first "turns a three-key misconfiguration
+into three failed deploys". Measured: three missing keys, one named.
+
+E-14 recorded the remedy half by reading, in an earlier round. This is the same defect measured against a running
+host, plus the two closure halves that reading had not reached.
+
+The repair for the first closure half is not a longer `[InlineData]` list, which is the same hand-written list one
+entry longer. `Required()` is a local function, so its call sites are enumerable by a source scan, and the theory
+can be driven from that scan: every key the application actually demands gets a test, by construction.
+
+### E-62. MOD-1's cross-module rules do not exist, and its row cites another claim's lint
+
+**Claim:** MOD-1. **Found:** 2026-07-27. **Measured at 58d13de.**
+
+The row reads `latent`, with the note "single module; the cross-module rules have no second module to constrain,
+so the second module is their first real run". That describes a mechanism waiting for a surface. There is no
+mechanism.
+
+Planted a second module, `Kernel.App.Widgets.WidgetService`, taking a direct constructor dependency on the Notes
+module's `NoteService` rather than an interface registered at the composition root, which is the reach MOD-1's
+mechanism class says the arch rules reject. Green, 157 of 157. The string "module" appears in no test in the
+project. `DependencyDirectionTests` constrains LAYERS (App, Persistence, Api); a module is a different partition
+and nothing partitions it.
+
+The row's other cited mechanism, "client deep-path import bans", is `serviceBan` in the shared eslint config,
+whose own message reads "screens receive data and callbacks (UI-5)". It is UI-5's ban on screens reaching the
+transport, cited for MOD-1's ban on modules reaching each other's internals. Same file, same rule name, different
+claim, and MOD-1 has nothing of its own there either.
+
+`latent` is the wrong status for this. `latent` means built but never executed, which is a real and useful state;
+this is not built. It goes to `owed` with the trigger the note was already reaching for: the second module.
+
+### E-63. MOD-2's artifact-kind registry is closed over six suffixes and open to every kind not in it
+
+**Claim:** MOD-2. **Found:** 2026-07-27. **Measured at 58d13de.**
+
+Two plants bind: a second public type in a file turns
+`Every_source_file_holds_one_public_type_named_for_the_file` red, and a `MapGet` in a `*Middleware.cs` turns
+`Routes_are_declared_only_in_endpoint_files` red. The naming and route halves of this claim are real.
+
+The registry half is not. `Registry_suffixes_live_in_their_legal_location` checks six suffixes: `Ef*Store`,
+`*Store`, `*Endpoints`, `*Configuration`, `*Middleware`, `*Service`. A file named for any other kind is
+unconstrained. Planted `NoteRepository.cs`, a data-access kind in `Kernel.Api/Platform/`, which is both a new
+artifact kind and a placement no layer rule allows. Green, 157 of 157.
+
+MOD-2's statement is "Artifact kinds form a closed registry; introducing a new kind is a deliberate kernel edit,
+not an ad hoc naming choice." The test enforces where the six known kinds live. Nothing notices a seventh
+arriving, which is the sentence's actual subject.
+
+The repair is the same shape as every other closure repair in this edition: derive the kind from the file name's
+suffix, and fail on a suffix the registry does not declare. That makes adding a kind exactly what the claim asks
+for, a deliberate edit of the registry.
+
+### E-64. One pinned image digest, four copies, and any one of them can drift alone
+
+**Claims:** TEST-1, DEP-1, CFG-1. **Found:** 2026-07-27. **Measured at 58d13de.**
+
+The SQL Server image is pinned by tag and digest in `VERSIONS.md`, and the same 71-character literal is written
+out again in `SqlServerFixture.cs`, `scripts/db-up.sh`, `.github/workflows/ci.yml` and
+`docs/runbooks/local-development.md`. Each copy carries a comment saying it is the pinned value from VERSIONS.md;
+`SqlServerFixture.cs` says it is stated explicitly "so all three tiers run the same engine build as the runbook
+and CI".
+
+Planted: change the digest in `SqlServerFixture.cs` alone to sixty-four zeroes. Architecture 157 of 157 green,
+docs-lint ok, conformance ok. Nothing anywhere compares the copies to VERSIONS.md or to each other, so the
+sentence "all three tiers run the same engine build" is an aspiration held by a comment.
+
+CFG-1's statement has this exactly: "a script never duplicates a committed configuration value, it reads it",
+which E-13 already recorded as unenforced. This is a measured instance of it, in the one place where the value
+being duplicated is a supply-chain pin.
+
+It is also TEST-1's "exactly one provisioning path" from the other side. There are three: Testcontainers for the
+integration tier, `scripts/db-up.sh` for development, and a GitHub Actions `services:` container plus
+`dotnet ef database update` for e2e. The claim's harm paragraph names this shape, "a container-based path plus a
+parallel shell-docker path", as what rots into "which one is true". The four-copy pin is the rot, visible.
+
+A shell script cannot read a markdown table, so the honest repair is one committed machine-readable pin the
+script, the fixture and the workflow all read, with `VERSIONS.md` generated from it or checked against it.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

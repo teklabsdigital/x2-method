@@ -1195,3 +1195,40 @@ vacuity guard, not by any rule.
 ### Gates
 
 Architecture 157, unit 58. Both conformance records ok at 69 rows. Literal em dash and en dash scans, 0 and 0.
+
+## 2026-07-27, batch 4 planting
+
+CON-2, DATA-5, MOD-1, MOD-2, TEST-1. Measured at 58d13de, tree clean before and after; every plant restored with
+`cp` from a copy taken in this round, and the baseline reconfirmed at architecture 157 and unit 58.
+
+| claim | plant | outcome |
+|-------|-------|---------|
+| CON-2 | rename `NextCursor` on an existing contract | red, correct |
+| CON-2 | a fourth hand-mirrored contract with no fixture entry | green, E-60 |
+| CON-2 | a fixture key neither side consumes | green both sides, E-60 |
+| CON-2 | an optional field added to the client's contract interface | green, E-60 |
+| DATA-5 | each of the four mandatory keys blanked in turn | red per key, correct |
+| DATA-5 | a fifth `Required()` key, satisfied in both factories | green, E-61 |
+| DATA-5 | an undeclared key in committed `appsettings.json` | green, E-61 |
+| DATA-5 | three mandatory keys blanked at once | names one, E-61 |
+| MOD-1 | a second module reaching into another module's service directly | green, E-62 |
+| MOD-2 | a second public type in a file | red, correct |
+| MOD-2 | a `MapGet` in a `*Middleware.cs` | red, correct |
+| MOD-2 | a seventh artifact kind (`*Repository`) in a layer it does not belong to | green, E-63 |
+| TEST-1 | `Microsoft.EntityFrameworkCore.InMemory` added to a test project | red, correct |
+| TEST-1 | the pinned SQL Server digest changed in one of its four copies | green everywhere, E-64 |
+
+Five rows fall: CON-2, DATA-5, MOD-2 and TEST-1 from `proven`, MOD-1 from `latent`. Non-owed rows 23 to 18.
+
+The roll-up tool caught one of my own errors while writing these rows: TEST-1 was written as `latent` with an
+`owed` obligation under it, and `conformance.mjs` refused the file naming both. That is the check working on the
+person maintaining the record rather than on the code, which is the harder direction.
+
+MOD-1 moving from `latent` to `owed` is the status vocabulary doing its job. `latent` says built but never
+executed and is an honest, useful state; nothing was built, and the note that read "the cross-module rules have
+no second module to constrain" described a mechanism that does not exist.
+
+### Gates
+
+Architecture 157, unit 58, conformance ok at 69 rows, docs-lint ok, dash scans 0 and 0. Integration not run: no
+Docker daemon (E-49).

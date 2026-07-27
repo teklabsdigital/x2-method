@@ -377,9 +377,31 @@
     },
     "DATA-5": {
       "title": "Fail-fast mandatory config",
-      "status": "proven",
-      "mechanism": "`Required()` startup reads; `StartupConfigTests` fails per missing key",
-      "note": ""
+      "status": "owed",
+      "mechanism": "`Required()` startup reads feeding the JWT options and the DbContext; `StartupConfigTests` blanks each of the four keys in turn",
+      "note": "the `when` obligation holds; the two `closure` obligations and the `remedy` obligation do not (E-61)",
+      "obligations": [
+        {
+          "name": "validation runs at startup, before the process accepts work, structurally",
+          "status": "proven",
+          "text": "`Required()` runs at configure time and its results are the JWT signing key, issuer, audience and the connection string, so the serving surface cannot be constructed without them; this is the structural ordering the claim asks for rather than a conventional early call. Each of the four keys is planted individually and each turns the host's startup red naming itself."
+        },
+        {
+          "name": "closure over every key the application declares mandatory",
+          "status": "owed",
+          "text": "The theory's key list is four `[InlineData]` entries. Adding a fifth `Required()` call and satisfying it in both factories leaves all 157 tests green, so a new mandatory key arrives with nothing proving it is load-bearing (E-61). trigger: drive the theory from a source scan of the `Required()` call sites, not a hand-written list."
+        },
+        {
+          "name": "closure over every key a committed configuration document declares that the application does not",
+          "status": "owed",
+          "text": "`Webhook:Secretz` added to `appsettings.json` is ignored, green (E-61). The claim calls this the direction that is easy to miss and says an undeclared key is refused rather than ignored, because a typo, a stale key and an abandoned key look identical to a validator that walks only its own list. trigger: walk the committed documents and refuse a key the application never reads."
+        },
+        {
+          "name": "the remedy names every failing key, not the first",
+          "status": "owed",
+          "text": "Three keys blanked at once, and startup names one: `Jwt:Issuer` (E-61, measured; E-14 recorded it by reading). `Required()` throws on first miss, so a three-key misconfiguration is three failed deploys, which is the claim's own sentence. trigger: collect the misses and throw once naming all of them."
+        }
+      ]
     },
     "DATA-6": {
       "title": "Migrate and exit",
@@ -465,9 +487,26 @@
     },
     "CON-2": {
       "title": "Contract parity fixture",
-      "status": "proven",
-      "mechanism": "shared `note-contract.fixture.json` linked into C# tests + read by the TS test; `ContractParityTests`, `noteContract.test.ts`",
-      "note": ""
+      "status": "owed",
+      "mechanism": "shared `note-contract.fixture.json`, one physical file linked into the C# test project (`None Include` + `Link`) and read natively by the TS test; `ContractParityTests`, `noteContract.test.ts`",
+      "note": "one corpus, no copy to rot, and three hand-written lists deciding what it covers (E-60)",
+      "obligations": [
+        {
+          "name": "exactly one corpus, physically one file",
+          "status": "proven",
+          "text": "The fixture lives once, under `client-web/src/data/__fixtures__/`, and reaches the server test project as a linked item rather than a copy. This is the mechanism class's actual sentence and it holds; the claim's precondition (both consumers under one root that travels together) also holds here, so the sanctioned materializer alternative is not needed."
+        },
+        {
+          "name": "every hand-mirrored contract is pinned by the corpus",
+          "status": "owed",
+          "text": "Adding a fourth contract type with no fixture entry leaves all 157 tests green, and adding a fixture key nothing consumes is green on both sides (E-60). The C# consumer names three types in `[InlineData]`, the client names three in three `it` blocks, and the fixture holds three keys; no side enumerates anything. trigger: enumerate the public types under `Kernel.Contracts` and assert each has a key, and assert every key has a consumer."
+        },
+        {
+          "name": "drift on either side fails that side's build",
+          "status": "patterned",
+          "text": "Renaming `NextCursor` on `NoteListResponse` turns `ContractParityTests` red, so the server half binds. The client half reads `Object.keys` off a literal typed as the contract type, so it sees what the literal sets: an optional field added to the interface leaves it green (E-60). A required field would fail compilation, which is why the gap is easy to miss. trigger: derive the client key set from the type rather than a literal."
+        }
+      ]
     },
     "CON-3": {
       "title": "Read completeness for action-bearing surfaces",
@@ -567,15 +606,49 @@
     },
     "MOD-1": {
       "title": "Module co-location",
-      "status": "latent",
-      "mechanism": "Notes module co-located; client deep-path import bans",
-      "note": "single module; the cross-module rules have no second module to constrain, so the second module is their first real run"
+      "status": "owed",
+      "mechanism": "the Notes module is co-located by construction; no cross-module rule exists on either side",
+      "note": "not built rather than not executed, and the cited client lint belongs to UI-5 (E-62)",
+      "obligations": [
+        {
+          "name": "a module's code lives together on each side of the wire",
+          "status": "latent",
+          "text": "The skeleton instantiates the layout and Notes is co-located, which is the mechanism class's first part and is real. Nothing asserts it, and with one module nothing could distinguish co-located from coincidental. trigger: the second module."
+        },
+        {
+          "name": "modules meet only through interfaces registered at the composition root",
+          "status": "owed",
+          "text": "Planted a second module taking a direct constructor dependency on another module's service: green, 157 of 157. The string `module` appears in no test; `DependencyDirectionTests` partitions layers, not modules (E-62). trigger: the second module, and a rule that partitions by module folder with the platform layer whitelisted, which the claim's weakening note requires."
+        },
+        {
+          "name": "client-side deep-path import bans force modules through their public surface",
+          "status": "owed",
+          "text": "The lint this row cited is `serviceBan`, whose own message names UI-5: it stops screens reaching the transport, not modules reaching each other (E-62). trigger: the second client module."
+        }
+      ]
     },
     "MOD-2": {
       "title": "Deterministic naming and placement",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`NamingPlacementTests` (server source scan) + `namingPlacement.test.ts` (client)",
-      "note": ""
+      "note": "naming and routes bind; the artifact-kind registry is closed over six suffixes and silent about a seventh (E-63)",
+      "obligations": [
+        {
+          "name": "one public type per file, named for the file",
+          "status": "proven",
+          "text": "A second public type added to `NoteCursor.cs` turns the scan red. The scan walks every non-generated file under `src`, counts delegates separately so a delegate cannot be the smuggled second type, and carries two declared exceptions (`Program.cs`, and `*Contracts.cs` under `Kernel.Contracts` only)."
+        },
+        {
+          "name": "routes originate only from endpoint files",
+          "status": "proven",
+          "text": "A `MapGet` planted in `SessionVersionMiddleware.cs` turns `Routes_are_declared_only_in_endpoint_files` red. The pattern covers every framework `Map*` binder including `MapHub<T>` and bare `Map(`, and deliberately does not match a custom `Map{Resource}Endpoints` aggregator."
+        },
+        {
+          "name": "artifact kinds form a closed registry, and a new kind is a deliberate kernel edit",
+          "status": "owed",
+          "text": "The check knows six suffixes and constrains where those six live. `NoteRepository.cs`, a seventh kind placed in `Kernel.Api/Platform/`, is green at 157 of 157 (E-63). The claim's sentence is about the registry being closed, and nothing notices a kind that is not in it. trigger: fail on a file whose suffix the registry does not declare."
+        }
+      ]
     },
     "DOC-1": {
       "title": "Documentation lifecycle",
@@ -726,9 +799,31 @@
     },
     "TEST-1": {
       "title": "Tier strategy",
-      "status": "proven",
-      "mechanism": "SQLite unit/arch, Testcontainers integration; EF InMemory banned by `NamingPlacementTests`",
-      "note": ""
+      "status": "owed",
+      "mechanism": "SQLite unit/arch tier, Testcontainers integration tier with a unique database and the real migration, e2e through the client service layer; EF InMemory banned by `NamingPlacementTests`; the edition's `ci.yml` runs all three",
+      "note": "the ban binds and the integration fixture is correctly shaped by reading; it has never run here, and the engine pin is duplicated four times (E-64, E-49)",
+      "obligations": [
+        {
+          "name": "no fake in-memory database provider in any test project",
+          "status": "proven",
+          "text": "Adding `Microsoft.EntityFrameworkCore.InMemory` to the unit project turns `Test_projects_do_not_reference_ef_in_memory` red. The scan is case-insensitive and covers `Directory.Build.props` and `Directory.Packages.props` as well as every test csproj, so neither a casing trick nor a shared props file evades it."
+        },
+        {
+          "name": "the integration tier uses the real engine, disposable, unique per run, with real migrations",
+          "status": "latent",
+          "text": "`SqlServerFixture` starts one ephemeral container, points it at `Kernel_{guid}` and runs `MigrateAsync()` rather than `EnsureCreated`, which is exactly the claim's shape. It cannot be executed here: with no Docker daemon the tier fails rather than skips (E-49), so this is read and not run. trigger: a run with a daemon available, which is also E-49's fix."
+        },
+        {
+          "name": "exactly one provisioning path",
+          "status": "owed",
+          "text": "Three: Testcontainers for the integration tier, `scripts/db-up.sh` for development, and a workflow `services:` container plus `dotnet ef database update` for e2e. The claim's harm paragraph names this shape by name. The pinned image digest is written out four times and changing one copy alone leaves everything green (E-64). trigger: one committed machine-readable pin that the script, the fixture and the workflow all read."
+        },
+        {
+          "name": "all three tiers run in the CI loop",
+          "status": "latent",
+          "text": "The edition's `.github/workflows/ci.yml` restores locked, builds with `-warnaserror` and runs all three tiers. It is a template that becomes real CI only at instantiation, and instantiation ships no arming mechanism (E-24), so it has never run. This repository's own CI runs no dotnet at all (E-39), which is a fact about the repository rather than about the edition. trigger: E-24."
+        }
+      ]
     },
     "TEST-2": {
       "title": "E2E harness",
