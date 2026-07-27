@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.IdentityModel.Tokens.Jwt;
 using Kernel.App.Platform.Sessions;
 using Kernel.Contracts.Notes;
 using Microsoft.AspNetCore.Authentication;
@@ -108,6 +109,85 @@ public sealed class HostSecurityTests(KernelApiFactory factory) : IClassFixture<
     {
         var response = await ClientWith(TestTokens.Unsigned(Guid.NewGuid(), "notes.read")).GetAsync("/notes");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    /// <summary>
+    /// The other five validation properties, read off every scheme. E-88: on 2026-07-27 all five were planted
+    /// permissive at once, `ValidateIssuer`, `ValidateAudience`, `ValidateLifetime` and `RequireExpirationTime`
+    /// false and `ClockSkew` at a year, and 203 architecture plus 58 unit tests stayed green. Nothing was wrong
+    /// with the host; nothing could see it either way.
+    ///
+    /// SEC-4's sentences name none of these five, and that is recorded rather than smoothed over: this assertion
+    /// exists because the claim's revocation half promises revocation "rather than at token expiry", which
+    /// presupposes that tokens expire. A claim can rest on a premise it states as background, and a guard set
+    /// built from its words alone does not cover the premise.
+    ///
+    /// `ClockSkew` is asserted as a BOUND rather than as an equality, and behaviourally not at all. A token
+    /// expired inside the skew window is valid on purpose, so a behavioural test of the boundary asserts the
+    /// opposite of what the host promises and flakes on top of that. The bound is what matters: a skew large
+    /// enough to matter is a lifetime extension nobody wrote down.
+    /// </summary>
+    [Fact]
+    public void Token_validation_checks_issuer_audience_and_lifetime()
+    {
+        foreach (var (scheme, options) in BearerSchemes())
+        {
+            var parameters = options.TokenValidationParameters;
+
+            Assert.True(parameters.ValidateIssuer,
+                $"Scheme '{scheme}' does not validate the issuer, so it accepts a token minted by anyone holding the key, for any issuer (E-88).");
+            Assert.True(parameters.ValidateAudience,
+                $"Scheme '{scheme}' does not validate the audience, so a token minted for another service is accepted here (E-88).");
+            Assert.True(parameters.ValidateLifetime,
+                $"Scheme '{scheme}' does not validate the lifetime, so a token never expires and the session-version check becomes the only bound on a stolen one (E-88, SEC-4).");
+            Assert.True(parameters.RequireExpirationTime,
+                $"Scheme '{scheme}' does not require an expiry claim, so a token minted without one is valid forever (E-88).");
+            Assert.True(parameters.ClockSkew <= TimeSpan.FromMinutes(5),
+                $"Scheme '{scheme}' allows {parameters.ClockSkew} of clock skew. The skew is added to every token's lifetime, so a large one is an undeclared lifetime extension (E-88).");
+        }
+    }
+
+    /// <summary>
+    /// The inputs those five properties are the only thing refusing. Each asserts the shape of the token it
+    /// sends before sending it, because a minter that quietly produced a VALID token would make every one of
+    /// these pass for the opposite reason, and "the input really was violating" is the one thing a status code
+    /// cannot tell you.
+    /// </summary>
+    [Fact]
+    public async Task A_token_from_another_issuer_is_rejected()
+    {
+        var token = TestTokens.MintFromIssuer(Guid.NewGuid(), "https://another-issuer.invalid", "notes.read");
+        Assert.NotEqual(KernelApiFactory.JwtIssuer, new JwtSecurityTokenHandler().ReadJwtToken(token).Issuer);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await ClientWith(token).GetAsync("/notes")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_token_for_another_audience_is_rejected()
+    {
+        var token = TestTokens.MintForAudience(Guid.NewGuid(), "another-api", "notes.read");
+        Assert.DoesNotContain(KernelApiFactory.JwtAudience, new JwtSecurityTokenHandler().ReadJwtToken(token).Audiences);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await ClientWith(token).GetAsync("/notes")).StatusCode);
+    }
+
+    [Fact]
+    public async Task An_expired_token_is_rejected()
+    {
+        var token = TestTokens.MintExpired(Guid.NewGuid(), "notes.read");
+        var expiry = new JwtSecurityTokenHandler().ReadJwtToken(token).ValidTo;
+        Assert.True(expiry < DateTime.UtcNow.AddMinutes(-1), $"the minted token expires at {expiry:o}, which is not comfortably outside the 30 second clock skew.");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await ClientWith(token).GetAsync("/notes")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_token_carrying_no_expiry_at_all_is_rejected()
+    {
+        var token = TestTokens.MintWithoutExpiry(Guid.NewGuid(), "notes.read");
+        Assert.DoesNotContain(new JwtSecurityTokenHandler().ReadJwtToken(token).Claims, claim => claim.Type == "exp");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await ClientWith(token).GetAsync("/notes")).StatusCode);
     }
 
     /// <summary>

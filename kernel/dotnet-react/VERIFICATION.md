@@ -1739,3 +1739,59 @@ direction of a dishonest row, which this week has spent a lot of time finding el
 
 docs-lint self-test 28 caught / 27 ignored in both editions (from 28 / 22), both docs-lints ok, both conformance
 records ok at 69 rows, compose 78 files / 2 editions.
+
+## 2026-07-27, E-88 repaired: the minters that had to exist before any assertion could mean anything
+
+Measured at `34b3bf6`. Architecture tier 203 before, 208 after. Unit tier 58, unchanged.
+
+E-88 was found while building the node edition's verifier, by asking what this edition's equivalent could prove.
+`Program.cs` sets seven token-validation properties. Two carried assertions. The other five were planted permissive
+all at once, `ValidateIssuer`, `ValidateAudience`, `ValidateLifetime` and `RequireExpirationTime` false and
+`ClockSkew` at a year, and **203 architecture plus 58 unit tests stayed green**. This host would have accepted a
+token from any issuer, for any audience, with no expiry claim, or expired by up to a year.
+
+Nothing was wrong with the host. The cause was one line in the test harness: every mint routed through a single
+`TestTokens.Build` that always passed the right issuer, the right audience and a thirty minute expiry, so no
+violating input existed to send. **A configuration assertion cannot be stronger than the inputs the harness can
+produce**, and this is E-42's vacuity argument arriving through the fixture rather than through the scan.
+
+The finding set its own repair order, minters before assertions, and it was followed. `Build` stopped hardcoding
+three values; `MintFromIssuer`, `MintForAudience`, `MintExpired` and `MintWithoutExpiry` were added; then four
+behavioural tests and one configuration assertion over every registered bearer scheme.
+
+### Each test proves its own input is violating, before it sends it
+
+A minter that quietly produced a VALID token would make every one of these pass for the opposite reason, and a
+status code cannot tell you which happened. So `An_expired_token_is_rejected` reads `ValidTo` back off its own
+token and asserts it is comfortably outside the thirty second skew, and `A_token_carrying_no_expiry_at_all_is_rejected`
+asserts the `exp` claim is ABSENT rather than trusting that `expires: null` omits it.
+
+### Two controls, and the second is what makes the first mean anything
+
+| plant | outcome |
+|---|---|
+| all five permissive | 5 failed, 203 passed. The identical plant left all 203 green before the repair. |
+| `ValidateIssuer` alone | 2 failed, 206 passed: the issuer test and the configuration assertion, and nothing else. |
+
+Five tests failing together is also what one degenerate assertion looks like. The discrimination plant is what
+separates those two readings, and it says each behavioural test is bound to its own property rather than to
+whichever of the five happens to be off.
+
+### One deliberate omission, named so it is not read as a gap
+
+`ClockSkew` is asserted as a bound and never behaviourally. A token expired inside the skew window is valid on
+purpose, so a behavioural test of that boundary asserts the opposite of what the host promises and flakes besides.
+What matters is the size: a skew large enough to matter is a lifetime extension nobody wrote down.
+
+### The row
+
+SEC-4 stays `proven` and gains a fourth obligation, `the premise the claim rests on`. It is recorded as its own
+obligation rather than folded into the other three because **SEC-4's statement names none of issuer, audience or
+expiry**, and this row should not pretend the claim asked for what it did not. The argument for guarding them is
+the claim's own revocation sentence: revocation takes effect "rather than at token expiry", which presupposes
+tokens expire.
+
+### Gates
+
+Architecture 208, unit 58, integration 4 skipped by design, build clean with `-warnaserror`, conformance ok at 69
+rows, docs-lint ok. Both plants restored byte-for-byte, verified by hash, backup deleted in this round (E-59).

@@ -4273,10 +4273,30 @@ bounds and becomes the only one. **A claim can rest on a premise it states as ba
 requirement, and a guard set built from the claim's words alone will not cover the premise.** That is E-39's shape
 (a decision resting on a premise that is no longer true) relocated from a document to a claim.
 
-Not repaired here: this is the sibling edition and the work in front of the loop is node's verifier. Recorded with
-the plant so the next dotnet pass starts from a measurement. **Trigger: the next dotnet security round, which owes
-a minter for each violating input before it owes any assertion**, because the assertions without the inputs are
-what produced this state.
+**Repaired 2026-07-27 at 34b3bf6**, and the trigger this finding set for itself was followed rather than skipped:
+a minter for each violating input first, then the assertions. `TestTokens` gained `MintFromIssuer`,
+`MintForAudience`, `MintExpired` and `MintWithoutExpiry`, which required `Build` to stop hardcoding the issuer,
+the audience and a thirty minute expiry; `HostSecurityTests` gained four behavioural tests and one configuration
+assertion reading all five properties off every registered bearer scheme.
+
+Each behavioural test asserts the SHAPE of the token it is about to send, before sending it. That is not
+decoration: a minter that quietly produced a valid token would make every one of these pass for the opposite
+reason, and "the input really was violating" is the one thing a status code cannot tell you. So the expiry test
+reads `ValidTo` back and asserts it is comfortably outside the clock skew, and the no-expiry test asserts the
+`exp` claim is absent from the minted token rather than trusting that `expires: null` omits it.
+
+Two controls, both at 34b3bf6:
+
+    all five planted permissive     5 failed, 203 passed.  The same plant left all 203 green before the repair.
+    ValidateIssuer alone            2 failed, 206 passed.  Only the issuer test and the configuration assertion.
+
+The second is the one that makes the first mean something. Five tests failing together is also what a single
+degenerate assertion would look like, and the discrimination plant shows each behavioural test is bound to its own
+property rather than to whichever of the five happens to be off.
+
+`ClockSkew` is asserted as a bound and not behaviourally, stated here because it is a deliberate omission rather
+than an oversight: a token expired inside the skew window is valid ON PURPOSE, so a behavioural test of that
+boundary asserts the opposite of what the host promises, and flakes. Architecture tier 203 to 208.
 
 ### E-89. A relaxation that is harmless today, and becomes a fail-open the moment the next security change lands
 
