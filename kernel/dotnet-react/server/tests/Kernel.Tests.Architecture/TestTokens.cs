@@ -24,6 +24,30 @@ public static class TestTokens
     public static string MintWithoutSessionVersion(Guid tenantId, params string[] permissions) =>
         Build(tenantId, Guid.NewGuid().ToString(), sv: null, permissions);
 
+    /// <summary>
+    /// The alg:none token SEC-4's harm paragraph names first: a well-formed header and payload, and no signature at
+    /// all. Hand-assembled because no signing handler will emit one, which is the point.
+    /// </summary>
+    public static string Unsigned(Guid tenantId, params string[] permissions)
+    {
+        var expires = DateTimeOffset.UtcNow.AddMinutes(30).ToUnixTimeSeconds();
+        var claims = new List<string>
+        {
+            $"\"sub\":\"{Guid.NewGuid()}\"",
+            "\"sv\":\"1\"",
+            $"\"tenant_id\":\"{tenantId}\"",
+            $"\"iss\":\"{KernelApiFactory.JwtIssuer}\"",
+            $"\"aud\":\"{KernelApiFactory.JwtAudience}\"",
+            $"\"exp\":{expires}",
+        };
+        claims.AddRange(permissions.Select(p => $"\"perm\":\"{p}\""));
+
+        var header = Base64UrlEncoder.Encode("{\"alg\":\"none\",\"typ\":\"JWT\"}");
+        var payload = Base64UrlEncoder.Encode($"{{{string.Join(',', claims)}}}");
+
+        return $"{header}.{payload}.";
+    }
+
     public static string Tampered(Guid tenantId, params string[] permissions)
     {
         var parts = Mint(tenantId, permissions: permissions).Split('.');

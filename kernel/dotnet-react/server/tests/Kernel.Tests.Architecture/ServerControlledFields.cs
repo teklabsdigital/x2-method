@@ -1,3 +1,5 @@
+using Kernel.App.Platform.Naming;
+
 namespace Kernel.Tests.Architecture;
 
 /// <summary>

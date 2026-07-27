@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Kernel.Tests.Architecture;
+namespace Kernel.App.Platform.Naming;
 
 /// <summary>
 /// The comparison behind three claims' registries (SEC-3's PII names, SEC-2's server-owned fields, TEN-1's
@@ -34,8 +34,15 @@ namespace Kernel.Tests.Architecture;
 /// Enumerating those spellings by hand instead is what all three claims now say does not discharge the
 /// obligation, and the registries here are shorter than the ones they replace BECAUSE the comparison derives what
 /// they used to list. Every dropped spelling is asserted to still match.
+///
+/// It lives in the application assembly rather than the test assembly because one of its readers runs at runtime.
+/// AI-1's `ToolExecutor` asks the same question of an actor-supplied argument name that the build-time guards ask
+/// of a URL segment or a model property, and while it sat in the tests it could not, so it carried its own
+/// twenty-one entry list compared by equality. That list claimed parity with the URL and EF-model guards and did
+/// not have it: five of eleven identity-shaped keys survived it, `workspaceId` and `accountId` among them (E-53).
+/// A guard whose comparison cannot be shared grows a second registry, and the second one is always the weaker.
 /// </summary>
-internal static class NameComparison
+public static class NameComparison
 {
     /// <summary>
     /// How much entry a glued word has to carry before its remainder is allowed to be anything at all. `tenant` in
@@ -159,24 +166,4 @@ internal static class NameComparison
             }
         }
     }
-}
-
-/// <summary>
-/// `Run` matches the entry anywhere inside the name; `Whole` matches only the entire name.
-///
-/// The distinction exists for one entry and is worth the machinery, for the reason the sibling edition found:
-/// SEC-2 forbids "entity ids on create", and `id` as a run matches `parentId`, `noteId` and every other foreign
-/// key a legitimate body carries. As a whole-name entry it matches the field the claim is about and nothing else.
-/// </summary>
-internal enum NameMatchMode
-{
-    Run,
-    Whole,
-}
-
-internal readonly record struct NameRule(string Entry, NameMatchMode Mode)
-{
-    public static NameRule Rule(string entry) => new(entry, NameMatchMode.Run);
-
-    public static NameRule Whole(string entry) => new(entry, NameMatchMode.Whole);
 }

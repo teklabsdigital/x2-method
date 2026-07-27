@@ -1,3 +1,5 @@
+using Kernel.App.Platform.Naming;
+using Kernel.App.Platform.Tenancy;
 using System.Reflection;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -65,11 +67,11 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
     // spelling a caller might use had to be enumerated. The comparison derives them now (E-9), and every dropped
     // spelling is asserted to still match in NameComparisonTests, so the shorter list is a measured claim rather
     // than a tidy-up.
-    internal static NameRule[] ForbiddenTenantParams { get; } =
-        [
-            NameRule.Rule("tenant"), NameRule.Rule("org"), NameRule.Rule("organization"),
-            NameRule.Rule("organisation"), NameRule.Rule("workspace"), NameRule.Rule("account"),
-        ];
+    // The canonical registry, read from the application assembly rather than restated here, because a second copy
+    // is how TEN-3 and AI-1 each ended up with their own idea of what a tenant is (E-51, E-53). Its extent is
+    // asserted against an independently written floor in NameComparisonTests and TenantKeyTests, never against
+    // itself: a list read out of the thing under test shrinks when the thing under test shrinks.
+    internal static IReadOnlyList<NameRule> ForbiddenTenantParams => TenantNames.Rules;
 
     private static readonly NameRule[] ForbiddenPiiParams =
         [

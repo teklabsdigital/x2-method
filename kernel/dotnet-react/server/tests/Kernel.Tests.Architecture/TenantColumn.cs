@@ -1,3 +1,6 @@
+using Kernel.App.Platform.Naming;
+using Kernel.App.Platform.Tenancy;
+
 namespace Kernel.Tests.Architecture;
 
 /// <summary>
@@ -16,9 +19,11 @@ namespace Kernel.Tests.Architecture;
 /// TEN-3 stops having an opinion of its own about what a tenant is. The extent is asserted in TenantKeyTests
 /// against an independently written floor, not against this registry, because a list read out of the thing under
 /// test shrinks when the thing under test shrinks.
+///
+/// The registry itself is `TenantNames` in the application assembly, which is where it went when AI-1's runtime
+/// chokepoint turned out to need it too (E-53). This wrapper survives only to name the question TEN-3 asks.
 /// </summary>
 internal static class TenantColumn
 {
-    public static bool IsTenantShaped(string propertyName) =>
-        NameComparison.Matches(EndpointSpineTests.ForbiddenTenantParams, propertyName);
+    public static bool IsTenantShaped(string propertyName) => TenantNames.IsTenantShaped(propertyName);
 }

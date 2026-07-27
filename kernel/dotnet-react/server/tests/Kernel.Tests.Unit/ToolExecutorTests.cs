@@ -11,6 +11,54 @@ namespace Kernel.Tests.Unit;
 /// </summary>
 public sealed class ToolExecutorTests
 {
+    // An independently written floor of identity-shaped argument names. NOT derived from ServerOwnedKeys: the point
+    // is to catch that registry shrinking, and a list read out of it shrinks with it (the E-30 lesson). Five of
+    // these survived the twenty-one entry equality-matched set this replaced, `workspaceId` and `accountId` among
+    // them, while that set's own comment claimed parity with the URL and EF-model guards (E-53).
+    [Theory]
+    [InlineData("tenantId")]
+    [InlineData("tenant_id")]
+    [InlineData("TenantIdentifier")]
+    [InlineData("orgId")]
+    [InlineData("organizationId")]
+    [InlineData("organisation_id")]
+    [InlineData("workspaceId")]
+    [InlineData("workspaceSlug")]
+    [InlineData("accountId")]
+    [InlineData("userId")]
+    [InlineData("user_id")]
+    [InlineData("actorId")]
+    [InlineData("sub")]
+    [InlineData("oid")]
+    [InlineData("tid")]
+    [InlineData("roles")]
+    [InlineData("scope")]
+    [InlineData("permissions")]
+    [InlineData("act")]
+    [InlineData("on_behalf_of")]
+    public void An_identity_shaped_argument_name_is_server_owned(string key) =>
+        Assert.True(ToolExecutor.IsServerOwned(key),
+            $"'{key}' is not recognised as server-owned, so an actor could supply it and the executor would merge it (AI-1, E-53).");
+
+    // The cost side, asserted rather than described. Every one of these is an argument a real tool would declare,
+    // and every one of them is a word this comparison could reach if the wrong match mode were chosen: `scopeOfWork`
+    // and `subtotal` are why the claim vocabulary is Whole rather than Run, and `origin` is the header the sibling
+    // edition rejected a prefix rule over.
+    [Theory]
+    [InlineData("cursor")]
+    [InlineData("limit")]
+    [InlineData("title")]
+    [InlineData("origin")]
+    [InlineData("scopeOfWork")]
+    [InlineData("subtotal")]
+    [InlineData("roleplayPrompt")]
+    [InlineData("groupBy")]
+    [InlineData("noteId")]
+    [InlineData("activity")]
+    public void An_ordinary_tool_argument_is_not_stripped(string key) =>
+        Assert.False(ToolExecutor.IsServerOwned(key),
+            $"'{key}' is wrongly treated as server-owned, so the chokepoint silently eats a legitimate tool argument (AI-1).");
+
     [Fact]
     public async Task Actor_supplied_identity_is_rejected_and_server_tenant_is_injected()
     {

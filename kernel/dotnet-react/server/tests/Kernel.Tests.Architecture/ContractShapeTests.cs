@@ -1,4 +1,5 @@
 using Kernel.App.Notes;
+using Kernel.App.Platform.Naming;
 using Kernel.Contracts.Notes;
 using Xunit;
 

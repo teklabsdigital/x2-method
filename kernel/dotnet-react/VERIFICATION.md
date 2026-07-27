@@ -1128,3 +1128,70 @@ The git-safety hook does not cover this, because a stale `cp` is not a git comma
 Architecture 150, unit 28, node server 154, both client-webs 65. `compose --check` ok, 38 shared files in 2
 editions. Both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok at 14 caught and 11
 ignored. Integration 4 failures, environment-blocked on Docker. Literal em dash and en dash scans, 0 and 0.
+
+## 2026-07-27, batch 3 repairs
+
+Taken at a2eb4cf plus the repairs below. Every control was run with the new assertion already in place and the
+pre-repair mechanism restored, per the protocol; every restore was verified byte-identical by hash before the
+green run.
+
+### SEC-4, both halves of the token-validation sentence
+
+`ValidAlgorithms` and `RequireSignedTokens` are now read off the composed host, over every scheme whose handler
+is `JwtBearerHandler` rather than the default scheme by name, plus an unsigned alg:none token driven through the
+pipeline.
+
+| control | result |
+|---------|--------|
+| `ValidAlgorithms` widened with `RsaSha256` | red, 1 failure, the pin assertion |
+| `RequireSignedTokens = false` | red, 2 failures, the flag assertion and the unsigned token |
+| a second bearer scheme registered with looser validation | red, 2 failures, both naming `Loose` |
+| the scan narrowed to match no scheme | red, 2 failures, on the non-empty assertion |
+
+The second control corrected a prediction: with the flag off and the algorithm still pinned, an unsigned token
+authenticates, because it never reaches signature validation. Recorded on E-55.
+
+Row: `owed` to `proven`.
+
+### AI-1, the server-owned key registry
+
+`NameComparison` and the tenant registry moved into the application assembly so the runtime chokepoint reads the
+same comparison as the build-time guards. Extent asserted against a twenty-name floor written independently of
+the registry, with a ten-name cost side.
+
+Control: the pre-repair equality set with the new theory in place turns six cases red. The finding recorded
+five, measured against a narrower list; the sixth is `organisation_id`.
+
+Row: stays `patterned`, now for the reason the claim names (a `JsonElement` subtree is not walked) rather than
+for a registry defect.
+
+### SEC-6, the server surface
+
+`LogSafetyTests`: a capturing `ILoggerProvider` in the composed host, a create that succeeds through the real
+store, a read that throws into the real `UseExceptionHandler`.
+
+| control | result |
+|---------|--------|
+| request-header logging added to the pipeline | red, the token and JWT assertions |
+| `EnableSensitiveDataLogging()` on the DbContext | red, the content assertion |
+| the capture not wired | red, the non-empty guard only; the other three pass on an empty log |
+
+Row: `owed` to `patterned`. The hub surface the claim names does not exist in this edition.
+
+### TEN-4, not repaired
+
+The provenance half needs an actor concept, two columns, a migration and a middleware, with consequences for
+SEC-2, TIME-1 and CON-3. That is a build pass, not a repair inside a planting round. It stays `owed` with the
+trigger it was given, and the row is honest at `owed` because the roll-up now carries the obligation rather than
+a note (E-52).
+
+### Two measurement hazards, both caught here
+
+A stale scratch backup reverted a committed repair earlier in this work; a restore by `mv` preserved an mtime
+older than the build output, so three consecutive runs reported the planted binary while the tree was clean and
+the source on disk was correct. Recorded as E-59 with the two rules that follow. The second was caught by a
+vacuity guard, not by any rule.
+
+### Gates
+
+Architecture 157, unit 58. Both conformance records ok at 69 rows. Literal em dash and en dash scans, 0 and 0.

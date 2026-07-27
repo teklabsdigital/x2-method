@@ -3,7 +3,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Kernel.App.Platform.Sessions;
 using Kernel.Contracts.Notes;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
@@ -58,6 +61,72 @@ public sealed class HostSecurityTests(KernelApiFactory factory) : IClassFixture<
         var token = TestTokens.MintWithAlgorithm(Guid.NewGuid(), SecurityAlgorithms.HmacSha384, "notes.read");
         var response = await ClientWith(token).GetAsync("/notes");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    /// <summary>
+    /// The pin itself, not a token that fails it. `A_token_signed_with_a_different_algorithm_is_rejected` mints
+    /// HS384 and proves HS384 is excluded; it says nothing about what else the list admits. Measured on 2026-07-27:
+    /// adding `RsaSha256` to `ValidAlgorithms` left all twelve host tests green (E-54). SEC-4's statement is "pins
+    /// the exact expected signing algorithm", which is a statement about the set, so the set is what is asserted.
+    ///
+    /// Read off the composed host rather than restated: a constant repeated in the test is a second copy of the
+    /// configuration, and it agrees with itself when the host changes.
+    /// </summary>
+    [Fact]
+    public void Token_validation_pins_exactly_one_algorithm()
+    {
+        foreach (var (scheme, options) in BearerSchemes())
+        {
+            var pinned = options.TokenValidationParameters.ValidAlgorithms;
+            Assert.True(pinned is not null && pinned.SequenceEqual([SecurityAlgorithms.HmacSha256]),
+                $"Scheme '{scheme}' admits {(pinned is null ? "every algorithm its key supports (ValidAlgorithms is unset, which is the unpinned default)" : $"[{string.Join(", ", pinned)}]")}. SEC-4 pins exactly one: {SecurityAlgorithms.HmacSha256}.");
+        }
+    }
+
+    /// <summary>
+    /// The flag itself. Measured on 2026-07-27: `RequireSignedTokens = false` left all twelve host tests green
+    /// (E-55), because nothing sent an unsigned token.
+    ///
+    /// Worth knowing, because it was predicted the other way and the control said otherwise: with the flag off and
+    /// `ValidAlgorithms` still `[HS256]`, an alg:none token AUTHENTICATES. The algorithm pin does not refuse it,
+    /// because an unsigned token never reaches signature validation at all. So the behavioural test below does
+    /// carry this flag rather than being shadowed by the pin. Both assertions are kept anyway: the flag can be
+    /// switched, and a configuration assertion names which switch, where a 401 only says something refused.
+    /// </summary>
+    [Fact]
+    public void Token_validation_requires_a_signature()
+    {
+        foreach (var (scheme, options) in BearerSchemes())
+        {
+            Assert.True(options.TokenValidationParameters.RequireSignedTokens,
+                $"Scheme '{scheme}' does not require signed tokens, so it accepts a token carrying no signature at all (SEC-4).");
+        }
+    }
+
+    [Fact]
+    public async Task An_unsigned_token_is_rejected()
+    {
+        var response = await ClientWith(TestTokens.Unsigned(Guid.NewGuid(), "notes.read")).GetAsync("/notes");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    /// <summary>
+    /// Every bearer scheme the host registers, not the default one by name. A second scheme configured with looser
+    /// validation is the way a pin like this stops being total, and reading only `JwtBearerDefaults` would not see
+    /// it. Non-empty is asserted because a scan over nothing passes (E-42): if `AddJwtBearer` is dropped, this
+    /// fails rather than reporting that every scheme it found was hardened.
+    /// </summary>
+    private IReadOnlyList<(string Scheme, JwtBearerOptions Options)> BearerSchemes()
+    {
+        var monitor = factory.Services.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>();
+        var schemes = factory.Services.GetRequiredService<IAuthenticationSchemeProvider>()
+            .GetAllSchemesAsync().GetAwaiter().GetResult()
+            .Where(scheme => typeof(JwtBearerHandler).IsAssignableFrom(scheme.HandlerType))
+            .Select(scheme => (scheme.Name, monitor.Get(scheme.Name)))
+            .ToList();
+
+        Assert.True(schemes.Count > 0, "The host registers no JWT bearer scheme, so SEC-4's token-validation assertions would pass without reading any configuration (E-42).");
+        return schemes;
     }
 
     [Fact]

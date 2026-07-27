@@ -1,4 +1,5 @@
 using System.Collections;
+using Kernel.App.Platform.Naming;
 using Kernel.App.Platform.Tenancy;
 
 namespace Kernel.App.Agents;
@@ -15,16 +16,31 @@ namespace Kernel.App.Agents;
 /// </summary>
 public sealed class ToolExecutor(ITenantScope tenantScope)
 {
-    // The server owns these; an actor never supplies them. Matched case-insensitively at every depth. The list
-    // includes the common OIDC / Azure AD claim names (tid, oid, groups, scope(s)) and delegation keys, plus the
-    // tenant synonyms (org*) the URL and EF-model guards also reject, because a tool schema mirroring an IdP's or a
-    // tenant's claim vocabulary is the realistic confused-deputy vector.
-    private static readonly HashSet<string> ServerOwnedKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "tenantId", "tenant_id", "tenant", "tid", "orgId", "org_id", "org", "orgid",
-        "organizationId", "organisationId", "userId", "user_id", "sub", "oid",
-        "scope", "scopes", "role", "roles", "groups", "permissions", "act", "on_behalf_of",
-    };
+    // The server owns these; an actor never supplies them. The tenant half is TenantNames, shared with the URL and
+    // EF-model guards, because a tool schema mirroring a tenant's vocabulary is the realistic confused-deputy
+    // vector and three lists that each meant "tenant" disagreed about which spellings counted (E-53). The rest are
+    // the common OIDC / Azure AD claim names and the delegation keys.
+    //
+    // Match mode is the judgement call. The identity entries are runs, so `userId`, `user_id` and `actorId` are all
+    // one entry: a name that CONTAINS an identity word is identity, and rejecting a legitimate argument here costs
+    // a tool a parameter, where accepting a smuggled one costs the tenant. The claim vocabulary is `Whole`, because
+    // `scope`, `role`, `act` and `sub` are ordinary English inside longer words: as runs they would strip
+    // `scopeOfWork`, `roleplayPrompt` and `subtotal` from every tool schema in the system, and a chokepoint that
+    // silently eats ordinary arguments gets routed around, which is the failure that matters most here.
+    private static readonly IReadOnlyList<NameRule> ServerOwnedKeys =
+        [
+            .. TenantNames.Rules,
+            NameRule.Rule("userId"), NameRule.Rule("actorId"), NameRule.Rule("principalId"),
+            NameRule.Whole("user"), NameRule.Whole("actor"), NameRule.Whole("principal"),
+            NameRule.Whole("sub"), NameRule.Whole("oid"), NameRule.Whole("tid"),
+            NameRule.Whole("scope"), NameRule.Whole("scopes"), NameRule.Whole("role"), NameRule.Whole("roles"),
+            NameRule.Whole("group"), NameRule.Whole("groups"), NameRule.Whole("permission"), NameRule.Whole("permissions"),
+            NameRule.Whole("act"), NameRule.Whole("on_behalf_of"), NameRule.Whole("impersonate"),
+        ];
+
+    /// <summary>Exposed so the extent of what this rejects can be asserted against an independently written floor
+    /// rather than against itself, which is the only way a registry's shrinking is visible (AI-1, E-53).</summary>
+    public static bool IsServerOwned(string key) => NameComparison.Matches(ServerOwnedKeys, key);
 
     public Task<object?> InvokeAsync(ITool tool, IReadOnlyDictionary<string, object?> actorArguments, CancellationToken cancellationToken = default)
     {
@@ -43,7 +59,7 @@ public sealed class ToolExecutor(ITenantScope tenantScope)
         var result = new Dictionary<string, object?>(StringComparer.Ordinal);
         foreach (var (key, value) in map)
         {
-            if (ServerOwnedKeys.Contains(key))
+            if (IsServerOwned(key))
             {
                 continue; // reject actor-supplied identity/tenant/scope before any merge, at any depth
             }

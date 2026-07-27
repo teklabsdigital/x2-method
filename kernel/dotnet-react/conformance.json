@@ -207,19 +207,19 @@
     },
     "SEC-4": {
       "title": "JWT hardening and revocation",
-      "status": "owed",
-      "mechanism": "pinned HS256, `RequireSignedTokens`, `SessionVersionMiddleware`; `HostSecurityTests` covers a tampered signature, an HS384 token, a missing `sv` and a bumped `sv`",
-      "note": "revocation is proven; the two halves of the token-validation sentence are not (E-54, E-55)",
+      "status": "proven",
+      "mechanism": "pinned HS256, `RequireSignedTokens`, `SessionVersionMiddleware`; `HostSecurityTests` asserts both token-validation properties off every registered bearer scheme and covers a tampered signature, an HS384 token, an unsigned alg:none token, a missing `sv` and a bumped `sv`",
+      "note": "both halves of the token-validation sentence now read off the host, over every bearer scheme, not one by name",
       "obligations": [
         {
           "name": "the signing algorithm is pinned to exactly one",
-          "status": "patterned",
-          "text": "`A_token_signed_with_a_different_algorithm_is_rejected` mints HS384 over the same key and asserts 401, which proves HS384 is excluded and nothing about what the list contains. Adding `RsaSha256` to `ValidAlgorithms` leaves all twelve tests green (E-54). trigger: assert the configured `ValidAlgorithms` equals `[HS256]`, read off the host, beside the behavioural test."
+          "status": "proven",
+          "text": "`Token_validation_pins_exactly_one_algorithm` reads `ValidAlgorithms` off every scheme whose handler is `JwtBearerHandler` and asserts it equals `[HS256]`. The behavioural HS384 test proved HS384 was excluded and nothing about what else the list admitted: adding `RsaSha256` left all twelve host tests green (E-54). Controls on 2026-07-27: widening the list goes red, registering a second looser bearer scheme goes red, and narrowing the scan to no scheme goes red on its own non-empty assertion."
         },
         {
           "name": "tokens must be signed",
-          "status": "owed",
-          "text": "Setting `RequireSignedTokens = false` leaves all twelve tests green. `Tampered_signature_is_unauthorized` does not cover it: a signature that fails to validate is a different question from whether one is required (E-55). trigger: assert the flag off the host, and plant an unsigned token."
+          "status": "proven",
+          "text": "`Token_validation_requires_a_signature` reads the flag off every bearer scheme, and `An_unsigned_token_is_rejected` sends a hand-assembled alg:none token. `RequireSignedTokens = false` had left all twelve host tests green (E-55); it now turns both red. The control also corrected a prediction: with the flag off and the algorithm still pinned to HS256, an unsigned token AUTHENTICATES, because it never reaches signature validation, so the pin does not shadow this flag."
         },
         {
           "name": "revocation is immediate through a server-side session version",
@@ -248,19 +248,19 @@
     },
     "SEC-6": {
       "title": "Log safety",
-      "status": "owed",
-      "mechanism": "`client-web/tools/harness/redact.ts` scrubs Authorization headers and JWT-shaped strings; `redact.test.ts`",
-      "note": "the harness output surface is covered, on the client; the dotnet server has no log-safety mechanism (E-56)",
+      "status": "patterned",
+      "mechanism": "`client-web/tools/harness/redact.ts` scrubs Authorization headers and JWT-shaped strings (`redact.test.ts`); `LogSafetyTests` reads the server's real sink through a capturing `ILoggerProvider` while a request carrying a bearer token and a body with content in it goes through the real `UseExceptionHandler`",
+      "note": "both surfaces this edition has are covered; there is no hub, so realtime logging has no surface here yet",
       "obligations": [
         {
           "name": "secret-shaped values are scrubbed by one redactor",
           "status": "patterned",
-          "text": "`redact.ts` scrubs Authorization headers and JWT-shaped strings and `redact.test.ts` proves both. It is `client-web/tools/harness/redact.ts`: the harness output surface, on the client, in TypeScript. It does not run in the server (E-56). trigger: a redactor on the server side, or a slice that gives the server a logging surface."
+          "text": "Two surfaces, two mechanisms, because they are different sinks. Harness output: `redact.ts` plus `redact.test.ts`, on the client. Server: `LogSafetyTests` asserts the bearer token, a JWT-shaped string and the request body's content are all absent from what the sink actually received. It found the redactor's JWT pattern over-matching: the unanchored three-dot form matches `Microsoft.EntityFrameworkCore.Database.Command` and every other dotted identifier (E-58). trigger: each new logging surface owes its own, which is what keeps this `patterned`."
         },
         {
           "name": "each logging surface asserts its own redaction",
-          "status": "owed",
-          "text": "The claim's mechanism class names three surfaces: hub/realtime logging, harness output, error handlers. Only harness output is covered. `ILogger`, `Serilog` and any redaction helper return zero occurrences across the dotnet `server/src`, while `app.UseExceptionHandler()` is wired, so the framework logs unhandled exceptions and nothing asserts what those entries contain (E-56). trigger: a named test for the exception handler, and one per logging surface a slice adds; the hub is still owed on realtime."
+          "status": "patterned",
+          "text": "The claim names three surfaces: hub/realtime logging, harness output, error handlers. Harness output is covered on the client; the error handler is now covered on the server, where `ILogger`, `Serilog` and every redaction helper had returned zero occurrences across `server/src` while `app.UseExceptionHandler()` was wired and nothing asserted what those entries contained (E-56). This edition has no hub, so the third surface does not exist to test. Controls on 2026-07-27: logging request headers in the pipeline turns the token and JWT assertions red, `EnableSensitiveDataLogging()` on the DbContext turns the content assertion red, and unwiring the capture turns the arrangement's own non-empty guard red while the other three pass on an empty log. trigger: the first slice that adds a hub or any other logging surface owes its named test."
         }
       ]
     },
@@ -781,13 +781,13 @@
     "AI-1": {
       "title": "Server-injected identity",
       "status": "patterned",
-      "mechanism": "`ToolExecutor` reject-then-inject + throw-on-unset, rejecting a twenty-one entry server-owned key set recursively through nested objects and lists; `ToolExecutorTests` incl. a nested-payload case",
-      "note": "the chokepoint and its recursion hold; the key set is an equality-matched list that disagrees with the guards it claims parity with (E-53)",
+      "mechanism": "`ToolExecutor` reject-then-inject + throw-on-unset, rejecting server-owned keys recursively through nested objects and lists, matched through the shared `NameComparison` over `TenantNames` plus the OIDC claim and delegation vocabulary; `ToolExecutorTests` incl. a nested-payload case and a thirty-case extent theory",
+      "note": "the chokepoint, its recursion and its reach all hold; what remains is the JsonElement subtree the claim itself carves out",
       "obligations": [
         {
           "name": "actor-supplied identity, tenant and scope are rejected before any merge",
           "status": "patterned",
-          "text": "Rejection is case-insensitive and recurses nested dictionaries and lists, both covered by `ToolExecutorTests`. The reach is `ServerOwnedKeys`, twenty-one entries matched by equality: measured, five of eleven identity-shaped keys survived, `workspaceId`, `accountId`, `workspaceSlug`, `tenantIdentifier` and `actorId`, while the registry's own comment claims parity with the URL and EF-model guards, which reject `workspace` and `account` (E-53). trigger: move `NameComparison` where the runtime chokepoint can read it, or assert this set's extent and accept that it differs."
+          "text": "Rejection is case-insensitive and recurses nested dictionaries and lists, both covered by `ToolExecutorTests`. The reach was `ServerOwnedKeys`, twenty-one entries matched by equality: against a twenty-name floor written independently of it, six escaped, `workspaceId`, `accountId`, `workspaceSlug`, `organisation_id`, `tenantIdentifier` and `actorId`, while the registry's own comment claimed parity with the URL and EF-model guards (E-53). `NameComparison` and the canonical tenant registry now live in the application assembly, so this chokepoint reads the same comparison and the same list as those guards; the floor and a ten-name cost side are both asserted, and restoring the equality set turns six of them red. Still `patterned` rather than `proven`, now for the reason the claim names rather than a defect: a `JsonElement`-typed value is a subtree the executor does not walk, so every tool accepting a raw JSON payload owes its own review. trigger: the per-tool parameter allowlist the claim names as the upgrade, or the first tool that takes a raw JSON payload."
         },
         {
           "name": "server context is injected unconditionally",

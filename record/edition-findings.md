@@ -3032,6 +3032,18 @@ up obligations, not notes, so the status reads `proven` and the tally counts a p
 the record sees `proven`; someone reading the prose sees `owed`. This is the overstating row in its purest form,
 and it is worse than the ordinary kind because the correct information was already known and written down.
 
+**Repaired 2026-07-27, in part.** Nothing changed about the provenance stamps: they still do not exist, and
+building them is a slice with an actor concept, two columns, a migration and a middleware in it, which is a build
+pass and not a repair inside a planting round. The trigger stands.
+
+What was repaired is the defect the finding is actually about, which is not the missing mechanism but the row.
+The provenance obligation now exists as an obligation, so the roll-up carries it and TEN-4's row reads `owed`
+where it read `proven`. The note that had carried this honestly in prose stays, but nothing depends on anyone
+reading it.
+
+The general rule this earns: a note is where you put what you could not make the machine check. If the machine
+COULD have checked it, and you wrote a note instead, you have recorded the defect and shipped it.
+
 ### E-53. AI-1's server-owned key registry is a sixth hand-written list, and its comment claims a parity it does not have
 
 **Claim:** AI-1. **Found:** 2026-07-27. **Measured at 38ea5c9.**
@@ -3055,6 +3067,23 @@ than in a test. `NameComparison` lives in the test assembly, so the repair is no
 comparison moves into the App assembly where the runtime chokepoint can read it, or AI-1 keeps a registry that
 provably disagrees with the guards it claims to match.
 
+**Repaired 2026-07-27 at a2eb4cf+.** `NameComparison`, `NameRule` and `NameMatchMode` moved out of the test
+assembly into `Kernel.App.Platform.Naming`, and the tenant registry with them, as
+`Kernel.App.Platform.Tenancy.TenantNames`. `ToolExecutor` now asks the same comparison, over the same tenant
+list, that the URL scan and the EF-model scan ask. `EndpointSpineTests.ForbiddenTenantParams` and TEN-3's
+`TenantColumn` both read the shared registry rather than restating it.
+
+Extent is asserted in `ToolExecutorTests` against a twenty-name floor written independently of the registry, with
+a ten-name cost side beside it: `scopeOfWork`, `subtotal`, `roleplayPrompt`, `groupBy` and `origin` must all
+survive. That cost side is what fixes the match modes. The tenant and identity entries are runs; the OIDC claim
+vocabulary (`scope`, `role`, `act`, `sub`) is whole-name, because as runs they strip ordinary arguments out of
+every tool schema in the system, and a chokepoint that silently eats good arguments is one developers route
+around.
+
+Control: restoring the twenty-one entry equality set with the new theory in place turns six cases red, not the
+five this finding recorded. The sixth is `organisation_id`; the original measurement used `organisationId`. The
+count depends on the floor it is measured against, which is the argument for writing the floor down.
+
 ### E-54. SEC-4's algorithm pinning is proven by one sample and is blind to the list widening
 
 **Claim:** SEC-4. **Found:** 2026-07-27. **Measured at 38ea5c9.**
@@ -3069,6 +3098,14 @@ nothing reads the whole list. The repair is the same one this register now carri
 configured `TokenValidationParameters.ValidAlgorithms` equals `[HS256]`, read off the host, and keep the
 behavioural test beside it.
 
+**Repaired 2026-07-27 at a2eb4cf+.** `Token_validation_pins_exactly_one_algorithm` reads `ValidAlgorithms` off
+the composed host and asserts it equals `[HS256]`. It reads every scheme whose handler is `JwtBearerHandler`, not
+`JwtBearerDefaults` by name, because a second scheme with looser validation is how a pin like this stops being
+total. Four controls, all at a2eb4cf plus the repair: widening the list to include `RsaSha256` goes red; a second
+bearer scheme configured loosely goes red naming that scheme; narrowing the scan to no scheme goes red on its own
+non-empty assertion; and the pre-repair configuration with the new assertion in place goes red with exactly one
+failure.
+
 ### E-55. SEC-4's RequireSignedTokens is entirely unguarded
 
 **Claim:** SEC-4. **Found:** 2026-07-27. **Measured at 38ea5c9.**
@@ -3080,6 +3117,16 @@ tokens".
 `Tampered_signature_is_unauthorized` does not cover it: a tampered signature is a signature that fails to
 validate, which is a different question from whether a signature is required at all. The row read `proven` on an
 obligation whose second half nothing had ever fed a violating input to.
+
+**Repaired 2026-07-27 at a2eb4cf+.** `Token_validation_requires_a_signature` reads the flag off every bearer
+scheme, and `An_unsigned_token_is_rejected` sends a hand-assembled alg:none token through the host.
+
+The control corrected a prediction, which is the part worth keeping. The expectation was that the behavioural
+test could not isolate the flag, because with the algorithm pinned to HS256 an alg:none token should be refused
+by the pin whether or not signatures were required. Measured: with `RequireSignedTokens = false` and
+`ValidAlgorithms` still `[HS256]`, the unsigned token AUTHENTICATES. An unsigned token never reaches signature
+validation, so the algorithm pin never runs. The prediction was reasoned and wrong, and the control is the only
+reason that is known.
 
 ### E-56. SEC-6's dotnet row cites a client-side TypeScript redactor for a server-side claim
 
@@ -3098,6 +3145,26 @@ wired, so the framework logs unhandled exceptions, and nothing asserts what thos
 A row that satisfies a server-side claim with a client-side file is the shape a reader cannot catch by reading,
 because the file names look plausible and the claim's own vocabulary ("harness output") appears in both.
 
+**Repaired 2026-07-27 at a2eb4cf+.** `LogSafetyTests` reads the server's real sink: a capturing `ILoggerProvider`
+installed into the composed host, a request carrying a bearer token, a create that SUCCEEDS through the real
+store so the content actually travels into an EF command, and then a read that throws so the real
+`UseExceptionHandler` is on the surface being measured. It asserts the token, a JWT-shaped string and the request
+body's content are all absent from what the sink received.
+
+Three controls at a2eb4cf plus the repair: logging request headers in the pipeline, which is the ordinary
+diagnostic mistake, turns the token and JWT assertions red; `EnableSensitiveDataLogging()` on the DbContext turns
+the content assertion red; unwiring the capture turns the arrangement's own non-empty guard red while the other
+three pass on an empty log, which is why that guard is there.
+
+SEC-6's row moves to `patterned`, not `proven`, and that is the honest ceiling: the claim's locus is per-seam and
+every new logging surface owes its own test. The one surface the claim names that this edition does not have is
+the hub, because there is no hub.
+
+Two things came out of building it. The redactor's JWT pattern over-matches every dotted identifier (E-58). And
+`Parameters=[]` in EF's command log is doing real work: the content assertion passes because EF redacts parameter
+values by default, so this test is now the thing standing between `EnableSensitiveDataLogging()` and a log full
+of note bodies.
+
 ### E-57. A new tool can declare itself read-only while writing, and nothing notices
 
 **Claim:** AI-2. **Found:** 2026-07-27. **Measured at 38ea5c9.**
@@ -3111,6 +3178,56 @@ finding does not lower it. It is recorded because the per-seam obligation is mec
 mechanized: a check that every `ITool` implementation is named with its trust tier, and that every one declaring
 `IsReadOnly` has a guard test, converts "each new tool owes its own test" from review debt into a gate. That is
 the same move `EndpointSpineTests` already makes for SEC-1's endpoints, in the same edition.
+
+### E-58. The harness redactor's JWT pattern matches every dotted identifier, so it rewrites what it should leave alone
+
+**Claim:** SEC-6. **Found:** 2026-07-27. **Measured at a2eb4cf.**
+
+`client-web/tools/harness/redact.ts` ends with
+`/[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g` for "any JWT-shaped token that survives". Three
+dot-separated runs of eight or more token characters is not a JWT shape, it is the shape of a namespaced
+identifier. Found by porting the same pattern to the server side, where its first match on a real captured log
+was the string `Microsoft.EntityFrameworkCore.Database.Command`.
+
+On the server that was a false failure and was fixed by anchoring on `eyJ`, the base64url of `{"`, which begins
+every JWT header segment because every JWT header is a JSON object. On the client the same over-match fails
+nothing and is therefore worse: it silently rewrites dotted identifiers in harness output to `[REDACTED-JWT]`,
+and the file's own neighbouring comment shows the author was already thinking about not corrupting NDJSON
+("Match only token characters, not a greedy `\S+` that would swallow a following `"}`").
+
+A redactor's false positives are invisible by construction: nobody diffs a redacted log against the original,
+because if they could, they would not need the redactor. `redact.test.ts` proves the true positives and asserts
+nothing about what survives, which is the same one-sided shape as SEC-4's algorithm test (E-54).
+
+**Not repaired here.** It is the sibling edition's file, reached through `kernel/shared/`, and the repair belongs
+with the node-react rounds rather than inside a dotnet repair pass. Recorded with the fix known: anchor the
+pattern, and add a passing case for a dotted identifier that must survive.
+
+### E-59. Two ways a measurement can be taken against a binary that is not the source it names
+
+**Claim:** none; this is a defect in the method's own plant-and-revert protocol. **Found:** 2026-07-27.
+
+Both were caught this session, and neither by a rule that was in the protocol.
+
+**A stale scratch backup.** `Program.GOOD.cs` was taken before a repair landed and used to restore after a later
+plant, silently reverting the repair. It surfaced three plants later as failures first attributed to the plant in
+hand. The protocol says revert byte-for-byte; it did not say the copy must be taken in the round that uses it.
+
+**A restore that MSBuild did not see.** Restoring a planted file with `mv` preserves the original mtime, so the
+restored source can be older than the build output and the incremental build skips it. `dotnet test` then reports
+a run of the PLANTED binary while `git status` shows a clean tree and the source on disk is correct. Here the
+plant was a vacuity probe on `LogSafetyTests`, and the restored run kept failing with the probe's symptom for
+three consecutive runs.
+
+Both make a measurement wrong in the direction that matters: they report the code you did not write. Two rules
+follow, and they are cheap. Take a backup in the round that uses it and delete it at the end of that round.
+Restore with `cp`, never `mv`, so the mtime moves forward, and treat a red that persists after a restore as a
+build question before it is a code question.
+
+What actually caught the second one was the arrangement's own non-empty guard: three of the four log-safety
+assertions passed happily against an empty log, and the guard that asserts the surface was exercised did not.
+The vacuity guards in this edition are there to catch a guard that reaches nothing; this is the first time one
+caught a measurement that reached nothing.
 
 ## Acceptance test, first execution (2026-07-27)
 

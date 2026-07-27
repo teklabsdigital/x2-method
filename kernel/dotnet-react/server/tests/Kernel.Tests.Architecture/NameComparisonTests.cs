@@ -1,3 +1,4 @@
+using Kernel.App.Platform.Naming;
 using Xunit;
 
 namespace Kernel.Tests.Architecture;
