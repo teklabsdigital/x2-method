@@ -1270,3 +1270,37 @@ node edition has no instantiation manifest to cite the command from, which is E-
 Architecture 157, unit 58, compose 39 shared files in 2 editions, both conformance records ok at 69 rows, both
 docs-lints ok, both docs-lint self-tests ok at 14 caught and 11 ignored, both gate-check self-tests ok at 6
 caught and 7 ignored, dash scans 0 and 0.
+
+## 2026-07-27, batch 5 planting
+
+TEST-2, UI-3, UI-4, UI-5. Measured at 75ae4bb, tree clean before and after, client baseline 65 of 65 reconfirmed.
+
+| claim | plant | outcome |
+|-------|-------|---------|
+| TEST-2 | a second client data service with public methods and no scenario | green, E-67 |
+| TEST-2 | a repo method declared as a class-field arrow function | green, never enumerated, E-67 |
+| UI-3 | a raw `<p>` in a screen | green, E-69 |
+| UI-3 | a third component under `src/components` importing tokens | green, and correct: the row overstated the rule, E-69 |
+| UI-4 | a ledger atom renamed so it stops rendering | red, exhaustiveness, correct |
+| UI-4 | a fabricated element carrying `data-atom` | red, de-fabrication, correct |
+| UI-4 | a fabricated `<p>` carrying no `data-atom` | green, E-68 |
+| UI-5 | a data-service import in a screen | red with UI-5's own message, correct |
+| UI-5 | a screen calling `fetch` with the base URL and token from the environment | green, E-70 |
+
+Four rows fall: TEST-2 and UI-3 from `proven`, UI-4 and UI-5 from `patterned`. Non-owed rows 20 to 16.
+
+E-68 is the one to carry forward, because it is a class and not an instance. UI-4's de-fabrication assertion
+draws its SUBJECT from `[data-atom]`, a marker the code under test applies to itself, so it can only police
+elements that are already cooperating. It is the guard whose entire purpose is catching what an AI invented, and
+invented code is the least likely to volunteer a marker. Both of its directions bind for atoms that opt in, which
+is why three rounds of review never noticed.
+
+Two obligations could not be measured in this environment and are recorded as read rather than run: TEST-2's
+"an uncovered method fails the run" (with no server, every scenario throws before reaching its repo calls, so the
+coverage line is red for that reason) and UI-5's composed-entrypoint smoke (it needs the server up).
+
+### Gates
+
+Architecture 157, unit 58, integration 4 skipped (no engine), client 65, compose 39 shared files in 2 editions,
+both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok, both gate-check self-tests ok,
+dash scans 0 and 0.

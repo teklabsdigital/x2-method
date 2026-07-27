@@ -720,33 +720,72 @@
     },
     "UI-3": {
       "title": "Screens compose primitives only",
-      "status": "proven",
-      "mechanism": "`Text`/`Button` are the only token importers (eslint no-restricted-imports + naming scan)",
-      "note": ""
+      "status": "owed",
+      "mechanism": "`themeBan` in eslint plus the naming scan restrict theme imports to `src/components/**` and `src/theme/**`",
+      "note": "the token half is enforced; the other two things the statement bans in screens are not (E-69)",
+      "obligations": [
+        {
+          "name": "the primitive component layer is the sole consumer of theme tokens",
+          "status": "proven",
+          "text": "Two independent mechanisms, the eslint `themeBan` over `**/theme` and `**/theme/**` and a source scan in `namingPlacement.test.ts`, and both restrict the importer set to `components/` and `theme/`. That matches the claim, which speaks of the primitive LAYER. The conformance row previously read `Text`/`Button` are the only token importers, which is a rule neither mechanism has: a third primitive importing tokens is legal and correct (E-69)."
+        },
+        {
+          "name": "screens create no style sheets and use no raw platform text elements",
+          "status": "owed",
+          "text": "A bare `<p>` planted in `NotesScreen` is clean on tsc, eslint and 65 of 65 tests (E-69). UI-2's literal bans fire on visual VALUES, so an element carrying no inline style passes them, and nothing else looks. trigger: a screens-scoped lint on raw text elements and on style-sheet creation, which is the same kind of rule as the one already there."
+        },
+        {
+          "name": "client business logic lives in separately testable services, hooks and reducers",
+          "status": "latent",
+          "text": "The claim's own weakening note says this half is structural rather than lint-provable: the skeleton's shape is the mechanism and the fidelity suites plus off-framework unit tests are the evidence. With one screen and one repo the shape holds and nothing has tested that it stays true. trigger: the second module."
+        }
+      ]
     },
     "UI-4": {
       "title": "Fidelity ledger",
-      "status": "patterned",
-      "mechanism": "`NotesScreen.fidelity.test.tsx` exhaustiveness + de-fabrication; ledgers live in `design/ledger/` (INV-01)",
-      "note": "each screen owes its suite; per-atom resolved-style assertions not included; the prototype-to-ledger exporter owed",
+      "status": "owed",
+      "mechanism": "`NotesScreen.fidelity.test.tsx` renders every branch and asserts the `data-atom` set against a hand-transcribed ledger, in both directions",
+      "note": "both directions bind for atoms that opt in; fabricated UI that carries no marker is invisible to both (E-68)",
       "obligations": [
         {
-          "name": "every ledger atom renders",
+          "name": "every ledger atom renders (exhaustiveness)",
           "status": "patterned",
-          "text": "`NotesScreen.fidelity.test.tsx` asserts exhaustiveness against the ledger; each new screen owes its own suite."
+          "text": "Renaming a ledger atom so it stops rendering turns the test red, and both branches (populated and empty) are rendered so a conditional atom cannot hide. Per-screen by construction: this is one screen's suite and each new screen owes its own. trigger: the second screen."
         },
         {
-          "name": "nothing renders beyond the ledger",
-          "status": "patterned",
-          "text": "the same suite asserts de-fabrication, which is the direction a generated UI fails in without anyone noticing."
+          "name": "nothing renders beyond the ledger (de-fabrication)",
+          "status": "owed",
+          "text": "The assertion iterates `querySelectorAll('[data-atom]')`, so its subject is the set of elements that already declare themselves part of the ledger's vocabulary. A fabricated `<div data-atom=\"promo-banner\">` is caught; a fabricated `<p>` with no marker is green at 65 of 65 (E-68). This is the direction the claim exists for, and it can only police code that is cooperating. trigger: assert over the rendered element tree with a declared allowlist of invisible wrappers, so an unmarked element fails rather than being absent."
+        },
+        {
+          "name": "the ledger is exported from the locked prototype, not hand-maintained",
+          "status": "owed",
+          "text": "The ledger is a hand-written const in the test file. The claim names this itself: \"The v1 exemplar ledger is hand-authored: the prototype-to-ledger exporter is owed, and until it exists the ledger is a second hand-maintained copy of the prototype, carrying exactly the UI-1 divergence risk this claim's export mechanism is meant to remove.\" trigger: the first slice with a design tool that emits a machine-readable prototype."
         }
       ]
     },
     "UI-5": {
       "title": "Thin UI over tested services, composed entrypoint exercised",
-      "status": "patterned",
-      "mechanism": "eslint bans `api/**` and `data/**` imports outside the composition root (`src/main.tsx`); `npm run smoke` boots the ACTUAL `src/main.tsx` in jsdom against the live server, asserting a real GET and a real POST; runs in the CI e2e job and `scripts/e2e.sh`",
-      "note": "the import ban is proven-centralized; each new primary flow owes its smoke line"
+      "status": "owed",
+      "mechanism": "eslint `serviceBan` on `api/**` and `data/**` outside the composition root; `npm run smoke` boots the actual `src/main.tsx` in jsdom and asserts a real request per primary flow",
+      "note": "the import ban binds; transport logic that imports nothing walks past it, and the smoke has not been run here (E-70)",
+      "obligations": [
+        {
+          "name": "modules outside the composition root import neither the transport nor the data services",
+          "status": "proven",
+          "text": "Importing `../../data/notesRepo.ts` into `NotesScreen` fails eslint with UI-5's own message. Centralized: a violating import cannot merge. Type-only imports stay legal, which the claim requires explicitly. This closes the route the acceptance-test pilot's failure actually took."
+        },
+        {
+          "name": "the client UI holds no business or transport logic of its own",
+          "status": "owed",
+          "text": "A screen-local function calling `fetch` with the API base URL and a bearer token from the environment imports nothing, so the ban cannot see it: clean tsc, clean eslint, 65 of 65 tests (E-70). The realistic arrival is a screen needing one endpoint the repo does not expose yet. trigger: a screens-scoped ban on `fetch`, `XMLHttpRequest`, `EventSource` and `WebSocket`."
+        },
+        {
+          "name": "the composed entrypoint is exercised against a running server",
+          "status": "latent",
+          "text": "`composedApp.smoke.ts` imports the real `src/main.tsx`, wraps `globalThis.fetch` to record what leaves, and waits for a real GET and a real POST per primary flow. It needs the server up, which needs the engine, so it was read and not run here. Per-seam by the claim's own note: each new primary flow owes its smoke line. trigger: a run with the stack up."
+        }
+      ]
     },
     "DEP-1": {
       "title": "Dependency quarantine",
@@ -827,9 +866,31 @@
     },
     "TEST-2": {
       "title": "E2E harness",
-      "status": "proven",
-      "mechanism": "`tools/harness/main.ts` drives the real client services (NDJSON + redaction, fails loudly not vacuously); the completeness self-audit fails on any undriven repo method; the gated harness profile refuses outside Development/Testing (`HarnessProfileTests`)",
-      "note": "the harness-profile gate is latent: there is no product-owned provider port to re-bind yet, so the first one is its first re-binding"
+      "status": "owed",
+      "mechanism": "`tools/harness/main.ts` drives the real client services out of process (NDJSON + redaction, fails loudly not vacuously); a completeness self-audit wraps the enumerated methods and diffs them against what ran",
+      "note": "the harness is real and the audit's shape is right; its reach is one class, prototype members only (E-67)",
+      "obligations": [
+        {
+          "name": "an out-of-process harness drives the real, unmodified client service layer",
+          "status": "proven",
+          "text": "`main.ts` imports `KernelClient` and `NotesRepo` themselves, not a parallel HTTP client and not a browser puppet, and runs as a node process against a running server. This is the mechanism class's own sentence and the harness satisfies it by construction."
+        },
+        {
+          "name": "the floor is complete: every public method of every client data service has a scenario",
+          "status": "owed",
+          "text": "The audit reads `Object.getOwnPropertyNames(NotesRepo.prototype)`. A second data service is invisible: `TagsRepo` with two public methods and no scenario leaves the coverage line byte-identical, tsc and eslint clean, 65 of 65 tests green. A method declared as a class-field arrow function is invisible too, because it is an instance property and never enters the set that gets diffed (E-67). trigger: enumerate the class exports under `src/data/` rather than naming one, and enumerate instance members as well as prototype members."
+        },
+        {
+          "name": "the deterministic tier runs in CI",
+          "status": "latent",
+          "text": "The edition's `ci.yml` carries the `e2e-wire` job which starts the API and runs the harness. It has never executed: the workflow is a template until instantiation (E-24) and this repository's own CI runs no dotnet (E-39). Locally it needs the stack up, which needs a container runtime. trigger: the first instantiation, or a local run with the engine available."
+        },
+        {
+          "name": "harness output redacts secrets",
+          "status": "patterned",
+          "text": "`redact.ts` scrubs Authorization headers and JWT-shaped strings and every emitted line goes through it; `redact.test.ts` proves the true positives. It asserts nothing about what survives, and its JWT pattern matches any dotted identifier (E-58). trigger: anchor the pattern and add a passing case for an identifier that must survive."
+        }
+      ]
     },
     "TEST-3": {
       "title": "CI loop",

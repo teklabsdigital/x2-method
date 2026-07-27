@@ -3477,6 +3477,111 @@ ran here on arm64 with no container. The Docker dependency in this edition is no
 Apple Silicon, which is why `scripts/db-up.sh` carries a colima and Rosetta precheck. Swapping the fast tier's
 engine would not remove a container from anything.
 
+### E-67. TEST-2's completeness self-audit enumerates one hardcoded class, and only half of that class
+
+**Claim:** TEST-2. **Found:** 2026-07-27. **Measured at 75ae4bb.**
+
+The self-audit is the mechanism TEST-2 rests its strongest sentence on: "the harness self-audits (it enumerates
+the service methods, diffs them against what actually ran, and fails on an uncovered method), so completeness is
+declared, never interrogated." Its reach is one line:
+
+    Object.getOwnPropertyNames(NotesRepo.prototype)
+
+Two holes, both planted and both green.
+
+**A second data service is invisible.** Added `src/data/tagsRepo.ts`, a `TagsRepo` with two public methods and no
+scenario. `tsc --noEmit` clean, eslint clean, 65 of 65 tests pass, and the harness coverage line is
+byte-identical: it names the same three NotesRepo methods and never mentions TagsRepo. The claim says "every
+public method of every client data service"; the audit knows one class, by name, written into the harness.
+
+**A method declared as a class field is invisible.** Added `purgeAll = async (): Promise<void> => {...}` to
+`NotesRepo`. That is an instance property, not a prototype member, so `getOwnPropertyNames(prototype)` never sees
+it: it cannot be reported uncovered, because it is not in the set that gets diffed. The arrow-function class field
+is an ordinary way to write a method in TypeScript, chosen for `this` binding, not an exotic evasion.
+
+The audit's design is right and better than a hand-written list, which is why this is a reach defect rather than a
+shape defect. The repair is the same move made twice: enumerate the data-service MODULES (the `src/data/` exports
+that are classes) rather than naming one, and enumerate instance members of a constructed instance as well as
+prototype members.
+
+**Not measurable here:** whether an uncovered method actually fails the run. With no server every scenario throws
+before reaching its repo calls, so `driven` is under-populated and the coverage line is red for that reason. That
+half needs the stack up.
+
+### E-68. UI-4's de-fabrication direction only sees elements that volunteer to be seen
+
+**Claim:** UI-4. **Found:** 2026-07-27. **Measured at 75ae4bb.**
+
+UI-4 exists for two directions, and the de-fabrication one is the reason it exists: "Generated UI drifts in both
+directions: silently omitted states the prototype specified, and fabricated elements the prototype never
+contained. Both read as done in a demo; only a two-directional ledger catches them mechanically."
+
+The suite collects `container.querySelectorAll('[data-atom]')` and asserts every collected atom is in the ledger.
+So the set it checks is the set of elements that carry `data-atom`, which is to say: the elements that have
+already declared themselves part of the ledger's vocabulary.
+
+| plant | result |
+|-------|--------|
+| a ledger atom renamed so it stops rendering | red, exhaustiveness |
+| a fabricated `<div data-atom="promo-banner">` | red, de-fabrication |
+| a fabricated `<p>` with no `data-atom` | **green, 65 of 65** |
+
+Both directions bind for atoms that opt in. Fabricated UI that does not opt in is not caught by either, and
+nothing else catches it: the same `<p>` passes `tsc`, eslint and every test in the client suite.
+
+This is the sharpest form of a pattern this register keeps finding, and it is worth naming as a class rather than
+an instance. A guard whose SUBJECT is drawn from a marker the code under test applies to itself can only ever
+police the code that is already cooperating. UI-2's lint has the property honestly (it scans all source and picks
+out literals). This one does not, and it is the guard whose whole purpose is catching what an AI invented, which
+is exactly the code least likely to volunteer a marker.
+
+**Repair, and it is not "add data-atom everywhere".** The de-fabrication assertion needs a subject that does not
+come from the atoms: assert over the rendered ELEMENT tree, with a declared allowlist of structurally invisible
+wrappers, so an element that carries no `data-atom` is a failure rather than an absence. That inverts the default
+from opt-in to opt-out, which is the only version of this test that can catch fabrication.
+
+### E-69. UI-3's screen-side bans are one ban, not three, and the row names a rule the lint does not have
+
+**Claim:** UI-3. **Found:** 2026-07-27. **Measured at 75ae4bb.**
+
+UI-3's statement bans three things in screens: style-sheet creation, raw platform text elements, and direct token
+consumption. Only the third is enforced.
+
+Planted a bare `<p>A raw platform text element in a screen.</p>` in `NotesScreen`. Clean `tsc`, clean eslint, 65
+of 65 tests. The `themeBan` covers imports from the theme layer and the naming scan covers which paths may import
+it; neither has an opinion about a raw element, and UI-2's literal bans only fire on visual VALUES, so an element
+with no inline styles passes them all.
+
+Separately, the conformance row reads "`Text`/`Button` are the only token importers". The enforced rule is not
+that. The lint exempts `src/components/**` wholesale and the naming scan allows any path starting `components/`,
+so a third primitive importing tokens is legal, which is correct against the claim ("the primitive component
+layer is the sole consumer") and not what the row says. The row names two files; the mechanism names a directory.
+The mechanism is right and the row overstates its precision.
+
+### E-70. UI-5's import ban cannot see transport logic that imports nothing
+
+**Claim:** UI-5. **Found:** 2026-07-27. **Measured at 75ae4bb.**
+
+The ban binds: importing `../../data/notesRepo.ts` into `NotesScreen` fails eslint with UI-5's own message. That
+half is centralized and real, and it closes the route the pilot's failure took.
+
+It is a ban on IMPORTS, and UI-5's statement is broader: "The client UI holds no business or transport logic of
+its own." Planted a screen-local function that builds its own authenticated request:
+
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notes`,
+      { headers: { authorization: `Bearer ${import.meta.env.VITE_API_TOKEN}` } });
+
+That is a screen reading the API base URL, reading a bearer token, and calling the server. It imports nothing.
+Clean `tsc`, clean eslint, 65 of 65 tests.
+
+The realistic arrival is not malice: it is a screen that needs one endpoint the repo does not expose yet, and the
+ban that would stop the clean route (import the repo) is silent on the dirty one. A screen-scoped ban on bare
+`fetch`, `XMLHttpRequest`, `EventSource` and `WebSocket` is a lint rule of the same kind as the one already there,
+and it covers what the import ban structurally cannot.
+
+**Not measurable here:** the composed-entrypoint smoke needs the server up, so UI-5's second half was read and
+not run.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
