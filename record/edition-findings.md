@@ -2803,6 +2803,16 @@ registry dead and the marker intact, flipping `NoteConfiguration.HasKey` to lead
 `Every_tenant_owned_entity_leads_its_key_with_TenantId` red. TEN-3 is in better shape than CFG-1 was. What is
 unguarded is the second obligation only, "no unmarked tenant data", whose whole reach is that four-name list.
 
+**Repaired, 2026-07-27, with the exact neutering as its control.** Two additions. The registry half is E-51:
+the four-name list is gone and the extent of its replacement is asserted. The vacuity half is a new assertion,
+`The_sets_these_assertions_iterate_are_not_empty`, which fails if the model holds no entities or if none is
+marked `ITenantOwned`, with a message saying that an edition genuinely owning no tenant data belongs at `owed`
+with that as its trigger rather than `proven` over an empty set.
+
+Control: E-43's own neutering, `Note` stripped of its marker so a real violation is present and the registry
+narrowed to a name no column carries. It left all 113 tests green when measured. It now fails the vacuity
+assertion by name and thirteen extent cases besides.
+
 ### E-44. TEN-3's sanctioned-exception obligation has no mechanism
 
 **Claim:** TEN-3. **Found:** 2026-07-27. **Measured at 1e52bfa.**
@@ -2814,6 +2824,26 @@ needs a home of its own. `TenantKeyTests` has no exemption list, no justificatio
 There are no exceptions today, so nothing is presently wrong. What is missing is the supported path: a project
 seeding from this kernel that needs one has nowhere to record it and nothing forcing the justification, and the
 row read `proven` on an obligation with no mechanism to plant against.
+
+**Repaired, 2026-07-27, with three controls.** `KeyShapeExemption` is a second register, separate from the TEN-5
+access ledger because the claim rules that a key-shape exemption is not a cross-tenant access path and the two
+kinds are recorded in different places. It follows `AnonymousCarveOut`, the register this kernel already trusts
+for the same job on SEC-1: a justification per entry, and a stale entry fails.
+
+Four rules, each a pure function of its inputs: an entry naming no entity in the model fails, an entry whose
+justification is shorter than a sentence fails, an entry for an entity that already leads its key with the tenant
+fails as unnecessary, and a duplicate fails. The shipped register is EMPTY, which is exactly how a mechanism
+becomes vacuous, so the rules are proven against fixtures rather than against the shipped state. Proving them
+from an empty register would have been E-44's own shape one level up.
+
+| control | outcome |
+|---------|---------|
+| key flipped to lead with `Id`, no exemption | red, the key assertion |
+| same, plus an exemption carrying a real justification | green, the exemption works |
+| same exemption, justification reduced to `legacy` | red, the register assertion |
+
+The justification floor is 40 characters and the code says what that is worth: it does not make a bad
+justification good, it prevents the one-word entry that carries nothing a reviewer could disagree with.
 
 ### E-45. CON-1's enum wire set is not closed: an integer off the wire yields an undeclared value
 
@@ -2891,6 +2921,22 @@ surface looks covered and DATA-2's own guard reached nothing.
 `NoteServiceTests.List_clamps_the_page_size` is real and runnable but drives a `FakeNoteStore`, so it proves the
 service clamp and never reaches the store's.
 
+**Repaired, 2026-07-27, with four controls.** `EfNoteStoreTests` in `Kernel.Tests.Unit`, nine assertions against
+the real `EfNoteStore` over SQLite, which needs no Docker daemon.
+
+| control, re-planted | before | after |
+|---------------------|--------|-------|
+| `.AsNoTracking()` off `GetAsync` | **green, 113 and 19** | red, 1 |
+| the store's `Math.Clamp` removed | **green, 113 and 19** | red, 5 |
+| `.Take(limit)` removed, the unbounded read | **green, 113 and 19** | red, 5 |
+| the keyset cursor filter removed | untested outside Docker | red, 1 |
+
+The fourth row is the one that was not in E-48. Paging the whole table one page at a time and asserting every row
+is visited exactly once distinguishes keyset from offset without needing a concurrent writer, and it runs on
+SQLite, so DATA-2's keyset obligation stops depending on a suite that cannot start (E-49). The same-timestamp
+collision page stays with the integration suite, because Guid ordering is provider-specific and that tie is the
+one place it matters.
+
 ### E-49. DATA-2's only cited proof of keyset paging cannot run
 
 **Claim:** DATA-2, and TEN-3's engine-level half. **Found:** 2026-07-27. **Measured at 1e52bfa.**
@@ -2920,6 +2966,49 @@ existence oracle, and uniform not-found exists to deny exactly that. Uniformity 
 store method separately remembering its own `Where`, and the backstop that catches a lapse announces it.
 
 The probe passes against unplanted code, so it is a valid test and the 500 is caused by the plant.
+
+### E-51. TEN-3 carried a fourth tenant registry, using the comparison E-9 replaced
+
+**Claim:** TEN-3. **Found:** 2026-07-27. **Measured at 4bcbdf4.**
+
+E-9 is the finding that three claims (SEC-3's PII names, SEC-2's server-owned fields, TEN-1's tenant-shaped names)
+each compared a registry with `hashSet.Contains(name.ToLowerInvariant())`, which is equality, so `email` was on
+the list and `emailAddress` walked past it. `NameComparison` exists to replace that comparison, `ForbiddenTenantParams`
+is the canonical tenant registry, and `NameComparisonTests` asserts that every spelling the old lists enumerated
+still matches.
+
+`TenantKeyTests` was never converted. It carried its own list,
+`["tenantid", "orgid", "organizationid", "organisationid"]`, compared with `Contains(p.Name.ToLowerInvariant())`,
+in the same directory as the repair, three rounds after the repair landed.
+
+Measured, thirteen tenant-shaped spellings against the shipped predicate, six escaped:
+
+```
+recognised      TenantId  tenantid  TenantID  OrgId  orgid  OrganizationId  OrganisationId
+escaped         tenant_id  TenantIdentifier  TenantKey  WorkspaceId  workspaceslug  AccountId
+```
+
+The first three of the escaped six are ordinary spellings of the exact property the claim names. The last three
+are the entries the node-react round 4 audit added to the canonical registry after measuring the two editions
+against each other, so TEN-3 was behind a correction that had already been made and recorded.
+
+This is E-9's own harm restated: no novelty was required. `tenant_id` is the snake_case spelling of `TenantId`.
+
+**Repaired, 2026-07-27, with two controls.** `TenantColumn.IsTenantShaped` is now
+`NameComparison.Matches(EndpointSpineTests.ForbiddenTenantParams, name)`, so TEN-3 reads the registry TEN-1's
+guards read and stops holding an opinion of its own about what a tenant is. The extent is asserted against an
+independently written floor of thirteen spellings plus six ordinary column names that must NOT match, `Origin`
+among them, which is the name the node-react edition rejected a prefix rule over.
+
+| control | before | after |
+|---------|--------|-------|
+| the thirteen-spelling floor | **6 escaped** | 13 recognised |
+| the six ordinary names | not mistaken | not mistaken |
+| pre-repair equality registry restored | n/a | red, exactly the 6 |
+
+TEN-3's unmarked-data obligation now rests on precisely the registry and comparison TEN-1's `proven` row rests
+on. The two stand or fall together, which is the intended consequence and is better than two registries
+disagreeing quietly.
 
 ## Acceptance test, first execution (2026-07-27)
 

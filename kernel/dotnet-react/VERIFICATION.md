@@ -917,3 +917,109 @@ Architecture 122, unit 19, node server 154, both client-webs 65. `compose --chec
 editions. Both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok at 14 caught and 11
 ignored. Integration 4 failures, environment-blocked on Docker, recorded rather than counted as a pass. Literal
 em dash and en dash scans, 0 and 0.
+
+## Round: batch 2's two unrepaired rows, and a registry that missed its own repair (2026-07-27)
+
+TEN-3 and DATA-2 were the two rows batch 2 lowered and did not repair. Both are repaired here, measured at
+`4bcbdf4` against baselines of 122 architecture and 19 unit tests. The architecture suite ends at 150 and the
+unit suite at 28.
+
+### TEN-3 was reading a registry the kernel had already replaced
+
+E-43 recorded that TEN-3's tenant-column registry had no extent assertion. Looking for where to put one found
+something worse. `NameComparison` exists because E-9 found three claims comparing a registry with
+`Contains(name.ToLowerInvariant())`, which is equality, so `email` matched and `emailAddress` did not.
+`ForbiddenTenantParams` is the canonical tenant registry that replaced the enumerated spellings.
+`TenantKeyTests` was never converted. It sat in the same directory as the repair, three rounds later, still
+carrying `["tenantid", "orgid", "organizationid", "organisationid"]` and still comparing by equality.
+
+Thirteen tenant-shaped spellings measured against it, six escaped:
+
+```
+recognised   TenantId  tenantid  TenantID  OrgId  orgid  OrganizationId  OrganisationId
+escaped      tenant_id  TenantIdentifier  TenantKey  WorkspaceId  workspaceslug  AccountId
+```
+
+`tenant_id` is the snake_case spelling of the exact property the claim names. The last three are entries the
+node-react round 4 audit had already added to the canonical registry, so TEN-3 was behind a correction that had
+been made, recorded and merged.
+
+| control | before | after |
+|---------|--------|-------|
+| the thirteen-spelling floor | **6 escaped** | 13 recognised |
+| six ordinary names (`Id`, `Title`, `Origin`, `NoteId`, ...) | not mistaken | not mistaken |
+| pre-repair equality registry restored | n/a | red, exactly the 6 |
+| E-43's own neutering: marker stripped, registry narrowed | **green, 113** | red, vacuity assertion by name |
+
+The last row is the one worth keeping. E-43's neutering left all 113 tests green because both halves went
+vacuous together. It now fails an assertion whose message says an edition genuinely owning no tenant data belongs
+at `owed` with that as its trigger, not `proven` over an empty set.
+
+TEN-3's unmarked-data obligation now rests on precisely the registry and comparison TEN-1's `proven` row rests
+on. The two stand or fall together. That is the intended consequence: two registries disagreeing quietly is
+worse than one being wrong loudly.
+
+### TEN-3's sanctioned exception, and the trap of proving it from an empty register
+
+`KeyShapeExemption` is a second register, separate from the TEN-5 access ledger because the claim rules that a
+key-shape exemption is not a cross-tenant access path. It follows `AnonymousCarveOut`, which is the register this
+kernel already trusts for the same job on SEC-1: a justification per entry, and a stale entry fails.
+
+The shipped register is empty, and an empty register makes every assertion over it pass. Proving the mechanism
+from the shipped state would have been E-44's own shape one level up, so the four rules are a pure function of
+their inputs, proven against fixtures, and separately run against the real model.
+
+| control | outcome |
+|---------|---------|
+| key flipped to lead with `Id`, no exemption | red, the key assertion |
+| same, plus an exemption carrying a real justification | green, the exemption works |
+| same exemption, justification reduced to `legacy` | red, the register assertion |
+
+The justification floor is 40 characters, and the code says what that is worth rather than pretending otherwise:
+it does not make a bad justification good, it prevents the one-word entry that carries nothing a reviewer could
+disagree with.
+
+### DATA-2, nine assertions against a store nothing was checking
+
+`EfNoteStoreTests`, in the unit project, against the real `EfNoteStore` over SQLite. Every one of the three
+plants E-48 recorded is now red, and a fourth was added.
+
+| control, re-planted | before | after |
+|---------------------|--------|-------|
+| `.AsNoTracking()` off `GetAsync` | **green, 113 and 19** | red, 1 |
+| the store's `Math.Clamp` removed | **green, 113 and 19** | red, 5 |
+| `.Take(limit)` removed, the unbounded read | **green, 113 and 19** | red, 5 |
+| the keyset cursor filter removed | untestable without Docker | red, 1 |
+
+The fourth row was not in E-48 and is the useful surprise of the round. Paging the whole table one page at a time
+and asserting every row is visited exactly once distinguishes keyset from offset without needing a concurrent
+writer, and it runs on SQLite. So DATA-2's keyset obligation stops depending on a suite that cannot start, which
+was E-49 and behind it E-39. The same-timestamp collision page stays with the integration suite, because Guid
+ordering is provider-specific and that tie is the one place it matters.
+
+SQLite rather than SQL Server is a deliberate choice about where a claim's proof should live. A proof that needs
+a daemon is a proof that does not run.
+
+### Tally movement
+
+| | before | after |
+|---|---|---|
+| proven | 14 | 15 |
+| patterned | 6 | 7 |
+| latent | 2 | 2 |
+| owed | 47 | 45 |
+| non-owed rows | 22 | 24 |
+
+TEN-3 `owed` to `proven`, on three obligations each planted against separately. DATA-2 `owed` to `patterned`,
+which is its ceiling: the claim's locus is per-seam and its weakening note says its static enforcement is the
+weakest in the catalog. Its keyset obligation moves from `latent` to `patterned`, which is the first time
+anything has moved off `latent` by being made runnable rather than by being lowered.
+
+One finding, E-51. Batch 2's five rows are now closed.
+
+### Gates
+
+Architecture 150, unit 19 to 28, node server 154, both client-webs 65. `compose --check` ok, 38 shared files in
+2 editions. Both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok at 14 caught and 11
+ignored. Integration still 4 failures, environment-blocked on Docker, and now carrying less weight than it did.
+Literal em dash and en dash scans, 0 and 0.

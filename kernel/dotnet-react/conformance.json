@@ -65,24 +65,24 @@
     },
     "TEN-3": {
       "title": "Tenant-leading composite keys",
-      "status": "owed",
-      "mechanism": "`NoteConfiguration.HasKey(TenantId, Id)`; `TenantKeyTests` (key shape via the `ITenantOwned` marker, unmarked-data via a four-name column registry)",
-      "note": "the key half holds; the registry has no extent assertion and exceptions have no home (E-43, E-44)",
+      "status": "proven",
+      "mechanism": "`NoteConfiguration.HasKey(TenantId, Id)`; `TenantKeyTests` over the EF model, reading `TenantColumn.IsTenantShaped`, which is TEN-1's `ForbiddenTenantParams` registry through `NameComparison`; `KeyShapeExemption` for sanctioned exceptions",
+      "note": "",
       "obligations": [
         {
           "name": "tenant-owned entities lead their key with the tenant id",
           "status": "proven",
-          "text": "`Every_tenant_owned_entity_leads_its_key_with_TenantId` reads the EF model and binds: flipping `HasKey` to lead with `Id` turns it red and names TEN-3. It rides on the `ITenantOwned` marker, not on the column registry, so it still binds with that registry narrowed to nothing."
+          "text": "`Every_tenant_owned_entity_leads_its_key_with_TenantId` reads the EF model and binds: flipping `HasKey` to lead with `Id` turns it red and names TEN-3. It rides on the `ITenantOwned` marker, and `The_sets_these_assertions_iterate_are_not_empty` now fails if that marked set is empty, so the assertion cannot pass over nothing (E-43 repaired)."
         },
         {
           "name": "no unmarked tenant data",
-          "status": "patterned",
-          "text": "`Every_entity_with_a_tenant_column_is_marked_tenant_owned` binds: stripping `ITenantOwned` from `Note` turns it red. Its whole reach is `TenantColumnNames`, a hand-written four-name list with nothing asserting its extent, so an entity whose tenant column is spelled any other way merges silently (E-43). trigger: an extent assertion over the registry, in the shape `SecretConfigShapeTests` and the UI-2 lint extent test already carry."
+          "status": "proven",
+          "text": "`Every_entity_with_a_tenant_column_is_marked_tenant_owned` binds: stripping `ITenantOwned` from `Note` turns it red. It reads TEN-1's `ForbiddenTenantParams` through `NameComparison`, not a list of its own; the four-name equality list it carried until E-51 let six of thirteen tenant-shaped spellings past, `tenant_id` and `TenantKey` among them. The extent is asserted against an independently written floor of thirteen spellings plus six ordinary names that must not match. This obligation now rests on exactly the registry and comparison TEN-1 rests on, so the two rows stand or fall together."
         },
         {
           "name": "a sanctioned exception carries a named justification and its own guard",
-          "status": "owed",
-          "text": "`TenantKeyTests` has no exemption list, no justification field and no guard for one, and the claim rules that a key-shape exemption does not belong in the TEN-5 access ledger, so it needs a home of its own (E-44). trigger: the first sanctioned key-shape exception."
+          "status": "proven",
+          "text": "`KeyShapeExemption` is a register separate from the TEN-5 access ledger, as the claim requires, following `AnonymousCarveOut`. Four rules, each proven by fixture because the shipped register is empty and proving them from an empty register would prove nothing: a stale entry fails, an unjustified entry fails, an unnecessary entry fails, a duplicate fails. End-to-end control: a violating key plus a justified exemption is green, and the same exemption with its justification reduced to a label is red (E-44 repaired)."
         }
       ]
     },
@@ -332,24 +332,24 @@
     },
     "DATA-2": {
       "title": "Bounded reads",
-      "status": "owed",
-      "mechanism": "`EfNoteStore` AsNoTracking + `(CreatedAtUtc, Id)` keyset + a store-side clamp; `NoteServiceTests` (service clamp, over a fake store); integration `KeysetPagingTests`, which needs a Docker daemon",
-      "note": "structural + review; the store is inside the tested path and nothing asserts how it reads (E-48, E-49)",
+      "status": "patterned",
+      "mechanism": "`EfNoteStore` AsNoTracking + `(CreatedAtUtc, Id)` keyset + a store-side clamp; `EfNoteStoreTests` asserts all three against the real store over SQLite; `NoteServiceTests` the service clamp; integration `KeysetPagingTests` the same-timestamp collision page, which needs Docker",
+      "note": "per-seam: each new list endpoint and each new store read owes its own assertion",
       "obligations": [
         {
           "name": "every list endpoint has a maximum page size",
           "status": "patterned",
-          "text": "`NoteServiceTests.List_clamps_the_page_size` is runnable and binds, but drives a `FakeNoteStore`, so it proves the service clamp only; the store clamp whose comment reads \"a direct caller cannot read unbounded\" deletes with every runnable suite green, as does `.Take(limit)` itself (E-48). trigger: each new list endpoint owes its own bound test, and the store bound owes an assertion that observes it."
+          "text": "Bounded at the service (`NoteServiceTests.List_clamps_the_page_size`, over a fake store) and again at the store (`A_direct_caller_cannot_read_past_the_maximum_page_size`, over the real one). Removing the store clamp turns five assertions red, as does removing `.Take(limit)` outright; both were green everywhere before E-48 was repaired. trigger: each new list endpoint owes its own bound test."
         },
         {
           "name": "reads run without change tracking",
-          "status": "owed",
-          "text": "Removing `.AsNoTracking()` from `GetAsync` leaves both runnable suites green. Removing it from `ListAsync` turns AI-2's `ListNotesToolReadOnlyTests` red with a message naming a tool and not DATA-2, which is the third scoring outcome and E-22's shape, not coverage (E-48). trigger: an assertion that observes the change tracker across the store's read paths."
+          "status": "patterned",
+          "text": "Asserted on both read paths against the real store. Removing `.AsNoTracking()` from `GetAsync` turns `A_single_read_leaves_nothing_tracked` red; before the repair it was green everywhere, and removing it from `ListAsync` turned only AI-2's tool test red with a message naming a tool, which is E-22's shape rather than coverage (E-48 repaired). trigger: each new store read method owes its own assertion."
         },
         {
           "name": "list reads are paginated by keyset, not offset",
-          "status": "latent",
-          "text": "`KeysetPagingTests` exists and covers a same-timestamp collision page, but `Kernel.Tests.Integration` builds a SQL Server container and fails rather than skips with no Docker daemon, and per E-39 no CI runs dotnet at all, so the mechanism has not been executed here (E-49). trigger: the integration suite running in CI, or a keyset assertion that needs no engine."
+          "status": "patterned",
+          "text": "`Paging_by_cursor_visits_every_row_exactly_once` pages the whole table and asserts no row is dropped or repeated, which distinguishes keyset from offset without a concurrent writer, and runs on SQLite with no Docker daemon. Removing the cursor filter turns it red. The same-timestamp collision page stays with `KeysetPagingTests`, which needs Docker and per E-39 runs in no CI (E-49). trigger: a provider whose id ordering differs from the one under test owes the collision page on that engine."
         }
       ]
     },
