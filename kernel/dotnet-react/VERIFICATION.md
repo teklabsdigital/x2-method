@@ -673,3 +673,64 @@ rather than a flag, and it is a build rather than a port.
 Baselines: .NET architecture 113 of 113, node server 154 of 154, node client-web 16 of 16, dotnet client-web 16
 of 16, `compose --check` 36 shared files across 2 editions, both editions' `docs-lint`, `docs-lint --self-test`
 and `conformance --check` ok, literal em-dash and en-dash scans zero.
+
+## Round: the eslint config gets its extent asserted (2026-07-27)
+
+E-30's repair, the twin of the previous round's. `docs-lint.mjs` got `--self-test` by porting what
+`secret-scan.mjs` already had. UI-2's config could not be repaired by porting anything: it is not a node script,
+it has no fixture surface, and its guard is ESLint itself, so the repair is a vitest suite that drives ESLint's
+own API over known-bad and known-good inputs.
+
+`src/__tests__/ui2LintExtent.test.ts` in the shared tier, composed into both editions. Nineteen caught controls,
+one per banned category the config declares, twenty-two ignored controls, an independently written floor of 54
+named colours, and an independently written list of 21 gated dimension axes. Forty-nine assertions. Both
+editions' client suites move from 16 tests to 65. No new dependency: eslint 10.4.1 was already an exact pin.
+
+### The control, which is the whole point
+
+| probe against the shipped config | `eslint .` | extent test |
+|----------------------------------|-----------|--------------|
+| three colour names swapped out | **green** | red |
+| whole colour alternation matches nothing | **green** | red, 3 failures |
+| dimension alternation matches nothing | **green** | red, 3 failures |
+| widened, `lineHeight` newly gated | **green** | red |
+| severity dropped from `error` to `warn` | **green** | red |
+| none, shipped config | green | 49 passed |
+
+Five sabotages. `eslint .` is green for every one of them, which is E-30 restated as a measurement rather than
+an argument. The test is red for every one.
+
+The severity row is worth its own sentence. UI-2's claim has an explicit "no warn-and-ship tier" obligation, and
+until this round nothing asserted it: one word turns every ban into a report that merges anyway, and the suite,
+the lint and the CI job all stay green.
+
+### Three wrong first answers, kept because each was corrected by running the control
+
+**Where the controls live.** They are in a JSON fixture, not in the test source, because the colour selectors
+match any string or template literal rather than only style-object properties, so a known-bad fixture held as a
+source string makes the guard test fail the rule it asserts. Putting the test under `src/theme/__tests__/`, where
+`no-restricted-syntax` is off, also dodges it and was rejected: an extent assertion must not depend on where it
+sits relative to the exemptions of the config it is asserting.
+
+**One control against sixty-one members.** The first cut asserted a single named colour, `crimson`, against an
+alternation of 61, so deleting sixty of them passed. The second cut read the member list out of the config and
+drove every member through the linter, and a probe swapping three names for four passed again, because a list
+read out of the thing under test shrinks when the thing under test shrinks. Both are kept now: an independent
+floor catches removal, the derived sweep catches a selector broken while the list still looks complete. Neither
+alone was sufficient and only the control showed it. The first row of the table above is that probe.
+
+**How the config is read.** Through `calculateConfigForFile`, not by importing `eslint.config.js`. That started
+as a way around a type error and is the better mechanism anyway: it is the config as ESLint resolves it for that
+exact path, and it carries the severity, without which the warn-and-ship obligation is not assertable.
+
+### Status
+
+No row moves. UI-2 stays `patterned`, because what makes it `patterned` is coverage, not vacuity: bare negative
+numerics and the per-side axes still escape. Fourteen such holes are now carried as PASSING controls marked
+KNOWN GAP, up from the two that had been planted; the other twelve were predicted by reading the selectors and
+are confirmed here as measured facts. Closing any of them turns this test red and has to be argued. Tally
+unchanged at 16/7/2/44, non-`owed` 25.
+
+Baselines: .NET architecture 113 of 113, node server 154 of 154, node client-web **65 of 65**, dotnet client-web
+**65 of 65**, `compose --check` 38 shared files across 2 editions, both editions' `docs-lint`, `docs-lint
+--self-test` and `conformance --check` ok, literal em-dash and en-dash scans zero.

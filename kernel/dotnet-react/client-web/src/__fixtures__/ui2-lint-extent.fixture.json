@@ -1,0 +1,254 @@
+{
+  "_comment": [
+    "UI-2 lint extent controls. Consumed by src/__tests__/ui2LintExtent.test.ts.",
+    "These live in JSON, not in the test source, deliberately: eslint.config.js's colour selectors match ANY",
+    "string or template literal, not only style-object properties, so a known-bad fixture held as a source",
+    "string would make the guard test fail the very rule it asserts. Putting the test in an exempt directory",
+    "would also work and was rejected: an extent assertion must not depend on where it sits relative to the",
+    "exemptions of the config it is asserting. JSON is invisible to the **/*.{ts,tsx} files glob."
+  ],
+  "filePath": "src/modules/notes/LintExtentProbe.tsx",
+  "catch": [
+    {
+      "category": "Raw dimension/spacing literal: bare number, camelCase key",
+      "source": "export const Card = () => <div style={{ padding: 24 }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "Raw dimension/spacing literal: bare number, string-literal kebab key (key.value half of the same category)",
+      "source": "export const cardStyle: Record<string, string | number> = { 'margin-top': 12 };\nexport const Card = () => <div>{Object.keys(cardStyle).length}</div>;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "Raw dimension/spacing literal: px/rem string, camelCase key",
+      "source": "export const Card = () => <div style={{ maxWidth: '640px' }} />;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "Raw dimension/spacing literal: px/rem string, string-literal kebab key (key.value half of the same category)",
+      "source": "export const gridStyle: Record<string, string | number> = { 'row-gap': '1.5rem' };\nexport const Grid = () => <div>{Object.keys(gridStyle).length}</div>;",
+      "expectedMessage": "Raw dimension/spacing literal (UI-2). Use a spacing or size token."
+    },
+    {
+      "category": "Hex color literal (3/4/6/8 digit, unanchored so composite values count)",
+      "source": "export const Card = () => <div style={{ color: '#3b82f6' }} />;",
+      "expectedMessage": "Hex color literal (UI-2). Use a design token."
+    },
+    {
+      "category": "CSS color function literal, legacy forms (rgb/rgba/hsl/hsla)",
+      "source": "export const Card = () => <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }} />;",
+      "expectedMessage": "CSS color function literal (UI-2). Use a design token."
+    },
+    {
+      "category": "CSS color function literal, modern forms (oklch/oklab/lab/lch/hwb/color) - same selector and same message as the legacy forms, kept as its own fixture because the modern alternation is the part no plant exercised",
+      "source": "export const Card = () => <div style={{ backgroundColor: 'oklch(0.72 0.11 250)' }} />;",
+      "expectedMessage": "CSS color function literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Named color literal (NAMED_COLORS, anchored ^...$, case-insensitive)",
+      "source": "export const Card = () => <div style={{ color: 'crimson' }} />;",
+      "expectedMessage": "Named color literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Hex color inside a template literal",
+      "source": "export const Card = ({ alpha }: { alpha: string }) => <div style={{ boxShadow: `0 1px 2px #112233${alpha}` }} />;",
+      "expectedMessage": "Hex color in a template literal (UI-2). Use a design token."
+    },
+    {
+      "category": "CSS color function inside a template literal",
+      "source": "export const Card = ({ alpha }: { alpha: number }) => <div style={{ color: `rgb(0 0 0 / ${alpha})` }} />;",
+      "expectedMessage": "CSS color function in a template literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Inline fontSize literal (camelCase key)",
+      "source": "export const Card = () => <div style={{ fontSize: 18 }} />;",
+      "expectedMessage": "Inline fontSize literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Inline fontFamily literal (camelCase key)",
+      "source": "export const Card = () => <div style={{ fontFamily: 'Inter, sans-serif' }} />;",
+      "expectedMessage": "Inline fontFamily literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Inline fontWeight literal (camelCase key)",
+      "source": "export const Card = () => <div style={{ fontWeight: 600 }} />;",
+      "expectedMessage": "Inline fontWeight literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Inline font-size literal (kebab string-literal key)",
+      "source": "export const headingStyle: Record<string, string | number> = { 'font-size': '18px' };\nexport const Heading = () => <div>{Object.keys(headingStyle).length}</div>;",
+      "expectedMessage": "Inline font-size literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Inline font-family literal (kebab string-literal key)",
+      "source": "export const headingStyle: Record<string, string | number> = { 'font-family': 'Inter' };\nexport const Heading = () => <div>{Object.keys(headingStyle).length}</div>;",
+      "expectedMessage": "Inline font-family literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Inline font-weight literal (kebab string-literal key)",
+      "source": "export const headingStyle: Record<string, string | number> = { 'font-weight': 600 };\nexport const Heading = () => <div>{Object.keys(headingStyle).length}</div>;",
+      "expectedMessage": "Inline font-weight literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Raw borderRadius number (camelCase key; one category, two selectors: value=/^[0-9]/ catches '8px', raw=/^[0-9]/ catches the bare 8 this fixture uses)",
+      "source": "export const Card = () => <div style={{ borderRadius: 8 }} />;",
+      "expectedMessage": "Raw borderRadius number (UI-2). Use a design token."
+    },
+    {
+      "category": "Raw border-radius literal (kebab string-literal key; separate message from the camelCase borderRadius category)",
+      "source": "export const cardStyle: Record<string, string | number> = { 'border-radius': '8px' };\nexport const Card = () => <div>{Object.keys(cardStyle).length}</div>;",
+      "expectedMessage": "Raw border-radius literal (UI-2). Use a design token."
+    },
+    {
+      "category": "Raw border/hairline width (one category: key.name borderWidth|border at :46 and key.value border-width|border at :47 share the message; fixture drives the camelCase half)",
+      "source": "export const Card = () => <div style={{ borderWidth: 1 }} />;",
+      "expectedMessage": "Raw border/hairline width (UI-2). Use a design token."
+    }
+  ],
+  "ignore": [
+    {
+      "why": "Token reference: values arrive as identifiers/member expressions, never as literals, so no selector applies. Note the token object must arrive by prop, not by import: a module outside src/components that does `import { tokens } from '../../theme/tokens'` fires the separate UI-3 import ban (verified), which would make the fixture noisy for the wrong reason.",
+      "source": "export const Card = ({ t }: { t: { spaceMd: string; fg: string } }) => <div style={{ padding: t.spaceMd, color: t.fg }} />;"
+    },
+    {
+      "why": "Unitless ratio. lineHeight is deliberately absent from DIM_CAMEL and DIM_KEBAB; a widening that added it would red-flag every legal ratio.",
+      "source": "export const Card = () => <div style={{ lineHeight: 1.5 }} />;"
+    },
+    {
+      "why": "Flex factors and order are unitless structural numbers, deliberately outside DIM_CAMEL (comment at lines 18-19).",
+      "source": "export const Card = () => <div style={{ flex: 1, flexGrow: 0, flexShrink: 1, order: 2 }} />;"
+    },
+    {
+      "why": "Integer zIndex is a stacking ordinal, not a dimension; deliberately outside DIM_CAMEL.",
+      "source": "export const Card = () => <div style={{ zIndex: 10 }} />;"
+    },
+    {
+      "why": "Percentages on gated keys. The numeric selector matches Literal.raw, which for a string includes its quotes and so cannot match ^\\d+$, and the unit selector requires px or rem. Both structural, both deliberate.",
+      "source": "export const Card = () => <div style={{ width: '100%', maxWidth: '50%' }} />;"
+    },
+    {
+      "why": "Viewport units on gated keys pass the same way percentages do. Deliberate allowlist.",
+      "source": "export const Card = () => <div style={{ height: '100vh', minHeight: '50vmin' }} />;"
+    },
+    {
+      "why": "ch, fr and the auto keyword on gated keys. Deliberate allowlist.",
+      "source": "export const Card = () => <div style={{ maxWidth: '60ch', width: 'auto', gridTemplateColumns: '1fr 2fr' }} />;"
+    },
+    {
+      "why": "Literal zero, excluded explicitly by the (?!0$) lookahead in the numeric selectors. Zero carries no design decision.",
+      "source": "export const Card = () => <div style={{ margin: 0, padding: 0 }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): a bare negative numeric. The numeric dimension selectors use a direct-child combinator and a negative parses as Property > UnaryExpression > Literal, so the literal is a grandchild and unreachable. The px/rem selectors do not backstop it because they test `value`, undefined for a number. MEASURED by plant on 2026-07-27, went green. The string form '-8px' is still caught.",
+      "source": "export const Card = () => <div style={{ marginTop: -8 }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): the per-side border widths appear in neither DIM_CAMEL nor the ^(?:borderWidth|border)$ selector, so borderTopWidth and its siblings are unguarded while `border` is. MEASURED by plant on 2026-07-27, went green.",
+      "source": "export const Card = () => <div style={{ borderTopWidth: 1 }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): same per-side hole in string form. `border: '1px solid'` is red, `borderLeft: '1px solid'` is silent, and the shorthand only trips a different rule if it happens to embed a hex. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = () => <div style={{ borderLeft: '1px solid' }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): the borderRadius selectors are anchored to the exact key name, so the four per-corner radii are unguarded while borderRadius is. Same per-seam debt as the per-side widths. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = () => <div style={{ borderTopLeftRadius: 8 }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): the string-form dimension selectors match only \\d(?:px|rem)\\b, so em, rem-adjacent ex, pt, cm and in on a gated key all pass. These are not on the config's stated allowlist (which names ratios, flex, zIndex, percentages, viewport units, ch, fr, auto and 0), so this is a hole, not a policy. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = () => <div style={{ padding: '1.5em', width: '20pt' }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): the named-colour selector is anchored ^(?:NAMED_COLORS)$, so a named colour embedded in a composite value escapes, while the hex selector at the same seam is deliberately unanchored and would catch '#f00'. `outline` is also an ungated key, so the 2px escapes too. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = () => <div style={{ outline: '2px solid red' }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): there are TemplateElement selectors for hex and for colour functions, but none for NAMED_COLORS, so the template-literal seam is narrower than the Literal seam by exactly one category. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = ({ w }: { w: number }) => <div style={{ outline: `${w}px solid red` }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): the borderRadius selectors require the value to START with a digit (/^[0-9]/), so 'calc(8px + 2px)' and '.5rem' pass, and borderRadius is not in DIM_CAMEL so the px/rem seam does not backstop it. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = () => <div style={{ borderRadius: 'calc(8px + 2px)' }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): same direct-child hole as the negative numeric, reached by a different expression. A ConditionalExpression makes both literals grandchildren of the Property. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = ({ dense }: { dense: boolean }) => <div style={{ padding: dense ? 8 : 24 }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): a gated dimension key whose value is a TemplateLiteral. The dimension selectors require a Literal child, and the TemplateElement selectors cover only colour, so the raw 24px is invisible. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = ({ n }: { n: number }) => <div style={{ padding: `${n}px 24px` }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): fontKeyBans require [value.type='Literal'], so any font size, family or weight expressed as a template literal is unreachable. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = ({ n }: { n: number }) => <div style={{ fontSize: `${n}px` }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): a computed key. esquery reads key.name of the computed Identifier ('key'), not the property it resolves to, so every key.name and key.value selector in the file misses. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "const key = 'padding' as const;\nexport const Card = () => <div style={{ [key]: 24 }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): one level of indirection through a module-local constant defeats every selector, and a local const is not a token. This is the shape a raw-value drift takes once anyone hits the rule once. Structurally indistinguishable from a legitimate token reference to a syntactic linter, which is why closing it needs a different mechanism, not a wider selector. Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "const PAD = 24;\nexport const Card = () => <div style={{ padding: PAD }} />;"
+    },
+    {
+      "why": "KNOWN GAP (E-31): px on an ungated key. The px/rem seam is scoped by key, not by value, so letterSpacing, boxShadow offsets and transform translations carry raw pixels with no rule attached (boxShadow is reached only if it embeds a hex or a colour function). Unverified by a plant; measured here by driving ESLint against the config.",
+      "source": "export const Card = () => <div style={{ letterSpacing: '0.5px', boxShadow: '0 2px 8px', transform: 'translateY(8px)' }} />;"
+    }
+  ],
+  "namedColourFloor": [
+    "red",
+    "blue",
+    "green",
+    "black",
+    "white",
+    "gray",
+    "grey",
+    "yellow",
+    "orange",
+    "purple",
+    "pink",
+    "cyan",
+    "magenta",
+    "silver",
+    "gold",
+    "teal",
+    "navy",
+    "maroon",
+    "olive",
+    "lime",
+    "aqua",
+    "fuchsia",
+    "crimson",
+    "coral",
+    "indigo",
+    "salmon",
+    "tomato",
+    "turquoise",
+    "violet",
+    "chocolate",
+    "rebeccapurple",
+    "orchid",
+    "plum",
+    "beige",
+    "ivory",
+    "azure",
+    "lavender",
+    "sienna",
+    "wheat",
+    "snow",
+    "thistle",
+    "slategray",
+    "steelblue",
+    "skyblue",
+    "royalblue",
+    "midnightblue",
+    "forestgreen",
+    "seagreen",
+    "darkred",
+    "darkblue",
+    "darkgreen",
+    "hotpink",
+    "deeppink",
+    "dodgerblue"
+  ]
+}

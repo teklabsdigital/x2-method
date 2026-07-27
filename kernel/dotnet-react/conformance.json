@@ -543,17 +543,17 @@
       "title": "Literal visual values are lint errors",
       "status": "patterned",
       "mechanism": "`eslint.config.js` bans visual literals in styles: colors, font props, radii, hairlines, and spacing/dimension literals (numerics matched on `raw`), with the structural allowlist",
-      "note": "the ban is not total: bare negative numerics escape every dimension selector, because the numeric selectors use a direct-child combinator and a negative parses as Property > UnaryExpression > Literal, and the per-side axes (borderTopWidth, outline) are in no alternation (E-31). Planted 2026-07-27, nine plants, seven red naming UI-2. The config itself is fixture-free and can be narrowed to reach nothing with `npm run verify` green (E-30).",
+      "note": "the ban is not total: bare negative numerics escape every dimension selector, because the numeric selectors use a direct-child combinator and a negative parses as Property > UnaryExpression > Literal, and the per-side axes (borderTopWidth, outline) are in no alternation (E-31). Planted 2026-07-27, nine plants, seven red naming UI-2. The config itself is fixture-free and can be narrowed to reach nothing with `npm run verify` green (E-30). The config gained an executable extent assertion on 2026-07-27 (E-30 repaired): 49 assertions over 19 caught and 22 ignored controls plus an independent 54-colour floor and 21 gated axes, red under all five sabotage probes including a drop to `warn` severity, while `eslint .` stayed green under every one.",
       "obligations": [
         {
           "name": "error-tier rules ban literal visual values and gate the client verification chain",
           "status": "proven",
-          "text": "planted 2026-07-27 across seven categories (hex, named colour, bare dimension, px string, radius, border shorthand, fontWeight); each failed `eslint .` with the message naming UI-2, and `verify` short-circuits on it."
+          "text": "planted 2026-07-27 across seven categories (hex, named colour, bare dimension, px string, radius, border shorthand, fontWeight); each failed `eslint .` with the message naming UI-2, and `verify` short-circuits on it. The reach is now asserted executably rather than by plant alone (E-30)."
         },
         {
           "name": "coverage of every axis and every syntactic form a literal can take",
           "status": "patterned",
-          "text": "`marginTop: -8` and `borderTopWidth: 1` both pass (E-31). Each newly gated axis and each newly reachable syntactic form owes its own selector, which is the standing debt this tag names."
+          "text": "`marginTop: -8` and `borderTopWidth: 1` both pass (E-31). Each newly gated axis and each newly reachable syntactic form owes its own selector, which is the standing debt this tag names. The fourteen measured holes are carried as passing controls in the extent test, so closing one turns that test red and has to be argued (E-31)."
         }
       ]
     },

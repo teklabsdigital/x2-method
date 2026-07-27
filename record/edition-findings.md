@@ -2546,6 +2546,46 @@ Nothing in either edition feeds the config a known-bad input. The file's own com
 defect being found and repaired once already ("the old value-only selector was vacuous for `borderRadius: 8`"),
 which is the argument for a fixture rather than against one.
 
+**Repaired, 2026-07-27, with five controls.** `src/__tests__/ui2LintExtent.test.ts` in the shared tier drives
+ESLint's own API over 19 CATCH and 22 IGNORE controls held in `src/__fixtures__/ui2-lint-extent.fixture.json`,
+plus an independent named-colour floor of 54 and an independent list of 21 gated dimension axes. Forty-nine
+assertions, composed into both editions, which move from 16 client tests to 65.
+
+| probe against the shipped config | `eslint .` | extent test |
+|----------------------------------|-----------|--------------|
+| three colour names swapped out | **green** | red |
+| whole colour alternation matches nothing | **green** | red, 3 |
+| dimension alternation matches nothing | **green** | red, 3 |
+| widened, `lineHeight` newly gated | **green** | red |
+| severity dropped from `error` to `warn` | **green** | red |
+
+Five sabotages, `eslint .` green for every one, the test red for every one. That is the finding and its closure
+in one table.
+
+**Three things this cost, all of them worth recording because each was a wrong first answer.**
+
+The controls live in JSON rather than in the test source. The colour selectors match ANY string or template
+literal, not only style-object properties, so a known-bad fixture held as a source string makes the guard test
+fail the rule it is asserting. Placing the test under `src/theme/__tests__/`, where `no-restricted-syntax` is
+off, dodges that and was rejected: an extent assertion must not depend on where it sits relative to the
+exemptions of the config it asserts.
+
+The first cut held ONE named-colour control against an alternation of 61 members, so a narrowing that deleted
+sixty of them passed. The second cut fixed that by reading the member list out of the config and driving every
+member through the linter, and a probe that swapped three names for four passed again, because a list read out
+of the thing under test shrinks when the thing under test shrinks. Both halves are now kept: an independent
+floor catches removal, and the derived sweep catches a selector broken while the list still looks complete.
+Neither alone was enough, and only running the control showed it.
+
+What the config bans is read back through `calculateConfigForFile` rather than by importing `eslint.config.js`.
+That began as a way around an untyped-import type error and is the better mechanism regardless: it is the config
+as ESLint resolves it FOR THAT PATH, and it carries the severity, which is what makes UI-2's "no warn-and-ship
+tier" obligation assertable at all.
+
+**Not closed by this.** The fourteen KNOWN GAP entries are recorded as passing controls, marked with E-31, and
+remain `owed` obligations on UI-2's row. Only two of them had ever been planted; the other twelve were predicted
+from reading the selectors and are confirmed by this test as measured facts rather than readings.
+
 ### E-31. UI-2's dimension ban misses every negative literal, and the ungated axes
 
 **Claim:** UI-2. **Status carried:** `proven`. **Found:** 2026-07-27. **Measured, nine plants.**
