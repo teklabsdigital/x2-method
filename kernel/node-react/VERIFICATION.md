@@ -632,3 +632,65 @@ and which is indistinguishable from a typo until the surface exists (E-81).
 ### Gates
 
 Client 65, server 154, docs-lint ok, conformance ok at 69 rows. Non-owed node rows 6 to 8.
+
+### Node Phase A, F4: the missing server halves, and a row that was not waiting after all
+
+Ten rows inspected for a missing server half: TEN-2, TEN-3, DATA-1, DATA-2, CON-1, CON-2, MOD-1, DEP-1, TEST-1,
+AI-1. All ten read `owed` with an empty `mechanism` field.
+
+**Six are honestly `owed` and their triggers are accurate**, checked rather than assumed: TEN-2 (no second scope
+entry point), TEN-3, DATA-1, DATA-2 and TEST-1 (no persistence layer at all, so no store, no tenant-owned entity
+and nothing for the tiers to be real about), and AI-1 (no tool-execution seam).
+
+**DEP-1's own note already said what to do**, that the mechanism is composed from the shared tier so what is owed
+is the measurement. Taken, here:
+
+| plant | outcome |
+|-------|---------|
+| a caret range on `fastify` | red-correct, naming the package and the rule |
+| an unledgered `left-pad` at an exact pin | red-correct, keyed on name AND version |
+| a `design/scratch/package.json` nobody declared | red-correct, caught by the whole-tree completeness sweep |
+| the client tier's `postcss` override moved off its ledgered version | red-correct |
+
+Two obligations are `latent` here for this edition's own reason rather than a weakness: there is no container
+image anywhere in the tree, and `VERSIONS.md` says so in prose in the section where the first one will land. The
+window-number obligation is `proven` on the strongest evidence available, having caught a live defect in this
+edition's own ledger on its first run (E-76). The row stays `owed` on the one obligation neither edition has
+built.
+
+**CON-2's fixture is read by one side only** (E-82). The client asserts its three types against
+`note-contract.fixture.json`; nothing in `server/src` reads it. A parity fixture only the consumer reads cannot
+fail on a producer rename, so the two agree forever because only one is ever asked. Consumer obligation `proven`,
+producer obligation `owed` and named.
+
+### CON-1 was not waiting, it was broken
+
+The most important result of this batch. CON-1 read `owed` with `trigger: the first enum on the wire`, and this
+edition has no enum, so by its own record the row was correctly waiting.
+
+CON-1's statement has four clauses. That trigger names the third. Two of the other three are violated in shipped
+code right now:
+
+    404: { type: 'object', properties: { error: { type: 'string' } } },
+    return note === undefined ? reply.code(404).send({ error: 'not found' }) : note;
+    id: String(notes.size + 1),
+
+A bespoke error shape, declared and sent, with no host-level error handler for anything to conform to. And a dense
+sequential counter as an identifier, which satisfies the wire-TYPE half of "identifiers are opaque strings" and
+fails the half the word `opaque` carries.
+
+**The defect is the trigger, not the code.** A trigger is what makes an `owed` row honest, and this one scoped a
+four-clause claim to its narrowest clause, so the record showed a claim patiently waiting while two of its clauses
+were being broken. A live violation is worse than an unbuilt guard, and this record showed neither. Recorded as
+E-83, with the general rule: a claim whose statement carries several clauses needs its trigger scoped per
+obligation, not per row. The other single-line `trigger:` rows in this edition have NOT been checked for the same
+defect, and that is now a known gap rather than an assumption.
+
+Repair is Phase B work: an error handler and an opaque id at the store boundary, and the store is what Phase B
+builds.
+
+### Gates
+
+Client 65, server 154, docs-lint ok, conformance ok at 69 rows. Non-owed unchanged at 8: DEP-1, CON-2 and CON-1
+all stay `owed` on a weakest obligation, correctly. What changed is that ten rows recording no mechanism now
+record what exists, what is missing and, in one case, what is broken.

@@ -4033,6 +4033,63 @@ tree and is not at the declared path, the declaration is wrong. **Trigger: the f
 which is the first moment the comparison has two sides.** Recorded so that the day it lands, the check is a known
 obligation rather than a rediscovery.
 
+### E-82. A contract parity fixture read by one side is a second copy of that side's own beliefs
+
+**Claim:** CON-2. **Found:** 2026-07-27. **Measured at aca0766.**
+
+Node's `client-web/src/data/__fixtures__/note-contract.fixture.json` is committed, and
+`noteContract.test.ts` asserts the client's `CreateNote`, `Note` and `NoteList` types against it. Its header
+comment reads "the same fixture the server's ContractParityTests links to". That test belongs to the SIBLING.
+Nothing in this edition's `server/src` reads the fixture at all.
+
+Parity between two sides is a statement about both. A fixture only the consumer reads cannot fail on a producer
+rename: the server's route schemas are declared inline in `src/routes/notes.ts`, so renaming a property there
+passes every gate in this edition, while the client goes on asserting the old name against a fixture the server no
+longer matches. The two will agree with each other forever, because only one of them is ever asked.
+
+The row read `owed` with an empty mechanism and `trigger: the first hand-mirrored contract`, which had already
+fired. Now split: the consumer obligation is `proven`, the producer obligation is `owed` and named. **Trigger: a
+server-side test reading the same fixture**, which is buildable today precisely because Fastify keeps the schema
+as a value on the route.
+
+### E-83. A trigger naming one clause of a four-clause claim held the row at `owed` while two other clauses were being violated in shipped code
+
+**Claim:** CON-1. **Found:** 2026-07-27. **Measured at aca0766.** **Live violations.**
+
+Node's CON-1 row read `owed`, mechanism empty, `trigger: the first enum on the wire`. This edition has no enum on
+the wire, so by its own record the row was correctly waiting.
+
+CON-1's statement has four clauses: one host-level serialization and error configuration point, errors as RFC 9457
+problem details with no endpoint inventing its own shape, enums as closed string sets, and identifiers as opaque
+strings. The trigger names the third. The other three do not wait for an enum, and two of them are being violated
+right now in `server/src/routes/notes.ts`:
+
+    // the declared 404 response
+    404: { type: 'object', properties: { error: { type: 'string' } } },
+    // and the send
+    return note === undefined ? reply.code(404).send({ error: 'not found' }) : note;
+
+That is a bespoke error shape, declared in the schema and sent by the handler. It is not problem+json, and it is
+the precise thing "no endpoint invents its own error shape" forbids. There is also no host-level error
+configuration point: `app.ts` calls no `setErrorHandler`, so there is nothing for a route to conform TO.
+
+    id: String(notes.size + 1),
+
+That is a dense sequential counter, stringified. It satisfies the wire-TYPE half of "identifiers are opaque
+strings" and fails the opacity half, which is the half the word `opaque` carries. It is also adjacent to SEC-7,
+which forbids a dense id addressing a public surface; the route is gated, so SEC-7 does not bind, and CON-1 does.
+
+**The general defect is the trigger, not the code.** A trigger is what makes an `owed` row honest, and this one
+scoped the whole row to the narrowest of its four clauses. Anyone reading the record saw a claim correctly waiting
+for a condition that had not arrived, when three of its four clauses were live and two were broken. This is the
+same class as E-71's sixty-one dead triggers and is worse in kind: a dead trigger cannot fire, and this one fires
+on the wrong thing. **Any claim whose statement carries several clauses needs its trigger scoped per obligation,
+not per row.** That is now visible for CON-1 because the row carries obligations; the other single-line `trigger:`
+rows in this edition have not been checked for the same defect.
+
+Not repaired here. Fixing it is Phase B work on the server (an error handler plus an opaque id at the store
+boundary), and the store is what G is for.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

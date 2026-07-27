@@ -380,14 +380,48 @@
     "CON-1": {
       "title": "One wire dialect",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first enum on the wire."
+      "mechanism": "none built. Route response shapes are declared per route in `src/routes/`, and nothing compares them against each other or against a dialect.",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F4), and the row was NOT correctly waiting. Its trigger read `the first enum on the wire`, which names the third of the claim's four clauses; the other three do not wait for an enum, and TWO OF THEM ARE VIOLATED IN SHIPPED CODE (E-83). `src/routes/notes.ts` declares and sends a bespoke `{ error: 'not found' }` 404 rather than problem details, with no host-level error handler for a route to conform to, and mints identifiers as `String(notes.size + 1)`, a dense sequential counter. A live violation is worse than an unbuilt guard, and this record showed neither. Repair is Phase B work: an error handler and an opaque id at the store boundary, and the store is what Phase B builds. Findings: E-83.",
+      "obligations": [
+        {
+          "name": "one host-level serialization and error configuration point",
+          "status": "owed",
+          "text": "unbuilt AND unmet. `app.ts` registers no `setErrorHandler` and no shared error serializer, so each route decides its own error shape and there is nothing central for a scan to assert against. Trigger: a host-level error handler, which is the artifact this obligation is about."
+        },
+        {
+          "name": "no endpoint invents its own error shape",
+          "status": "owed",
+          "text": "unbuilt, and VIOLATED in shipped code: the notes route declares `404: { type: 'object', properties: { error: { type: 'string' } } }` and sends `{ error: 'not found' }`, which is not RFC 9457 problem details (E-83). Trigger: the error handler above, then a scan over the composed route table's declared response shapes, which is cheap here because Fastify keeps the schema as a value on the route."
+        },
+        {
+          "name": "enums cross the wire as closed string sets",
+          "status": "owed",
+          "text": "unbuilt, and this is the one clause whose subject genuinely does not exist yet: no route declares an enum. Trigger: the first enum on the wire. This trigger was the WHOLE row's trigger until this round, which is how the two violated clauses above stayed invisible."
+        },
+        {
+          "name": "identifiers are opaque strings",
+          "status": "owed",
+          "text": "unbuilt, and VIOLATED in shipped code: `id: String(notes.size + 1)` is a dense sequential counter that satisfies the wire-type half of `opaque strings` and fails the opacity half (E-83). Adjacent to but not covered by SEC-7, which binds on anonymous surfaces and this route is gated. Trigger: an opaque id at the store boundary, then a scan over declared response shapes."
+        }
+      ]
     },
     "CON-2": {
       "title": "Contract parity fixture",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first hand-mirrored contract."
+      "mechanism": "`client-web/src/data/__fixtures__/note-contract.fixture.json` is the shared property-name fixture; `noteContract.test.ts` asserts the client's `CreateNote`, `Note` and `NoteList` types against it",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F4). Lifted out of a bare `trigger:` line. The trigger, `the first hand-mirrored contract`, HAS fired: the client hand-mirrors the server's shapes and the fixture and its consumer test both exist and run. What is missing is the other side. The fixture's own comment says it is `the same fixture the server's ContractParityTests links to`, and that test is the SIBLING's; nothing in this edition's `server/src` reads the fixture at all. A parity fixture read by one side is not parity, it is a second copy of the client's own beliefs, and it will agree with itself forever. Findings: E-82.",
+      "obligations": [
+        {
+          "name": "the consumer side asserts its types against the committed fixture",
+          "status": "proven",
+          "text": "`noteContract.test.ts` reads the fixture off disk and checks every property name of the three client contract types against it, so a rename on the client fails the client build."
+        },
+        {
+          "name": "the producer side asserts its contracts against the same fixture",
+          "status": "owed",
+          "text": "unbuilt, and this is the missing server half F4 exists to find. Node's route schemas are declared inline in `src/routes/notes.ts` and nothing compares them with the fixture, so a rename on the SERVER passes every gate in this edition while the client keeps asserting the old name against a fixture the server no longer matches (E-82). Trigger: a server-side test reading the same fixture, which is buildable today because the schemas are values on the routes."
+        }
+      ]
     },
     "CON-3": {
       "title": "Read completeness for action-bearing surfaces",
@@ -588,8 +622,45 @@
     "DEP-1": {
       "title": "Dependency quarantine",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: a violation planted against this claim's own obligation turning this claim's own guard red. The mechanism is realized in the shared tier and composed into this edition, so what is owed is the measurement, not the build."
+      "mechanism": "npm exact pins with committed lockfiles restored by `npm ci` + `VERSIONS.md` (cooling-off window header, container-images section, kernel-provenance section, advisory-rule section) + docs-lint's ledger, override, manifest-completeness, image, cross-surface agreement, window-number and kernel-provenance checks, with the dependency surfaces declared in `edition.json`",
+      "note": "Measured in this edition's own tree 2026-07-27 (node Phase A, F4). The row's own note already said the right thing, that the mechanism is realized in the shared tier and composed here so what is owed is the MEASUREMENT and not the build. The measurement is taken: four plants, all red-correct in this tree. Two obligations differ from the sibling's for a reason that is this edition's own and not a weakness: there is no container image anywhere in the tree, and `VERSIONS.md` says so in prose, so the image obligations are `latent` rather than `patterned`. The row stays `owed` on the single obligation neither edition has built, which needs a registry lookup no tool here makes. The window-number obligation is `proven` on the strongest evidence available: it caught a LIVE defect in this edition's own ledger on its first run (E-76).",
+      "obligations": [
+        {
+          "name": "every direct dependency is pinned exactly, dated, and restored in locked mode",
+          "status": "patterned",
+          "text": "Three plants, all red-correct here: a caret range on `fastify` (exactness), an unledgered `left-pad` at an exact pin (keyed on name AND version, so a row for another version vouches for nothing), and a `design/scratch/package.json` nobody declared, caught by the completeness sweep that runs over the whole tree rather than over the governed set. Residues, unchanged: source mapping is deletable unreported, and publish dates are shape-tested rather than parsed."
+        },
+        {
+          "name": "a transitive pin taken under the advisory rule carries its own ledger row",
+          "status": "proven",
+          "text": "The npm reader reads `overrides` alongside dependencies and devDependencies. Red-correct here: moving the client tier's `postcss` override off its ledgered version reports it by name and version. This edition carries a real advisory-rule pin, so the obligation has a live subject rather than a control."
+        },
+        {
+          "name": "the cooling-off window number lives in exactly one place",
+          "status": "proven",
+          "text": "The number is parsed from the VERSIONS.md header and every other assertion of it is compared against it. Proven on the strongest evidence a guard can have: on its first run it caught a live defect in THIS edition's ledger, which named the superseded window as a live one under a header declaring the current number (E-76, repaired)."
+        },
+        {
+          "name": "every container image is pinned tag-plus-digest and ledgered",
+          "status": "latent",
+          "text": "The predicate is built and control-tested (a floating tag, a missing tag, a missing digest, a missing ledger row, and Docker Hub shorthand on a Dockerfile FROM line are all caught in `--self-test`). It has never run against a real reference here, because this edition has no container image: no persistence engine has been chosen, and `VERSIONS.md` says so in the section where the first one will land. Trigger: the first image, which arrives with the store."
+        },
+        {
+          "name": "one image value across every surface naming an image",
+          "status": "latent",
+          "text": "Same mechanism and same reason. The agreement check runs over an empty sighting set here, so it is built and unexercised rather than failing to reach anything. Trigger: the second surface naming an image, which is the first moment the question exists."
+        },
+        {
+          "name": "kernel provenance is ledgered and moves only with the mechanisms",
+          "status": "latent",
+          "text": "The section's absence fails docs-lint. No real pin exists until the next instantiation fills one, so the comparison half has never run."
+        },
+        {
+          "name": "publish date is checked against the cooling-off window",
+          "status": "owed",
+          "text": "unbuilt in both editions, and the only obligation here that is. Dates are recorded by hand and shape-tested. Trigger: a publish-date check that reaches the registry, which no tool in this repository does."
+        }
+      ]
     },
     "DEP-2": {
       "title": "Standing advisory sweep with a remediation clock",
