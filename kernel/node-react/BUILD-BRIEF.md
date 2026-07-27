@@ -49,6 +49,18 @@ Each claim is built in three steps, in this order, and the order is the method:
 Step 3 is where findings come from. A delta of zero is a real result and is recorded as one. Skipping to step 3
 produces a translation, which proves nothing about the catalog.
 
+**The research phase is closed (owner's direction, 2026-07-27).** Step 2 is not run again. Eight claims received
+one (SEC-1, SEC-2, SEC-3, TEN-1, CFG-1, SEC-5, DATA-5, TIME-1) and those stand recorded and unedited in
+`record/delta-log.md`; the remaining 61 do not owe one. The definition above is kept deliberately, and so are the
+A, B and C finding classes it feeds, because they define the method rather than describe a mechanism, which is
+the line E-21 drew for what is kept and what is archived.
+
+The reason, in one sentence, with the full version in the delta log: step 2 buys falsifiability for FINDINGS, by
+proving a design was written before a realization could supply the answer, and the work remaining in this edition
+is not finding-hunting but planting violations against guards, which is falsifiable on its own terms. A row moves
+when a plant against that claim's own obligation turns that claim's own guard red. That is the discipline now, and
+it does not need a quarantine.
+
 ## The cut line
 
 IN: the enforcement harness. The route-table recorder and its completeness obligation, the contract surface, the

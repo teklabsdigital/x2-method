@@ -399,6 +399,45 @@ is no longer sitting under a row that reads `proven`: SEC-2, SEC-3 and TEN-1 in 
 enumeration obligation that reads `owed` and cites this finding by id, so the hole this finding measured is visible
 in the machine-readable record rather than only in a prose note.
 
+**REPAIRED 2026-07-27, and the remedy is wider than the one this finding proposed. That is worth naming.**
+
+This finding argued for a split: one predicate cannot serve SEC-2 and SEC-3/TEN-1 because the two claims need
+opposite errors, so make it two. The split was built and then abandoned within the same pass, because measuring
+it produced a better answer. Reflection cannot reproduce the binder's rules: `Uri` has no static `TryParse` and
+does not implement `IParsable`, and it binds from the URL anyway. A predicate written from `IParsable` plus a
+`TryParse` probe therefore had exactly this finding's defect on its first day.
+
+What the framework does publish is its own conclusion. `RequestDelegateFactory` records the body it inferred as
+`IAcceptsMetadata` on the composed endpoint, and that is available to the scan. So neither enumeration reimplements
+anything now:
+
+- **SEC-2's body set** is `IAcceptsMetadata.RequestType` per endpoint, with the parameter walk kept as a second
+  net and a non-vacuity assertion, because a body enumeration that finds nothing passes forever.
+- **SEC-3's and TEN-1's URL set** is enumerated BY EXCLUSION: the framework's declared body type, registered
+  services and a closed list of pipeline types are set aside, and every other parameter is a value a caller can
+  spell. Under-inclusion is no longer possible for a declared parameter, because a type nobody has thought of is
+  now inside the surface by default rather than outside it. That inverts the failure direction this finding named
+  as the dangerous one.
+- What survives of `BindsFromUrl` answers a different question, "is this a scalar the binder fills from one
+  string", which is about the type and not about routing.
+
+Both directions are held to the real binder by
+`Both_enumerations_agree_with_the_real_binder_over_a_corpus_of_parameter_types`, which builds a throwaway host per
+corpus type, lets `RequestDelegateFactory` classify a parameter named `tenantId`, and asserts that whichever
+surface the framework put it in is the surface that scans it. The corpus is this finding's own measured list:
+`TenantKey : IParsable`, `TimeSpan`, `Uri`, `IPAddress`, `Int128`, a legacy `TryParse` class, `Guid[]`,
+`TenantKey[]`, `List<T>` and a plain record. This is what the finding said did not exist: a way for the two
+implementations to disagree and something to fail when they do.
+
+**Proven against the composed host, both ways.** A query parameter named `tenantKey` typed `TenantKeyProbe :
+IParsable` was mapped on a real route: red now, and green under the mechanism restored from HEAD with the same
+parameter still planted. The route-parameter case is NOT a proof of this repair and was rejected as a control
+when it came up green on both sides: route pattern parameters were always read by name without consulting a
+type, which is what TEN-1's row already says.
+
+**Status consequence.** SEC-3's enumeration obligation and TEN-1's query-surface obligation read `proven`. SEC-2's
+enumeration obligation stays `owed`, on the other half, and only that half: see E-6.
+
 ### S-6. The shared linter was not stack-neutral, and nothing said so
 
 **Claim:** DEP-1. **Found:** Phase 2, on the first attempt to point the shared tooling at a second edition.
@@ -1019,6 +1058,28 @@ an obligation in its own right, and the flat contracts half reads `owed` beside 
 trigger. The row is `owed` overall. The sentence this finding argued for, that a reader taking `proven` to mean
 both guards reach every depth would be wrong, is now unnecessary, because the record no longer says `proven`.
 
+**The host half's SECOND exclusion is closed too, 2026-07-27, and the contracts half is now the only one open.**
+
+This finding's own postscript recorded a fifth, unwritten exclusion in `IsBodyDto`: `type.Namespace is null`, so a
+public DTO declared in `Program.cs` was outside the body scan entirely. It is gone, along with the predicate it
+lived in (see E-2). Proven on a real route: `public sealed record GlobalRequest(string Title, string CreatedBy)`
+declared after the top-level statements and posted to `/probe-body` is red now, and green under the mechanism
+restored from HEAD with the same record still planted. E-15 records the other half of the same composition, and
+`TimeTypeTests` had the identical exemption under a different name; both are gone.
+
+**`ContractShapeTests` is still flat, still `*Request`-only, and still not repaired here**, for the reason it was
+not repaired in round 6: it is MOD-2's realization and MOD-2 has not had its delta pass. What changed is that the
+residual is now measured rather than described. Planted and run:
+
+| Shape | Both guards |
+|---|---|
+| `OrphanRequest(string Title, ProbeAuthor Author)` in Contracts, `ProbeAuthor` carrying `CreatedBy`, on no route | green: the flat net does not descend, and the host net has no route to enumerate |
+| the identical type, bound to `POST /probe-orphan` | red at depth 1, from the host net alone |
+
+So the uncovered set is exactly: contract types that no route binds, which cannot be posted to, and which are
+caught the moment they gain a route. That is the price of leaving the third net flat, and it is the number the
+owner is deciding against when they rule on whether to burn MOD-2's delta pass to repair it.
+
 ### E-7. SEC-1's fallback admits every authenticated caller, and the test that would notice reads a field
 
 **Claim:** SEC-1. **Status carried:** `proven`. **Found:** Phase 3, step 3.
@@ -1246,6 +1307,47 @@ decompositions, plurals) and how the surrounding format spells a name, and it sa
 by hand is a list standing in for a comparison and does not discharge it. Three shipped rows in
 `kernel/dotnet-react/` are falsified: SEC-2, SEC-3 and TEN-1, each now `owed` with a comparison obligation that
 reads `owed` beside a predicate obligation that reads `proven`.
+
+**REPAIRED in `kernel/dotnet-react/` 2026-07-27, by a third matcher rather than by porting the second.**
+
+The audit's central correction is what made the port wrong: the two matchers are incomparable, not ordered, and
+six inputs escape both. So `NameComparison` is built to beat both, and each of its four rules answers one class
+the three claims name:
+
+| Rule | Class | What it buys |
+|---|---|---|
+| tokenize on camel case, separators AND letter/digit boundaries | compounds | `emailAddress`, `user_email`, `email1` |
+| re-glue every contiguous run of tokens into a candidate word | decompositions | `e_mail`, `e-mail`, `EMailAddress` |
+| a candidate word that BEGINS or ENDS with an entry matches it | concatenations | `firstname`, `notestatus`, `tenantid`, the class the token matcher cannot reach |
+| fold `s`/`es`, and derive an entry's tail past a one-letter particle | plurals, decompositions | `emails`, and `mail` from `email` |
+
+All six inputs that escape both editions are asserted, and so is the evidence that this is a comparison and not a
+longer list: **the registries got shorter.** `firstname`, `lastname`, `dateofbirth`, `tenantid`, `orgid`,
+`organizationid`, `organisationid`, `workspaceid`, `workspaceslug` and `accountid` stopped being entries and are
+now derived from `name`, `tenant`, `org`, `organisation`, `workspace` and `account`; `CreatedAtUtc`, `Roles` and
+`Permissions` are derived from their base words. Every dropped spelling is asserted to still match, which is the
+only thing standing between "a comparison replaced the list" and "the list was deleted".
+
+The costs are asserted as passing tests rather than described: `fileName` matches `name` (the sibling met the same
+cost and wrote it down), `voicemail` matches `email` because it ends with those letters and carries no boundary,
+and the tail rule derives non-words from every entry. The boundary those costs stop at is asserted too: `origin`
+does NOT match `org`, which is the prefix alternative this finding records the sibling rejecting, and it is
+rejected here by requiring a short entry's residue to be a declared affix.
+
+**And this finding's own exhibit list needed one more correction, in the same direction as the audit's.** E-9
+quotes SEC-2's weakening note, "a field named `newState` slips past a registry listing `status`". Measured against
+the comparison and this registry, `newState` is CAUGHT, and not by `status`: `state` is an entry beside it and
+`newState` is a compound of that. The note is true of the entry it names and false of the registry it describes.
+The honest replacements are a genuine synonym (`approvalStage`, `lifecyclePhase`) and both are asserted as
+residuals. This is the third time an exhibit in this finding has been refuted by running it rather than reading
+it, and the thesis has survived all three.
+
+**What still walks past, asserted in the direction of the hole so closing it later goes red:** a synonym, an
+abbreviation the registry does not carry, a reordering (`birthDate` against `dateOfBirth`), a plural that is not
+`s`/`es`, and a parameter whose name says nothing.
+
+**Status consequence.** The comparison obligation reads `proven` on SEC-2, SEC-3 and TEN-1 in
+`kernel/dotnet-react/`. SEC-5's registry still matches by its own rule and was not in this pass's work list.
 
 ### S-8. The conformance vocabulary has no value for a claim that is half realized
 
@@ -1675,6 +1777,32 @@ rather than a hand-written list, with this finding's control as the argument, an
 reads `owed` with the omitted layer as its own obligation. The one-line repair is still owed and now has a trigger
 and a status instead of a governance hold.
 
+**REPAIRED 2026-07-27, and not by adding the missing assembly.** Adding `Kernel.Api` to the array would have
+closed this instance and left the defect, which is the hand-written list itself; TIME-1's completeness obligation
+asks for "a rule the test can check rather than a hand-written list" and for the remedy that makes it checkable,
+"a layer that exists and is not in the enumeration fails the build too". So `TimeTypeTests` now derives its layer
+set from the projects under `server/src`, loads each one beside the test binary, and fails a test of its own when
+a declared layer has no assembly there. The derivation is cross-checked against the composed host's own assembly
+graph, so a walk that returns nothing cannot read green.
+
+Three controls, each planted, confirmed red, and reverted:
+
+| Control | Result |
+|---|---|
+| a naive `DateTime` on a public type in `Kernel.Api/Platform/`, this finding's own control | red, naming the layer |
+| the same type declared in `Program.cs`, where it has no namespace at all | red |
+| an unreferenced project added under `src/`, carrying no time type whatever | red, on both facts, naming the layer |
+
+The second control is the composition this finding is really about, and it took a second repair to close.
+`PublicSurface` stopped its hierarchy walk at the first type it judged framework, and it judged a null namespace
+to be framework, so a public record declared in `Program.cs` was skipped even once the layer was scanned. That is
+the same exemption E-6 found in `IsBodyDto` under a different name, and the two of them met on the one file three
+mechanisms exempt. Both are gone: the global namespace is app code in both scans as of 2026-07-27.
+
+**Status consequence.** TIME-1's layer obligation reads `proven`. The row stays `owed` on the monotonic-durations
+half, which has no realization here and is not part of this pass; see S-11, which this row is now a fourth
+instance of.
+
 ### A-6. CFG-1 names three homes for a value and this stack has four
 
 **Claim:** CFG-1. **Locus:** `centralized`. **Found:** Phase 3 round 2, step 2, before the sibling was opened.
@@ -1980,6 +2108,17 @@ where it already was. Ruling 3 is therefore applied for 13 rows and does not rea
 recorded here rather than smoothed by moving three shipped statuses no ruling authorized: the pass's own scope
 guard is that an edit no ruling authorizes is a finding, not a repair.
 
+**A fourth instance, 2026-07-27, and it arrived by a row being RAISED rather than by the ruling being applied.**
+TIME-1's layer obligation moved from `owed` to `proven` when E-15 was repaired, leaving the row with two
+obligations that are built, gating and red-green proven and one, the monotonic-durations lint, that has no
+realization here at all. Weakest-wins makes the row `owed`, which is the same false reading the three rows above
+carry: nothing about `owed` describes a scan that fails the build today over every layer the server declares.
+
+The instance is worth recording separately because it shows the defect is not an artifact of the application
+pass. It reappears every time a row's last deferred extension outlives its shipped duties, which is the normal
+shape of a claim that grew an extension after its mechanism was built. Per the pass instruction, no fifth status
+word was invented and the row reads conservatively.
+
 **What would close it,** neither proposed nor priced here: an obligation would carry whether it is inside the
 edition's cut line, and the roll-up would take the weakest obligation that is. That is a second field and a
 second rule on the same structure, so it wants a ruling and evidence from a third edition rather than a same-pass
@@ -2006,6 +2145,360 @@ makes about the world.
 
 **What changed:** the obligation is written as `proven` with the mechanism named, and the note's stale clause is
 removed. No status changed: SEC-5 in that edition rolls up to `owed` on the vault port either way.
+
+### E-20. A row can meet every obligation it carries and still not meet its claim
+
+**Claim:** SEC-3, and SEC-2 in the same shape. **Found:** the raise pass of 2026-07-27, closing E-2 and E-9.
+**Measured**, with a control, before the row was written.
+
+SEC-3 carried three obligations after the adjudication pass: a predicate, an enumeration, a comparison. E-2 closed
+the enumeration and E-9 closed the comparison, both proven both ways, so the roll-up would have returned the row
+to `proven`. It does not, and the reason is not a mechanism that fell short. It is that the three obligations do
+not add up to the claim.
+
+SEC-3's completeness obligation ends: "a query parameter the surface does not declare is refused or removed before
+the handler by a ruled decision, never bound silently". Nothing in this edition does that, and it is not a
+theoretical gap: a handler declared as `(HttpContext context) => context.Request.Query["emailAddress"]` was mapped
+on a real route and the whole suite stayed green. The scan cannot see it, because there is no declaration to scan,
+which is precisely the argument TEN-1 makes about headers and answers with a runtime mechanism rather than a scan.
+
+So a fourth obligation is written into the row and reads `owed`, and the row reads `owed` with it. **This is not
+the claim being softened and not the mechanism being blamed.** The duty was in the claim before the adjudication
+pass and the row simply never carried it, so the row could have read `proven` while the claim's own last sentence
+went unmet. Ruling 3 gave a row per-obligation statuses; nothing checks that a row's obligations COVER its claim,
+and `conformance.mjs` cannot check it, because it can compare a row against the catalog's file list and not
+against the catalog's prose.
+
+**The same shape sits on SEC-2** and is left where it is: its remedy sentence says "a member the contract does not
+declare must not reach the handler, and whether it is refused or removed is a ruling recorded per surface", and
+this edition's serializer silently drops unknown members with no ruling recorded anywhere. SEC-2's row already
+reads `owed` on the MOD-2 blocker, so adding the obligation moves no status; it is named here rather than written
+into the row, because a pass that starts adding unruled obligations to rows is doing the adjudication's job.
+
+**What it costs while open:** SEC-3 reads `owed` for a duty no mechanism in this repo has ever discharged, which
+is honest and is also indistinguishable, at the row level, from the two mechanisms that were repaired this round.
+The obligation text is where the difference lives.
+
+### S-12. The quarantine was breached by reading, in the pass that was told not to breach it by writing
+
+**Claim:** MOD-2, and the delta protocol structurally. **Found:** the raise pass of 2026-07-27, by the agent that
+did it, at the point of writing the report.
+
+The pass's standing constraint was that `ContractShapeTests` is MOD-2's realization, that MOD-2 still owes a step
+2, and that the decision to open it belongs to the owner. The file was not edited. **It was read**, early, while
+building the picture of SEC-2's two guards, and before the constraint had been weighed against the reading list.
+Under the delta protocol that is the same breach as an edit: step 2 is written from the claim text alone, and a
+reader who has seen one edition's answer cannot un-see it.
+
+Three things make this worth a finding rather than an apology.
+
+- **The read was avoidable and the measurement that mattered did not need it.** What the pass actually had to know
+  was the SIZE of the residual the flat net leaves, and that was established behaviourally, by planting a nested
+  violation on an unrouted contract and then routing it (E-6). The file's source was not required for any
+  conclusion in this pass.
+- **The register had already leaked it.** E-6 quotes the filter verbatim, down to
+  `Type.Name.EndsWith("Request", StringComparison.Ordinal)`, and the round 6 verification round names the file's
+  flatness twice. A step 2 written for MOD-2 from the claim file plus this register was already informed before
+  this pass touched anything, which is S-9's point aimed at a second surface: the quarantine covers the sibling's
+  code and cannot cover the record ABOUT the sibling's code, and this register is read at the start of every pass.
+- **The cost is asymmetric and small in one direction only.** MOD-2's step 2 loses its independence for the
+  placement rule that `*Request` naming encodes. It does not lose the rest of the claim.
+
+**Not proposed here:** whether a leaked claim should be marked burned in the delta ledger the way S-9's `[informed]`
+marking does, or whether the protocol should treat the register as inside the quarantine and require step 2 to be
+written before the register is read. Both are rulings, and both are larger than this pass.
+
+**RE-GRADED 2026-07-27: there was no breach, and the constraint that made it look like one was false.** Measured
+without reading the mechanism, by boolean substring tests: MOD-2's conformance row names `NamingPlacementTests`
+and does not name `ContractShapeTests`; `ContractShapeTests.cs` contains the string "MOD-2" zero times; its own
+summary names SEC-2; and the three files that do name MOD-2 are `NamingPlacementTests`, `EndpointSpineTests` and
+`NameComparisonTests`. `ContractShapeTests` is SEC-2's guard, SEC-2 was legitimately burned by its own delta
+pass, and the agent that reported this was reading its own claim's realization.
+
+The premise originated in the flow-back pass, was propagated into a commit message and then into a handover as a
+standing constraint, and was carried by three passes without ever being measured. Its cost was not the breach it
+appeared to be; it was that the repair it blocked went unmade for three rounds while both SEC-2 and TEN-1 sat
+below their claims.
+
+**RULED 2026-07-27, and the structural half is closed with a measurement rather than a policy.** The second
+bullet above said the quarantine cannot cover the record ABOUT the sibling's code and that nothing detects the
+leak. The first part stands. The second was wrong, and it was wrong in a way worth naming: it treated the leak as
+unbounded because its SOURCE is unbounded, when what matters is its REACH, and the reach is enumerable. A finding
+leaks a claim's realization by naming an artifact that claim owns, and the conformance record already says who
+owns what. `docs-lint` now reports it: for every finding, the claims that own an artifact it names and are not
+its subject. Measured, the .NET report names 12 of 69, seven already burned by their own step 2, so the live cost
+is five of the 61 claims still owing one. Six rounds of findings, five contaminated claims.
+
+Two shapes reach the leak and the first draft of the check saw only one. A fused realization leaks to every claim
+sharing it, which is `EndpointSpineTests` reaching four claims at once and is the loud case. But a finding also
+names a NEIGHBOUR's artifact it shares with nobody, which is how E-22, a finding about SEC-2 and TEN-1, informed
+CON-1 through one member-qualified mention of `WireConventionTests`. Filtering to shared artifacts, which is what
+the first draft did on the argument that an unshared artifact cannot leak, silently dropped that entire class. The
+argument was clean and it was false, and it is the same error shape as E-22 itself: a surface enumerated by a
+predicate narrower than the surface.
+
+The ruling on what the report costs is that it costs nothing beyond itself. No claim is marked, none is barred,
+and nothing is redone, because contamination has never been measured to damage a finding: all eight step 2s in
+the delta log were informed by the `Edition:` bullet before ruling 1 removed it, and DATA-5's was informed by a
+sentence describing a facility the edition does not have. The report dated into each round's ledger is the
+marking, and it is strictly better than a label, because the register only grows and a dated snapshot is the only
+honest answer to what a step 2 could have seen at the time it was written.
+
+**What the report cannot see, stated so it is not read as a proof.** It sees quoted artifacts. A finding that
+describes a sibling's mechanism in prose without naming anything leaks and is invisible to it, so the number is a
+lower bound and the residual is the finding author's honesty. It also over-reports, because a mechanism string
+names framework vocabulary next to its own artifacts and the Node SEC-2 row cites `allOf` and `anyOf`. Both
+directions were left in rather than filtered: a vocabulary registry to suppress the false half is the drift this
+register already has findings about, and over-reporting into a note that never fails is the safe direction.
+
+**What survives, and it is the half that mattered.** The structural finding is untouched: the register leaks
+realizations across claims, E-6 does quote this file's filter verbatim, and nothing detects that. The register is
+the one document that cannot be quarantined, because it is what a builder must read to know what has been found.
+That is S-9 one level out and it is still open.
+
+**And a second lesson this re-grading is the evidence for.** A constraint that blocks a repair should be measured
+before it is honoured, on the same standard as a finding. Three passes treated "this file belongs to MOD-2" as
+established because a previous pass had written it down, which is exactly the failure the delta protocol exists
+to prevent, applied to the protocol's own rules rather than to a claim.
+
+### E-21. The build brief still describes the mechanisms four rounds of repairs replaced
+
+**Claim:** SEC-1, SEC-2, SEC-3, TEN-1, TIME-1, structurally all of them. **Found:** the raise pass of 2026-07-27,
+checking whether anything else in the edition describes the mechanisms it changed. **Measured** by reading
+`kernel/dotnet-react/BUILD-BRIEF.md` against the current sources.
+
+The brief's architecture-test section describes `EndpointSpineTests` as allowlisting anonymity with a string set
+`{ "/health" }`, asserting `IOptions<AuthorizationOptions>.FallbackPolicy is not null`, and matching a tenant list
+of five names by "exact lowercase match". Every one of those was replaced: by a `(Method, Pattern, Why)` record
+array with staleness and justification checks (E-8), by resolving the policy from `IAuthorizationPolicyProvider`
+and EVALUATING it (E-7), and by a comparison over base words (E-9). Its `TimeTypeTests` entry names three
+assemblies, which this round replaced with a derivation (E-15). Its `ContractShapeTests` entry is still accurate,
+which is its own comment on which mechanisms have moved.
+
+**This is the third instance of a shape already in the register** (E-14, then E-19): a prose artifact describing a
+mechanism, with no checker on either side. `conformance.mjs` proves the conformance table matches the JSON and
+`docs-lint.mjs` proves a cited finding exists; neither can read a sentence about what a test does.
+
+**Not repaired**, and the reason is a question rather than a hold: the brief is dated build instructions for v1
+and reads as a historical artifact, so bringing it forward would make it a second live description of the
+mechanisms, which is what E-19 was about. Whether it is an archive or a spec is a decision, not an edit
+(trigger: an adjudication ruling on the status of the build brief, which is where the same question about
+`README.md` prose belongs too).
+
+**RULED 2026-07-27: archive. Applied by one word**, `status: authoritative` to `status: archived` in the front
+matter, plus a dated paragraph naming the four mechanisms that moved and pointing at `conformance.json`, the
+generated table and the tests as what the edition enforces today. `archived` was already in docs-lint's status
+vocabulary and already legal at the edition root, so the finding's own repair cost nothing to build. The file is
+not brought forward, for the reason it states: a forward-carried brief is the E-19 defect with a date on it.
+
+**The ruling was reached through a false premise, and the correction is the more useful half.** The question was
+put as "delete it, since documentation drifts, and its being about .NET and not Node is proof it already has".
+Measured, both halves fail. There are TWO briefs, one per edition, and the Node one is not documentation at all:
+it is the only definition of the delta protocol, of the A/B/C failure classes that type every A, B and C finding
+in this register, and of the sentence that makes this register the deliverable rather than the edition. Deleting
+it would delete the specification of the method that produced the register. And deletion is not a documentation
+act in either edition, because `docs-lint` detects the kernel context by the presence of `BUILD-BRIEF.md` and
+`VERIFICATION.md`, so removing one flips the DEP-1 provenance placeholders from legal to illegal. Measured by
+moving the .NET brief aside: three DEP-1 failures, for Remote, Commit and Catalog pass date.
+
+**The general rule that falls out, and it is worth more than this finding.** Prose that DESCRIBES a mechanism
+drifts and should be deleted or archived, which is E-14, E-19 and E-21, all three. Prose that DEFINES the method
+cannot drift, because there is no code for it to disagree with, and it has no other home. The two are
+indistinguishable by filename, live at the same path in two sibling editions, and want opposite treatment.
+
+### E-22. TEN-1's tenant registry reached URL parameters and nothing else
+
+**Claim:** TEN-1. **Status carried:** `proven` until the adjudication lowered it. **Found:** 2026-07-27, while
+raising TEN-1's request-contract obligation. **Measured, with a control on both surfaces.**
+
+TEN-1's statement has two halves and the second one is explicit: tenant identity never travels as a parameter,
+**and no request contract carries a tenant identifier field**. Every mechanism in the edition served the first
+half. `ForbiddenTenantParams` was read by the URL scan and by nothing else, so no body member was ever compared
+against it, on any route, in either guard.
+
+The single exception is an accident. `TenantId` is caught, because SEC-2's separate `ServerControlledFields`
+registry happens to list it for a different reason. Every other spelling TEN-1's own registry forbids was caught
+by nothing at all: measured, a request contract carrying `WorkspaceId` and `OrganisationId` passed all 100
+architecture tests, and so did the routed `CreateNoteRequest` with a `WorkspaceId` added to it.
+
+**Why it survived four rounds of attention on this exact claim.** TEN-1's row was read, lowered, and raised
+across three passes, and each time the question asked was whether the SURFACE was enumerated completely. It was.
+The predicate was never applied to it. That is ruling 2's structure catching a defect ruling 2 does not name:
+a mechanism class is surface, predicate and completeness obligation, and an obligation phrased as "the surface is
+enumerated completely" is silent about whether the predicate runs over what the enumeration returns. The
+obligation was true and the claim was false at the same time.
+
+**Repaired:** both guards apply the tenant registry to every body member at every depth. Red-green proven on an
+unrouted contract (1 of 100 fails) and on the routed contract (3 of 100 fail), green when reverted, source tree
+byte-reverted after each.
+
+**For the next adjudication, and it is small.** An obligation that names a surface should be readable as naming
+the predicate over that surface, or the two should be separate obligations. This is the first measured case of
+an obligation being met while the claim it belongs to is not.
+
+### E-23. HUM-1's locally testable half passes on a CODEOWNERS naming no human
+
+**Claim:** HUM-1. **Status carried:** `proven` on the locally testable half. **Found:** 2026-07-27, by the first
+execution of the instantiation acceptance test. **Measured in a seeded tree, with a control.**
+
+`docs-lint` asserts that every surface in `edition.json`'s `irreversibleSurfaces` is covered by a CODEOWNERS line
+matching `/\s@\S+/`. The owner the kernel ships is the literal `@OWNER`, a placeholder that manifest step 1
+renames to the product owner. `@OWNER` matches `/\s@\S+/`.
+
+So the check reads "is there an owner-shaped token on a line covering this path", and a placeholder is
+owner-shaped. Measured: a project seeded from this edition, with all four occurrences of `@OWNER` left
+unreplaced, gives `docs-lint: ok` and exit 0. All three irreversible surfaces (migrations, wire contracts,
+contract docs) were owned by nobody and the gate said fine.
+
+**This is worse than the unverified arming half beside it.** TEST-3 and HUM-1 both carry the honest asterisk
+"mechanism built, not yet armed" for the remote merge gate, which is a named and recorded condition. This half
+carried no asterisk because it was believed local and testable, and it was neither: it was a false green. A
+reader auditing the record sees one conditional half and one proven half, when what exists is one conditional
+half and one hole.
+
+**Repaired.** `docs-lint` now separates covered from owned: an entry whose only owners are the placeholder fails
+outside the kernel repo, and stays legal inside it. The kernel-context detection is not new, it is DEP-1's, which
+legalizes the provenance placeholders in this same file by the presence of BUILD-BRIEF.md and VERIFICATION.md;
+the definition is hoisted so both claims read one detection rather than two.
+
+**Red-green, all four states measured.** Seeded tree with `@OWNER`: red, three failures, one per surface, each
+naming the path and the placeholder. Seeded tree with a real handle: `docs-lint: ok`. Kernel repo unchanged:
+`docs-lint: ok`, placeholders still legal, both editions. Control, the one that matters: the pre-repair
+`docs-lint` restored with the placeholder still in place goes green again, which reproduces the hole and proves
+the repair was the thing that closed it.
+
+**What it says about the claim.** HUM-1's mechanism class was ruled portable on 2026-07-26 (ruling 7) as "the
+irreversible surfaces are enumerated, and each is declared to require a named human review". The enumeration was
+built and the declaration was checked for shape. Nothing checked that the declaration named a human. That is
+E-22's structure again, one round later and in a different family: the obligation was met and the claim was not.
+
+### E-24. Instantiation ships no mechanism that arms the gate, and none that reads it back
+
+**Claim:** TEST-3, HUM-1. **Status carried:** `proven`, "conditional on TEST-3's loop being armed at
+instantiation". **Found:** 2026-07-27, first execution of the acceptance test. **Measured by exhaustive search.**
+
+TEST-3's own weakening note predicts this defect verbatim: "'Set at instantiation' is exactly the step that gets
+skipped, so the kernel acceptance test must verify that instantiation actually arms the gate, not merely that the
+workflow file exists." The acceptance test ran. It can verify only what instantiation ships, and instantiation
+ships one imperative sentence.
+
+Measured: the entire repository contains zero occurrences of `api.github.com`, `octokit`, `GH_TOKEN`,
+`GITHUB_TOKEN`, `gh api`, `gh repo`, `gh pr`, `ruleset`, `required_status_checks`, `required_pull_request_reviews`
+and `require_code_owner`. Every hit for "branch protection" is prose in a README, a claim file, a skill or a code
+comment. The only executable files the edition ships are the four db and dev scripts plus `e2e.sh`, and none
+mentions the forge. Manifest step 4 is a sentence a human executes by hand in a web interface, with no script, no
+ruleset file, no post-condition check, and nothing that reads the armed state back.
+
+Part C's verification item has the same shape: "a test PR touching `Migrations/` must show the required
+code-owner review" names no command, needs a remote and a second identity, and leaves no artifact in the seeded
+repo, so nothing carries the fact that it ever passed.
+
+**Arming was not observed and is not observable by any means the edition ships.** 37 realized rows inherit the
+condition. The condition is honestly recorded in both the catalog and the record; what is missing is the thing
+the condition names.
+
+**Not repaired here.** Building it is a real piece of work (a ruleset writer plus a readback assertion, against a
+forge API, needing an owner token) and it is a decision about which forge the kernel presumes, which is exactly
+the portability question class B exists for. Recorded, with the acceptance test's own measurement behind it,
+rather than improvised.
+
+### E-25. The instantiation file set is incomplete and part A contradicts itself
+
+**Claim:** the manifest, and through it TEST-3 and SEC-5. **Found:** 2026-07-27, executing part A.
+
+Part A enumerates thirteen items to copy, then says three lines later "this is a straight copy of the edition
+directory". These produce different trees, and the difference is load-bearing in both directions.
+
+The enumeration drops two git-tracked files that the edition needs:
+
+- `.claude/settings.json`, the `UserPromptSubmit` hook that injects the turn-ledger reminder on every human
+  prompt. It exists because PC-10 measured that the CLAUDE.md rule alone drifts under long-context sessions. It
+  is the one mechanical defence against the MET-08 and MET-05 decay that x2:seed exists to prevent, and copying
+  the named file set deletes it. x2:seed step 4 tells the builder the opposite in as many words: "it is part of
+  the manifest's file set". It is not.
+- `secret-scan.allow.json`. Missing, the allowlist silently reads empty, and `node tools/secret-scan.mjs` exits 1
+  with four SEC-5 violations in a freshly seeded project. `secret-scan` is one of the five jobs manifest step 4
+  says branch protection must require, so the gate cannot go green on day one. Control: dropping the edition's
+  own allowlist in, with its paths renamed, flips it to exit 0.
+
+The straight-copy reading picks up what the enumeration correctly excludes: a gitignored `.env` holding a live
+dev SA password (E-12 records the file, not this consequence), a gitignored `server/src/Kernel.Probe/` left over
+from a red-green proof, `node_modules`, and every `bin` and `obj`. The literal copy measured 380M. The same
+paragraph also says README.md, BUILD-BRIEF.md and VERIFICATION.md stay behind, which a straight copy does not do.
+
+**Compounding it, part C never runs the secret scan.** The verify-as-a-set list names the build, the tests, the
+client verify, `e2e.sh`, docs-lint, the dash greps and branch protection. `secret-scan` appears nowhere, which is
+why a red required job is invisible to the set that exists to catch exactly this.
+
+### E-26. The documented development port is wrong, so the composed client cannot reach its own server
+
+**Claim:** UI-5, and the runbook. **Found:** 2026-07-27, booting the seeded host.
+
+Five places pin 5080: the manifest, the runbook, `.vscode/tasks.json`, the client composition root, the harness
+and the smoke. There is no `launchSettings.json` anywhere in the edition, no `UseUrls`, no `ASPNETCORE_URLS`
+default and no Kestrel port configuration. Measured, booting exactly as the runbook says: `Now listening on:
+http://localhost:5000`.
+
+Only `scripts/e2e.sh` sets `ASPNETCORE_URLS` explicitly, and its own comment says why, which is why the scripted
+path works and the documented developer path does not. Following the runbook, the client's default base URL
+points at a port nothing is listening on. UI-5's whole subject is that a headline flow which never reaches the
+server is the failure mode, and the documented local loop is in exactly that state.
+
+### E-27. UI-1 is `proven` against the kernel's own placeholder, and manifest step 6 cannot run when it is told to
+
+**Claim:** UI-1. **Status carried:** `proven`, with no instantiation asterisk. **Found:** 2026-07-27.
+
+Manifest step 6 demands the complete Claude Design export imported into `design/prototype/`, the lock record
+filled in, `tokenCoverage.test.ts` re-pointed at the real export and `src/theme/tokens.ts` re-transcribed until
+green. By the method's own ordering that export cannot exist yet: x2:seed runs immediately after gate 1, its Next
+is decompose, decompose produces D-000, and x2:design runs only once D-000 exists. The export is two skills away.
+Step 6 also duplicates x2:lock, whose done-checks are the same list.
+
+The manifest says nothing about what to do when there is no export, and part C says "the seed is not done until
+all pass". Formally that blocks seeding. In practice it does not, and that is the worse answer: the edition ships
+a placeholder `design/prototype/_ds/colors_and_type.css` carrying 58 variables, deliberately over UI-1's floor of
+50, whose own header says to replace it at instantiation. Measured: `npm run verify` passes with
+`tokenCoverage.test.ts` green in a project whose design system is the kernel's placeholder and whose product
+design does not exist.
+
+So UI-1 reads `proven` in a seeded project on the strength of the kernel's own filler. TEST-3 and HUM-1 both
+carry "mechanism built, not yet armed". UI-1 needs the same asterisk and does not have it. This is the same shape
+as E-23: a check that confirms a placeholder is shaped like the real thing.
+
+## Acceptance test, first execution (2026-07-27)
+
+The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch
+directory outside this repo, product name Ledgerly, source tree read-only throughout and verified unmodified
+afterwards.
+
+**Result: instantiation costs 27 human turns before slice one exists, and none of them is a product decision.**
+8 stop the seed until the owner answers (create the remote and choose the default branch; the owner's forge
+handle; arm protection by hand; verify arming with a test PR and a second identity; rule on a dirty kernel
+checkout's pin; rule that seeding proceeds with no design export; choose the CLAUDE.md house-style set; rule on
+carrying the four SEC-5 allowlist justifications into the product). 19 the builder can rule on alone but must log
+as manifest gaps. Three of the eight exist solely because arming has no mechanism.
+
+The manifest's own opening sentence says the instantiation layer is where the acceptance test found the kernel
+weakest, a quarter of the pilot's turns being bootstrap the handover failed to ship, and that the manifest exists
+to fix it. It converted an unwritten bootstrap into a written one that is incomplete in the file set (E-25),
+incomplete in the rename list (six further occurrences the list does not name, including the `Kernel.sln` literal
+in `TestPaths.cs`, which costs ten architecture tests if missed), self-contradictory in part A (E-25),
+unsatisfiable at step 6 (E-27), wrong about the ports (E-26), and still pure prose at the one step it itself
+labels "the step that gets skipped" (E-24).
+
+**Verify-as-a-set, measured.** `dotnet restore --locked-mode`, `dotnet build -warnaserror`, the architecture tier
+(100 passed) and the unit tier (19 passed) all pass after the rename. `npm ci` and `npm run verify` pass (16
+tests). docs-lint passes, printing four `note:` lines where the manifest documents two. Both dash greps pass. The
+integration tier and `scripts/e2e.sh` are environment-blocked on Docker, and both fail loudly with actionable
+messages rather than vacuously, which is worth recording as a positive. `secret-scan --self-test` passes;
+`secret-scan` itself fails, exit 1, per E-25. Branch protection was not performable, per E-24.
+
+**Two positives worth keeping.** DEP-1's kernel-provenance mechanism is armed and red-green proven in the seeded
+shape: blanking the Remote field back to its placeholder fails docs-lint by name, restoring it passes. It checks
+the shape and is blind to the content, so a pin written against a dirty checkout is accepted silently.
+`scripts/dev-setup.sh` is idempotent, verified by running it twice, with one conditional non-idempotent path in
+the source that this run did not trigger: a swallowed failure of `dotnet user-secrets list` would regenerate
+`Jwt:Key` on every run and silently invalidate every previously minted token.
 
 ## Audit, 2026-07-26
 

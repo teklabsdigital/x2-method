@@ -276,6 +276,96 @@ passes on the new lockfile.
 
 **Suite after this round: 67 of 67**, unchanged, which is the point: nothing about the code moved.
 
+## Round 8: raising four falsified rows (2026-07-27)
+
+Round 7 changed what the record claims and nothing about the code. This round is the opposite: four mechanisms
+changed, three of the four rows the adjudication falsified had their named gaps closed, and **the four gaps were
+closed by removing three hand-written lists rather than by extending them.** That is the shape worth reading
+first. A hand-written list of layers omitted one silently (E-15); a hand-written list of URL-bindable types
+omitted six silently (E-2); a hand-written list of spellings omitted every compound of its own entries (E-9). In
+each case the repair replaces the list with a rule, and in each case the list that remains is shorter than the one
+it replaced.
+
+**Suite: 67 of 67 before, 100 of 100 after.** The arithmetic is 67 + 1 layer-reachability fact + 1 binder-agreement
+fact + 31 comparison cases (five theories and two facts). No test was deleted.
+
+### The proofs
+
+Every row was planted on a REAL ROUTE in the composed host, not on a fixture, and every one was then re-run with
+the mechanism restored from `HEAD` and the violation still planted, which reproduces the hole rather than trusting
+the record's description of it.
+
+| Guard | Injected violation | Repaired | Mechanism restored from HEAD |
+|-------|--------------------|----------|------------------------------|
+| `TimeTypeTests` (TIME-1, E-15) | naive `DateTime` on a public type in `Kernel.Api/Platform/` | red | green (49-of-49 result this finding recorded) |
+| `TimeTypeTests` (TIME-1, E-15/E-6) | the same type declared in `Program.cs`, so with no namespace | red | green |
+| `TimeTypeTests` (TIME-1, remedy) | an unreferenced project added under `src/`, carrying no time type at all | red, on both facts | n/a (the fact did not exist) |
+| `EndpointSpineTests` (TEN-1/SEC-3, E-2) | `TenantKeyProbe : IParsable` as a QUERY parameter named `tenantKey` | red | green |
+| `EndpointSpineTests` (SEC-2, E-6) | `GlobalRequest(string Title, string CreatedBy)` declared in `Program.cs`, posted to a route | red | green |
+| `EndpointSpineTests` (SEC-3, E-9) | a query parameter named `emailAddress` | red | green |
+| `EndpointSpineTests` (SEC-2, E-9) | a body member named `NoteStatus` | red | green |
+| `EndpointSpineTests` (TEN-1, E-9) | a declared header `X-Tenant-Reference` | red | green |
+| all of the above | every mutation reverted | green, 100/100 | green |
+
+**One control was rejected rather than recorded.** The first attempt at the E-2 proof used a ROUTE parameter
+`/probe/{tenantId}` typed as the value object. It came up red on both the repaired and the restored mechanism,
+because route pattern parameters have always been read by name without consulting a type. It proves nothing about
+this repair, and TEN-1's row already said so ("the route surface is enumerated completely"). The query parameter
+is the control that separates the two.
+
+### What each mechanism does now
+
+**`TimeTypeTests` derives its layers.** The array of three assemblies is gone. The layer set is every project
+under `server/src`, read from the filesystem, and a declared layer whose assembly is not beside the test binary
+fails `Every_declared_layer_is_reachable_by_the_scan`, which is the remedy TIME-1 asks for and the half a list
+cannot have. The derivation is cross-checked against the composed host's own assembly graph so an empty walk
+cannot read green. The scan also stopped treating the global namespace as framework, which is what let a type in
+`Program.cs` sit inside a scanned layer and still be skipped.
+
+**Neither endpoint enumeration reimplements the binder.** E-2's remedy was a split of one predicate into two, and
+measuring it produced something better, so the split was built and abandoned in the same session: `Uri` has no
+static `TryParse` and does not implement `IParsable`, and it binds from the URL anyway, so a predicate written
+from reflection had E-2's defect on its first day. `RequestDelegateFactory` publishes its own conclusion as
+`IAcceptsMetadata`, so SEC-2's body set is now the framework's answer, and the URL surface is enumerated BY
+EXCLUSION: the declared body, registered services and a closed list of pipeline types are set aside, and every
+other parameter is compared. A type nobody has thought of is inside the surface by default. A new fact,
+`Both_enumerations_agree_with_the_real_binder_over_a_corpus_of_parameter_types`, builds a throwaway host per
+corpus type and asserts that whichever surface the framework chose is the surface that scans it, so the two can no
+longer drift apart in silence.
+
+**The comparison is a third matcher, not a port of the second.** The round 4 audit measured the sibling's token
+matcher and this edition's equality as incomparable, with six inputs escaping both, so `NameComparison` is built
+to beat both: tokenize on camel case, separators and digits; re-glue every contiguous run of tokens; match an
+entry that begins or ends a glued word; fold plurals and derive an entry's tail past a one-letter particle. The
+evidence that this is a comparison and not a longer list is that the registries SHRANK: ten tenant and PII
+spellings and three server-controlled ones stopped being entries and are derived, each asserted to still match.
+Its false positives (`fileName`, `voicemail`) and its residuals (a synonym, a reordering, a non-`s` plural) are
+asserted as PASSING tests, so a later narrowing goes red instead of quietly shrinking the surface.
+
+### Not repaired in this round, so that a green suite is not read as more coverage than it has
+
+- **`ContractShapeTests` is still flat and still `*Request`-only.** It is MOD-2's realization and MOD-2 has not
+  had its delta pass. The residual was measured rather than described: a `*Request` contract carrying a forbidden
+  field one level down and bound to NO route is invisible to both guards, and is caught by the host scan at depth
+  the moment it gains one. The uncovered set is exactly the contract types nothing can post to. SEC-2's
+  enumeration obligation and TEN-1's request-contract obligation stay `owed` on it, and the decision to open that
+  file is the owner's.
+- **SEC-3 does not return to `proven`**, and not because a mechanism fell short. Its claim's remedy sentence asks
+  for an undeclared query parameter to be refused or removed before the handler by a ruled decision; measured, a
+  handler reading `Request.Query["emailAddress"]` leaves the suite green. The row now carries that as a fourth
+  obligation reading `owed` (E-20).
+- **TIME-1's monotonic-durations lint** still has no realization here. The row reads `owed` for it while two
+  proven, gating obligations sit beside it, which is S-11's defect and is recorded there as its fourth instance
+  rather than smoothed with a fifth status word.
+- **The four Weakening-notes instances of the portable-layer rule** (B-6) were left alone: they are recorded and
+  unruled, and this pass was ruled.
+
+**Statuses after this round:** TIME-1 `owed` (2 of 3 obligations `proven`, was 1 of 3), SEC-2 `owed` (2 of 3, was
+1 of 3), SEC-3 `owed` (3 of 4, was 1 of 3, and the fourth obligation is new), TEN-1 `owed` (5 of 6, was 3 of 6).
+The row tally is unchanged at 21 `proven`, 6 `patterned`, 2 `latent`, 40 `owed`, which is the honest outcome: six
+obligations moved from `owed` to `proven`, one obligation was added reading `owed`, and no row crossed a
+threshold.
+
 ## Coverage notes by claim
 
 Scan-coverage detail behind the conformance table's summaries. Nothing here changes a status; these
@@ -320,3 +410,114 @@ are the specifics of what each mechanism inspects.
   token.
 - **AI-1**: the rejected key set includes the common OIDC/Azure claim names and `org*` tenant
   synonyms.
+
+## Round: the contracts guard, and the constraint that was never measured (2026-07-27)
+
+The last flat, equality-matching guard in the tree is repaired, and the reason it survived three rounds after both
+its defects were named is the more useful half of this round.
+
+**The constraint was false.** Three passes recorded that repairing `ContractShapeTests` would burn MOD-2's delta
+pass. Measured, without reading any mechanism: MOD-2's conformance row names `NamingPlacementTests` and not this
+file; this file contains the string "MOD-2" zero times; its own summary names SEC-2. It is SEC-2's guard. The
+premise came from one pass, was propagated into a commit message and a handover, and was honoured by three more
+without ever being checked. S-12 is re-graded on that measurement from a self-reported quarantine breach to no
+breach at all.
+
+**What changed.** `BodyMemberWalk` is extracted so both SEC-2 guards share ONE walk over bindable members and one
+leaf test. A second walk here would have been E-2's defect one level down: two enumerations of what a caller can
+populate, drifting silently, each guard green against its own idea of the surface. The contracts guard now walks
+at any depth and compares through `NameComparison` instead of case-insensitive equality.
+
+**And raising the obligation exposed a gap nobody had named.** TEN-1's tenant registry was read by the URL scan
+and by nothing else, so no body member on any route had ever been compared against it. `TenantId` was caught only
+because SEC-2's separate registry happens to list it. Recorded as E-22 and repaired on both surfaces.
+
+### Red-green proofs
+
+Every proof reproduces the hole with the pre-repair mechanism restored and the violation still planted, rather
+than trusting the record that the hole existed. Source tree byte-reverted after each.
+
+| Guard | Planted violation | Pre-repair | Repaired |
+|-------|-------------------|-----------|----------|
+| SEC-2 contracts, depth | unrouted `OrphanRequest(Title, AuthorInfo)` with `AuthorInfo.CreatedBy` | **100/100 green** | red |
+| SEC-2 contracts, comparison | unrouted `ShallowRequest(Title, CreatedByUser)` at depth zero | **100/100 green** | red |
+| TEN-1 contracts (E-22) | unrouted `WorkspaceRequest(Title, WorkspaceId, OrganisationId)` | green | red, 1 of 100 |
+| TEN-1 routed body (E-22) | `WorkspaceId` added to the routed `CreateNoteRequest` | green | red, 3 of 100 |
+| non-vacuity | plant removed | n/a | 100/100 green |
+
+The first two lines are the control that matters: with the plant in place and the old guard restored, the entire
+suite passed. Both defects were invisible to all 100 tests at once.
+
+### Status
+
+`SEC-2` and `TEN-1` return to `proven`, each at 3 of 3 and 6 of 6 obligations. The tally moves from 21/6/2/40 to
+23/6/2/38. `SEC-3` and `TIME-1` remain `owed`, on E-20's remedy obligation and on the monotonic-durations lint
+respectively; neither is touched by this round.
+
+The residual for SEC-2's enumeration, stated rather than left implicit: a contract type in the Contracts assembly
+that is neither routed nor named `*Request` is enumerated by neither guard. Nothing can post to it, so it enters
+the surface only by gaining a route, at which point the host scan sees it.
+
+
+## Round: the acceptance test runs for the first time (2026-07-27)
+
+Instantiation had never been executed. It was executed, into a scratch tree outside this repo, product name
+Ledgerly, this repo read-only throughout and verified unmodified afterwards. Three rows come down. The reason
+they were up is the same reason in all three cases, and it is the useful half of this round.
+
+**A check that a placeholder is shaped like the real thing is not a check.** HUM-1's locally testable half asked
+whether an owner-shaped token covered each irreversible surface. The owner this edition ships is `@OWNER`, which
+is owner-shaped. Measured: a seeded project with all four placeholders unreplaced passes docs-lint at exit 0 with
+migrations, wire contracts and contract docs owned by nobody (E-23). UI-1 has the same shape one family over: its
+token test reads `design/prototype/_ds/colors_and_type.css`, which is the kernel's own filler, carrying 58
+variables deliberately over the floor of 50, and it goes green in a seeded project whose product design does not
+exist (E-27).
+
+**And the step everything else is conditional on ships nothing.** 37 realized rows carry "armed at instantiation".
+Measured by exhaustive search: no forge API call, no ruleset, no token, no readback anywhere in the repository;
+every hit for branch protection is prose. TEST-3's own weakening note predicted exactly this, that the acceptance
+test must verify instantiation actually arms the gate rather than that the workflow file exists. The test ran and
+there is nothing to verify (E-24). Part C's verification item names no command, needs a second identity, and
+leaves no artifact recording that it ever passed.
+
+### Red-green proofs
+
+The E-23 repair is proven in all four states, with the control reproducing the hole rather than trusting the
+record that it existed. The repair reuses DEP-1's kernel-context detection, already in the same file, so a
+placeholder stays legal in the kernel and is refused downstream.
+
+| State | Guard | Plant | Result |
+|-------|-------|-------|--------|
+| the hole | pre-repair | seeded tree, `@OWNER` unreplaced | **green, exit 0** |
+| repaired | post-repair | seeded tree, `@OWNER` unreplaced | red, 3 failures, one per surface, each naming path and claim |
+| repaired | post-repair | seeded tree, real handle | green |
+| repaired, kernel | post-repair | this repo, placeholders in place | green, both editions, placeholders still legal |
+| control | pre-repair restored | plant still in place | **green again**, the hole reproduced |
+
+Baselines after the repair, unchanged from before it: .NET architecture 100 of 100, node server 154 of 154, node
+client-web 16 of 16, `compose --check` 36 shared files across 2 editions, both editions' `docs-lint` and
+`conformance --check` ok, literal em-dash and en-dash scans zero.
+
+### Status
+
+`HUM-1` and `TEST-3` go from `proven` to `owed`, each on a two-obligation array whose weakest half is the arming
+step. That roll-up is not a judgement call: `conformance.mjs` refused `patterned` on both rows and named the
+weakest obligation, which is the ruling working as intended. `UI-1` goes from `proven` to `latent`, the mechanism
+being real and its subject being filler, which is what `latent` means. The tally moves from 23/6/2/38 to
+20/6/3/40, and non-`owed` rows from 31 to 29.
+
+HUM-1's declaration half is genuinely `proven` for the first time, having been a false green until this round.
+The row still reads `owed` because the roll-up takes the weakest obligation, which is the conservative direction
+the ruling names and the correct one here: a named owner nothing requires a review from is a record, not a gate.
+
+E-24 is recorded and NOT repaired. Building an arming mechanism is a ruleset writer plus an armed-state readback
+against a forge API needing an owner token, and choosing which forge the kernel presumes is exactly the
+portability question the B class exists for. Improvising it inside a verification round would be the same move
+this round is documenting: shipping something shaped like a gate.
+
+Not repaired in this round, so that a green suite is not read as more coverage than it has: E-25 (the file set
+omits `.claude/settings.json` and `secret-scan.allow.json`, part A contradicts itself, and part C never runs the
+secret scan), E-26 (five places document port 5080 and the host binds 5000, because no `launchSettings.json`
+exists), E-27's manifest half (step 6 demands a design export that the method's own skill order puts two skills
+away, and offers no fallback). All four are manifest and file-set defects rather than guard defects, and the
+manifest is the artifact the next round should take as its subject.

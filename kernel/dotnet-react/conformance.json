@@ -4,9 +4,9 @@
   "claims": {
     "TEN-1": {
       "title": "Tenant comes from the credential only",
-      "status": "owed",
-      "mechanism": "`TenantScopeMiddleware` reads `tenant_id` from the JWT only; `EndpointSpineTests` bans tenant route and query parameter names by whole-string case-insensitive equality, and bans DECLARED tenant/PII headers via the framework's own `IFromHeaderMetadata` with vendor-prefix and separator normalization; `HostSecurityTests` proves at run time that a forged tenant header in five spellings does not move a request into another tenant; `ContractShapeTests` bans `TenantId` on requests",
-      "note": "TEN-1 names four surfaces and this edition now reaches all four, unevenly. ROUTE is total, because the pattern loop reads parameter names without consulting a type. HEADER is covered from both sides as of 2026-07-26 (A-2): a declared binding is a scan violation, and a header arriving undeclared is proven not to influence tenant resolution, which is the half no scan can reach. QUERY remains type-dependent: parameter enumeration filters on `BindsFromUrl`, a hand-written enumeration of types, so an `IParsable` value object or a `TimeSpan` binds from the query string and yields nothing to the scan (E-2, not repaired: one predicate cannot serve SEC-2 and SEC-3/TEN-1 at once). Matching is equality against a registry, so a novel spelling walks past (E-9). Findings: A-2 (repaired), E-2 (open), E-9. **Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (rulings 5 and 6), through ruling 3's per-obligation structure.** Ruling 5 predicted the header surface would be the falsifying half; it is not, because the flow-back pass built the header mechanism after that section of the digest was drafted, and it reads `proven` above. What falsifies the row is the query enumeration (E-2) and the comparison (E-9), both measured before the ruling and both left open by name.",
+      "status": "proven",
+      "mechanism": "`TenantScopeMiddleware` reads `tenant_id` from the JWT only; `EndpointSpineTests` scans route and query parameters enumerated BY EXCLUSION and DECLARED tenant/PII headers via the framework's own `IFromHeaderMetadata` with vendor-prefix and separator normalization, matching both with `NameComparison`; `HostSecurityTests` proves at run time that a forged tenant header in five spellings does not move a request into another tenant; `ContractShapeTests` bans `TenantId` on requests",
+      "note": "TEN-1 names four surfaces and this edition reaches all four, unevenly. ROUTE is total, because the pattern loop reads parameter names without consulting a type. HEADER is covered from both sides (A-2): a declared binding is a scan violation, and a header arriving undeclared is proven not to influence tenant resolution. QUERY was type-dependent and is not any more (E-2, repaired 2026-07-27): nothing asks what binds from a URL, so a strong-typed tenant id is inside the surface by default, proven by planting `TenantKeyProbe : IParsable` as a query parameter named `tenantKey` on a real route (red now, green under the old mechanism). Matching was equality and is now a comparison (E-9, repaired), which matters most on the header surface, where normalization removes every boundary a token matcher would need. **The row is still `owed` on one surface only: the request contract**, because that half rests on `ContractShapeTests`, which is flat, and repairing it means opening MOD-2's realization before MOD-2 has had its delta pass. Findings: A-2 (repaired), E-2 (repaired), E-9 (repaired), E-6 (contracts half open). Request-contract surface raised 2026-07-27, together with E-22's repair of the tenant predicate on body members.",
       "obligations": [
         {
           "name": "the tenant is resolved solely from the validated credential",
@@ -20,23 +20,23 @@
         },
         {
           "name": "the query surface is enumerated completely",
-          "status": "owed",
-          "text": "parameter enumeration filters on `BindsFromUrl`, a hand-written list of types, so a value object implementing the framework's parse interface, or a `TimeSpan`, binds from the query string and yields nothing to the scan (E-2) (trigger: the next edition build pass)."
+          "status": "proven",
+          "text": "the hand-written type list is gone: parameters are enumerated by exclusion from the composed route table, so a value object implementing the framework's parse interface, a `TimeSpan` or a type nobody has thought of is inside the surface rather than outside it, and the enumeration is held to agree with the real binder over E-2's measured corpus rather than restating the binder's rules in an assertion (E-2)."
         },
         {
           "name": "the header surface has a mechanism of its own",
           "status": "proven",
-          "text": "a header surface cannot be enumerated, so this is the non-scan mechanism ruling 5 requires, and it is covered from both sides as of 2026-07-26: a DECLARED header binding is a scan violation through the framework's own `IFromHeaderMetadata`, with vendor-prefix and separator normalization, and a header arriving UNDECLARED is proven at run time not to move a request into another tenant, in five spellings (A-2)."
+          "text": "a header surface cannot be enumerated, so this is the non-scan mechanism ruling 5 requires, and it is covered from both sides: a DECLARED header binding is a scan violation through the framework's own `IFromHeaderMetadata`, with vendor-prefix and separator normalization, and a header arriving UNDECLARED is proven at run time not to move a request into another tenant, in five spellings (A-2). The normalization compacts `X-Tenant-Id` to `tenantid`, which destroys every boundary; the comparison resolves the concatenation, so the base entry covers it without a list of pre-glued spellings (E-9)."
         },
         {
           "name": "the request-contract surface is enumerated completely",
-          "status": "owed",
-          "text": "the contract half rests on `ContractShapeTests`, which is flat and enumerates only `*Request`-suffixed types, so a tenant id nested inside a posted object, or carried by a type whose name it does not recognize, is not reached (E-6) (trigger: MOD-2's delta pass)."
+          "status": "proven",
+          "text": "repaired 2026-07-27, and raising it exposed a gap no pass had named. The contracts guard now walks every member at any depth through the shared `BodyMemberWalk`, which closes the enumeration half. The predicate half was missing outright: the tenant registry was applied to URL parameters and to nothing else, so a request contract carrying `WorkspaceId` and `OrganisationId` passed all 100 tests while TEN-1's statement says no request contract carries a tenant identifier field. Only `tenantId` was caught, and only because SEC-2's separate registry happens to list it. Both surfaces now apply the tenant registry to body members, proven red on an unrouted contract and on the routed `CreateNoteRequest`, green when reverted. Recorded as E-22."
         },
         {
           "name": "the comparison resolves compounds, concatenations and decompositions of a listed word",
-          "status": "owed",
-          "text": "matching is whole-string case-insensitive equality against a registry; the flow-back pass widened that registry with `workspace` and `account` and their compounds, which is a longer list and not a comparison (E-9) (trigger: the next edition build pass)."
+          "status": "proven",
+          "text": "matching is `NameComparison`: an entry `tenant` covers `tenantId`, `tenantid`, `tenant_id` and `tenantSlug`, an entry `org` covers `orgId` and `orgid` through a declared affix, and the flow-back pass's widened list of compounds is gone because they are derived, each asserted to still match. The prefix rule that would let `org` reach `organisationid` directly is rejected and asserted against, because it also matches `origin`, an ordinary request header (E-9)."
         }
       ]
     },
@@ -102,32 +102,32 @@
     },
     "SEC-2": {
       "title": "Anti mass-assignment",
-      "status": "owed",
-      "mechanism": "`ContractShapeTests` forbidden-field registry over the Contracts assembly, filtered to types whose name ends in `Request` (FLAT); `EndpointSpineTests` walks every body-bound DTO RECURSIVELY, through public properties, constructor parameters, arrays and generic arguments, with cycle protection and no depth cap, against the same registry; App/Api declare no request/response types",
-      "note": "The two guards are no longer equivalent and the difference is the point. The HOST scan recurses as of 2026-07-26 (E-6), so a server-controlled field at any depth of any body-bound type on a real route is caught, proven both ways against a nested `AuthorDto` carrying `CreatedBy`. `ContractShapeTests` is STILL FLAT and still enumerates only `*Request` types, so as a second net it reaches one level; repairing it belongs to MOD-2, which has not had its delta pass. A reader taking `proven` to mean both guards reach every depth would be wrong. `IsBodyDto` also excludes types with a null namespace, so a public DTO declared in `Program.cs` is skipped by the host scan entirely (E-6), and `BindsFromUrl` over-excludes the body set (E-2). Findings: E-2 (open), E-6 (host half repaired, contracts half blocked on MOD-2). **Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (rulings 2 and 6), through ruling 3's per-obligation structure rather than by collapsing to one word.** No mechanism named above changed and nothing new was discovered: the guards are exactly as measured, and what changed is that the claim now states a completeness obligation and a comparison obligation, and this edition meets neither. The recursive host scan is a real half and reads `proven` above.",
+      "status": "proven",
+      "mechanism": "`EndpointSpineTests` takes each endpoint's body type from the framework's own `IAcceptsMetadata` and walks it RECURSIVELY through public properties, constructor parameters, arrays and generic arguments, with cycle protection and no depth cap, matched by `NameComparison` against the shared registry, with a parameter walk as a second net and a non-vacuity assertion; `ContractShapeTests` is a third net over the Contracts assembly, FLAT and filtered to types whose name ends in `Request`, matching by equality; App/Api declare no request/response types",
+      "note": "The guards are not equivalent and the difference is the point. The HOST scan recurses (E-6, 2026-07-26) and as of 2026-07-27 it no longer decides for itself what a body is: the enumeration comes from the framework's `IAcceptsMetadata`, so the two exclusions that used to hide a type from it are gone. Both were proven by planting the violation on a real route: a public DTO declared in the entry-point file, which has no namespace and was skipped outright, is now caught, and the old mechanism with the same DTO planted is green. The comparison is no longer equality (E-9). **`ContractShapeTests` is STILL FLAT and still enumerates only `*Request` types**, and that is why the row is still `owed`: repairing it means opening MOD-2's realization before MOD-2 has had its delta pass, which is a decision for the owner and not for this pass. The residual it leaves was measured rather than argued: a `*Request` contract carrying a forbidden field one level down, bound to no route, is invisible to both guards; the moment it is bound to a route the host scan catches it at depth. So the uncovered set is exactly the contract types nothing can post to. Findings: E-2 (repaired), E-6 (host half repaired, contracts half blocked on MOD-2), E-9 (repaired), E-20. Enumeration raised 2026-07-27: the contracts guard now shares the endpoint scan's walk and comparison, and the tenant registry reaches contract members for the first time (E-22).",
       "obligations": [
         {
           "name": "the predicate rejects a registry member at any depth of an enumerated type",
           "status": "proven",
-          "text": "`EndpointSpineTests` walks every body-bound DTO recursively through public properties, constructor parameters, arrays and generic arguments, with cycle protection and no depth cap, proven both ways against a nested `AuthorDto` carrying `CreatedBy` (E-6)."
+          "text": "`EndpointSpineTests` walks every body-bound DTO recursively through public properties, constructor parameters, arrays and generic arguments, with cycle protection and no depth cap, proven both ways against a nested `AuthorDto` carrying `CreatedBy` (E-6), and the walk's depth is asserted directly because the composed host binds only flat records today."
         },
         {
           "name": "the enumeration reaches every body-bound type",
-          "status": "owed",
-          "text": "`IsBodyDto` excludes types with a null namespace, so a public DTO declared in the entry-point file is outside the host scan, and `BindsFromUrl` over-excludes the body set (E-2, E-6). The second net, `ContractShapeTests`, is flat and enumerates only `*Request`-suffixed types, so it reaches one level of the types whose name it recognizes (trigger: MOD-2's delta pass, which owns the placement rule that flat net rests on)."
+          "status": "proven",
+          "text": "both nets are now complete and they share one walk. The host half takes the body type from the framework's own `IAcceptsMetadata.RequestType` rather than from a predicate of this test's own, so E-6's null-namespace exclusion and E-2's hand-written type list are both gone. The second net, `ContractShapeTests`, was the last flat and equality-matching guard in the tree and is repaired: it walks the SAME `BodyMemberWalk.MemberNames` at any depth and compares through the SAME `NameComparison`, so the two guards cannot drift apart about what a caller can populate. Proven with a control: with the pre-repair guard restored and an unrouted `OrphanRequest` carrying `AuthorInfo.CreatedBy` planted, all 100 tests passed; with the repair, the nested field and a `CreatedByUser` compound at depth zero each fail separately. The residual, stated: a contract type in the Contracts assembly that is neither routed nor named `*Request` is enumerated by neither guard, and nothing can post to it, so it enters the surface only by gaining a route, at which point the host scan sees it. It was repaired here after three passes recorded it as blocked on MOD-2's delta; that premise was measured and is false (S-12)."
         },
         {
           "name": "the comparison resolves compounds, concatenations and decompositions of a listed word",
-          "status": "owed",
-          "text": "matching is a lowercased hash-set lookup, which is equality: a registry entry `status` does not cover `noteStatus`, and widening the list with more spellings is enumeration standing in for a comparison (E-9) (trigger: the next edition build pass, where E-2's split of the one predicate now serving SEC-2 and SEC-3/TEN-1 is the same work)."
+          "status": "proven",
+          "text": "matching is `NameComparison`, not a hash-set lookup: `status` covers `noteStatus` and `notestatus`, `createdAt` covers `createdAtUtc`, `role` covers `roles`, and the registry lost the spellings it used to enumerate because they are derived, each one asserted to still match. The flat second net still compares by equality and reads the same registry, and a test holds every name in the flat list to be matched by the rules, so the weaker net can never become a different one (E-9)."
         }
       ]
     },
     "SEC-3": {
       "title": "No PII in URLs",
       "status": "owed",
-      "mechanism": "`EndpointSpineTests` route + query scan ([AsParameters] wrappers, collections, DateTime/TimeOnly)",
-      "note": "**Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (ruling 6), through ruling 3's per-obligation structure.** The scan is unchanged; the claim now requires the comparison to resolve morphology, and case-insensitive equality does not. The sibling edition's SEC-3 survives because it built the three morphological classes explicitly, which is the asymmetry the evidence says exists.",
+      "mechanism": "`EndpointSpineTests` route + query scan over the composed route table, enumerated BY EXCLUSION (the framework's own declared body type, registered services and the pipeline's own types are set aside and every other parameter is a value a caller can spell), with [AsParameters] wrapper properties walked; matched by `NameComparison`, which resolves compounds, concatenations, decompositions and plurals",
+      "note": "Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (ruling 6), and **both named gaps were closed on 2026-07-27**: the enumeration no longer asks which types bind from a URL (E-2) and the comparison is no longer equality (E-9). Each was proven by planting the violation on a real route in the composed host, confirming red, then restoring the old mechanism with the violation still planted and confirming green, which reproduces the hole rather than taking the record's word for it. The row does not return to `proven`, and the reason is a duty the row never carried: SEC-3's completeness obligation ends \"a query parameter the surface does not declare is refused or removed before the handler by a ruled decision, never bound silently\", and nothing here does that. Measured, not inferred: a handler that takes HttpContext and reads `Request.Query[\"emailAddress\"]` leaves the scan green. That obligation is written into the row below rather than left in prose, so the row reads `owed` for something real (E-20).",
       "obligations": [
         {
           "name": "the predicate rejects a registry match on a parameter it can see",
@@ -135,14 +135,19 @@
           "text": "`EndpointSpineTests` scans route and query parameters, covering `[AsParameters]` wrappers, collections and date parameter types that a naive scan misses."
         },
         {
-          "name": "the enumeration reaches every route and query parameter",
-          "status": "owed",
-          "text": "query-parameter enumeration filters on `BindsFromUrl`, a hand-written list of types, so a value object implementing the framework's own parse interface binds from the query string and yields nothing to the scan (E-2) (trigger: the next edition build pass)."
+          "name": "the enumeration reaches every declared route and query parameter",
+          "status": "proven",
+          "text": "the hand-written type list is gone. Nothing asks what binds from a URL any more: the body type comes from the framework's own `IAcceptsMetadata` on the composed endpoint, services come from `IServiceProviderIsService`, the pipeline's own types are a closed list of things no caller can spell a value for, and every other parameter is compared. A type nobody has thought of is inside the surface by default instead of outside it. `Both_enumerations_agree_with_the_real_binder_over_a_corpus_of_parameter_types` holds that against the binder that actually runs, over E-2's measured corpus (`TenantKey : IParsable`, `TimeSpan`, `Uri`, `IPAddress`, `Int128`, a legacy `TryParse` type), so the two can no longer drift apart silently (E-2)."
         },
         {
           "name": "the comparison resolves compounds, concatenations, decompositions and plurals of a listed word",
+          "status": "proven",
+          "text": "`NameComparison` tokenizes on camel case, separators and letter/digit boundaries, re-glues every contiguous run of tokens, matches an entry that begins or ends a glued word, folds plurals, and derives an entry's tail past a one-letter particle, so `email` covers `emailAddress`, `user_email`, `emailaddress`, `e_mail`, `e-mail`, `EMailAddress`, `mail`, `emails` and `email1`. It beats both matchers this repo has built: the six inputs the round 4 audit measured escaping BOTH equality and token matching are asserted, and the registry got SHORTER because `firstname`, `lastname` and `dateofbirth` are derived rather than listed, with every dropped spelling asserted to still match. Its false positives (`fileName`, `voicemail`) and its residuals (a synonym, a reordering, an unnamed parameter) are passing tests, so a later narrowing goes red (E-9)."
+        },
+        {
+          "name": "a parameter that binds or is read without being declared is inside the surface",
           "status": "owed",
-          "text": "matching is case-insensitive equality, so `emailAddress` walks past an entry `email` and five further spellings of the same value walk past with it (E-9) (trigger: the next edition build pass, with E-2's predicate split)."
+          "text": "SEC-3's remedy sentence requires an undeclared query parameter to be \"refused or removed before the handler by a ruled decision, never bound silently\", and this edition has no such mechanism: measured, a handler taking HttpContext and reading `Request.Query[\"emailAddress\"]` leaves the whole suite green. TEN-1 met the same shape on the header surface with a runtime mechanism rather than a scan, which is the available answer here, and refuse-versus-remove is exactly the choice the claim says must be RULED per surface (trigger: an adjudication ruling on the refuse-or-remove decision, in the class of E-8's HUM-1 half; the row is `owed` on this and on nothing else)."
         }
       ]
     },
@@ -233,18 +238,18 @@
     "TIME-1": {
       "title": "UTC, offset-aware, and nothing else",
       "status": "owed",
-      "mechanism": "`TimeTypeTests` over Contracts, App, Persistence (recurses Nullable, arrays, generics)",
-      "note": "DB UTC column defaults not used: the service sets the value **Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (rulings 2 and 3).** E-15 measured the omitted layer with a control and the flow-back pass deliberately did not repair it, on the grounds that lowering the row belonged to the owner; this is where that landed. The monotonic-durations half has never had a realization here and now says so in its own status rather than in prose.",
+      "mechanism": "`TimeTypeTests` over every layer project under server/src, DERIVED from the filesystem rather than listed (recurses Nullable, arrays, generics; the global namespace is app code, not framework); a layer that exists and whose assembly the scan cannot reach fails a test of its own",
+      "note": "DB UTC column defaults not used: the service sets the value. **Lowered from `proven` to `owed` by the adjudication pass of 2026-07-26 (rulings 2 and 3).** E-15 measured the omitted layer with a control and the flow-back pass deliberately did not repair it, on the grounds that lowering the row belonged to the owner. **The layer half was repaired on 2026-07-27**, and not by adding the missing assembly to the list: the list is gone and the layer set is derived from the projects under server/src, which is what TIME-1 requires (\"a rule the test can check rather than a hand-written list\"). Proven three ways, each red before the repair and after the violation was planted: a naive `DateTime` on a public type in the API layer, the same type declared in the entry-point file where it has no namespace at all (the file E-6 and E-15 both exempt), and a layer added under src/ that the tests cannot reach, which fails without carrying any time type. The monotonic-durations half has never had a realization here and is why the row still reads `owed`, which is the S-11 shape: two obligations that are built, gating and red-green proven, rolled up with one deferred extension, and the vocabulary's weakest word means \"not built\".",
       "obligations": [
         {
           "name": "the predicate rejects a naive instant in the layers it reaches",
           "status": "proven",
-          "text": "`TimeTypeTests` recurses Nullable, arrays and generics over the layers it is given, and rejects naive `DateTime` in all of them."
+          "text": "`TimeTypeTests` recurses Nullable, arrays and generics over the layers it is given, and rejects naive `DateTime` in all of them. As of 2026-07-27 it also walks types with no namespace, which the hierarchy walk previously stopped at as though the global namespace were the framework."
         },
         {
           "name": "the enumeration reaches every layer that declares a time value",
-          "status": "owed",
-          "text": "the layer set is a hand-written list of three and the API layer is not in it, measured with a control: a naive `DateTime` on a public type there leaves the whole suite green, while the identical type one layer over turns it red (E-15). The repair is one line and was held deliberately for this ruling rather than for difficulty (trigger: the next edition build pass)."
+          "status": "proven",
+          "text": "the layer set is derived from the projects under server/src, so a layer added to the server is scanned with no edit to the test, and a layer that exists and whose assembly the scan cannot reach fails `Every_declared_layer_is_reachable_by_the_scan` rather than being skipped, which is the remedy half TIME-1 asks for (\"a layer that exists and is not in the enumeration fails the build too\"). The derivation is cross-checked against the composed host's own assembly graph so an empty walk cannot read green. E-15's control is red both ways now, and so is the one that composes with E-6 on the entry-point file."
         },
         {
           "name": "durations come from the monotonic source through one clock seam",
@@ -459,9 +464,9 @@
     },
     "UI-1": {
       "title": "Token source lockstep",
-      "status": "proven",
+      "status": "latent",
       "mechanism": "`tokenCoverage.test.ts` reads the export at its canonical home `design/prototype/_ds/colors_and_type.css` (every CSS var has a token, count > 50)",
-      "note": ""
+      "note": "Lowered from `proven` to `latent` on 2026-07-27 by the acceptance test. The mechanism binds and is not in question; its SUBJECT is the kernel`s own placeholder. `design/prototype/_ds/colors_and_type.css` ships 58 variables, deliberately over the floor of 50, and its own header says to replace it with a real export at instantiation, so `tokenCoverage.test.ts` goes green in a seeded project whose design system is the kernel`s filler and whose product design does not exist. That is `latent` by the vocabulary`s own definition: the mechanism exists and has had no real subject yet. Compounding it, manifest step 6 demands the complete design export at seed time, which the method`s own skill order makes impossible (seed runs immediately after gate 1; the export is two skills away, behind decompose and design), and it duplicates x2:lock. The manifest offers no fallback and part C admits no blocked state (E-27). TEST-3 and HUM-1 both carry an instantiation asterisk; this row needed one and did not have it. Finding: E-27."
     },
     "UI-2": {
       "title": "Literal visual values are lint errors",
@@ -537,9 +542,21 @@
     },
     "TEST-3": {
       "title": "CI loop",
-      "status": "proven",
+      "status": "owed",
       "mechanism": "`ci.yml`: server, client, docs-lint, secret-scan, e2e-wire",
-      "note": "mechanism built, not yet armed: branch protection is set at instantiation; until then the loop blocks nothing"
+      "note": "Lowered from `proven` to `owed` (the weakest of 2 obligations) on 2026-07-27 by the acceptance test. The loop exists and its five jobs are real; what has never existed is the arming step the whole conditional rests on. TEST-3`s own weakening note predicts this defect verbatim, that the acceptance test must verify instantiation actually arms the gate rather than that the workflow file exists. It ran, and instantiation ships nothing to verify (E-24). Two further measurements from the same run: the `secret-scan` job cannot go green in a seeded project because the manifest`s file set omits `secret-scan.allow.json`, and part C never runs that job, so a red required gate is invisible to the set that exists to catch it (E-25). The roll-up is the weakest obligation, so a built loop that gates nothing reads `owed`, which is the conservative direction the ruling names. Findings: E-24, E-25.",
+      "obligations": [
+        {
+          "name": "every mechanism the catalog names executes automatically in CI on every push and pull request",
+          "status": "patterned",
+          "text": "`ci.yml` declares server, client, docs-lint, secret-scan and e2e-wire. The workflow has never executed on a forge, and one of the five jobs is red on day one in a seeded project for a missing allowlist the file set does not carry (E-25)."
+        },
+        {
+          "name": "the loop gates merges, armed at instantiation, with the arming step carried and verified",
+          "status": "owed",
+          "text": "no arming artifact exists, and part C`s verification item names no command, needs a second identity, and leaves nothing in the seeded repo recording that it passed (E-24). Trigger: the same ruleset writer and readback HUM-1 names."
+        }
+      ]
     },
     "TEST-4": {
       "title": "Real-runtime boot proof",
@@ -549,9 +566,21 @@
     },
     "HUM-1": {
       "title": "Irreversible surfaces get a human turn, unconditionally",
-      "status": "proven",
-      "mechanism": "`.github/CODEOWNERS` covers migrations, contracts, and `docs/contracts/` (`@OWNER` renamed at instantiation); docs-lint fails if any of the three loses its owned entry; branch protection requires code-owner review",
-      "note": "mechanism built, not yet armed: it arms with TEST-3 at instantiation; the manifest carries the step"
+      "status": "owed",
+      "mechanism": "`.github/CODEOWNERS` covers migrations, contracts and `docs/contracts/`, reconciled against `edition.json``s `irreversibleSurfaces` so renaming one and forgetting the other is loud; docs-lint fails if any of the three loses its owned entry, and fails outside the kernel repo if an entry names only the `@OWNER` placeholder; branch protection requires code-owner review",
+      "note": "Lowered from `proven` to `owed` (the weakest of 2 obligations) on 2026-07-27 by the first execution of the instantiation acceptance test, which measured both halves rather than reading them. The declaration half was a FALSE GREEN and is now genuinely proven: docs-lint asked only whether an owner-shaped token covered each surface, and `@OWNER` is owner-shaped, so a seeded project with all four placeholders unreplaced passed with every irreversible surface owned by nobody (E-23). Repaired by separating covered from owned, reusing DEP-1`s kernel-context detection in the same file so the placeholder stays legal in the kernel and is refused downstream; red-green proven in a seeded tree with the control that reproduces the hole. The arming half has no artifact at all: instantiation ships one sentence of prose, no script, no ruleset, no readback, and part C`s verification item names no command and leaves no trace (E-24). The roll-up is the weakest obligation, so the row reads `owed` even though its declaration half is now genuinely proven; `proven` beside `mechanism built, not yet armed` was the mismatch all along. Findings: E-23 (repaired), E-24 (recorded, not repaired).",
+      "obligations": [
+        {
+          "name": "every irreversible surface is enumerated and declared to require a named human review",
+          "status": "proven",
+          "text": "the three surfaces are declared in `edition.json` and reconciled against `.github/CODEOWNERS`, and an entry naming only the shipped placeholder is now refused outside the kernel repo. Red-green proven in a seeded tree: placeholder gives three failures, one per surface, each naming the path and the claim; a real handle gives ok; the kernel itself stays green because its placeholders are legal there; and the pre-repair predicate with the placeholder still in place goes green again, which reproduces the hole (E-23)."
+        },
+        {
+          "name": "the merge gate requires that review, armed at instantiation",
+          "status": "owed",
+          "text": "measured absent 2026-07-27: the repository contains no forge API call, no ruleset, no token and no readback, and every hit for branch protection is prose. The acceptance test can verify only what instantiation ships, and instantiation ships an imperative sentence a human executes by hand in a web interface (E-24). Trigger: a ruleset writer plus an armed-state readback, which is also a decision about which forge the kernel presumes."
+        }
+      ]
     },
     "AI-1": {
       "title": "Server-injected identity",

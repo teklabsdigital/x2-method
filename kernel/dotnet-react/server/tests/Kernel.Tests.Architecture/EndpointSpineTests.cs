@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
@@ -13,15 +14,21 @@ namespace Kernel.Tests.Architecture;
 
 /// <summary>
 /// SEC-1, TEN-1, SEC-3. Scans the composed route table: every endpoint is either allowlisted-anonymous or names a
-/// perm policy; no route or query parameter carries a tenant or PII name (including [AsParameters] wrapper
-/// properties, collection-typed params, and DateTime/TimeOnly, which naive scans miss); no body DTO carries a
-/// server-controlled field (SEC-2, even an internal, non-*Request, or immutable constructor-bound type); and the
+/// perm policy; no route or query parameter carries a tenant or PII name; no body DTO carries a server-controlled
+/// field (SEC-2, at any depth, including an internal, non-*Request, or immutable constructor-bound type); and the
 /// deny-by-default fallback policy actually rejects anonymous callers. This is the single un-filterable home for
 /// the host-wide spine (X-8 rule 3).
 ///
+/// Two things this file used to do and does not any more, both recorded as E-2. It does not decide for itself
+/// what binds from a URL: the URL surface is enumerated by exclusion, and the body surface is the framework's own
+/// `IAcceptsMetadata`. And it does not compare names by equality: `NameComparison` resolves the morphology, which
+/// is E-9. Both are held to something outside this file, a corpus run against the real binder and a set of
+/// asserted spellings, because the failure mode in both cases was a scan that agreed with itself.
+///
 /// Residual limitation: a handler that takes HttpContext and reads Request.Query[...] at runtime is invisible to
-/// any static route-table scan; ad-hoc query reads are a slice-level review item, called out here so it is not
-/// mistaken for coverage.
+/// any static route-table scan. That is measured rather than assumed (a handler reading `Request.Query`
+/// ["emailAddress"] leaves this suite green) and it is now an obligation reading `owed` on SEC-3's row rather
+/// than a note here, because a residual named only in a comment is a residual nothing tracks (E-20).
 /// </summary>
 public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture<KernelApiFactory>
 {
@@ -52,17 +59,26 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
             + "no write method on this URL is covered by this entry."),
     ];
 
-    // "workspace" and "account" were absent until the node-react round 4 audit measured the two registries
-    // against each other. Matching here is whole-string equality, so every spelling a caller might use has to be
-    // enumerated; the compounds are listed for the same reason "organisationid" already was.
-    private static readonly string[] ForbiddenTenantParams =
+    // Base words only. "workspace" and "account" were absent until the node-react round 4 audit measured the two
+    // registries against each other, and the compounds ("tenantid", "workspaceslug", "organisationid",
+    // "firstname", "lastname", "dateofbirth") were listed one by one because the comparison was equality and every
+    // spelling a caller might use had to be enumerated. The comparison derives them now (E-9), and every dropped
+    // spelling is asserted to still match in NameComparisonTests, so the shorter list is a measured claim rather
+    // than a tidy-up.
+    internal static NameRule[] ForbiddenTenantParams { get; } =
         [
-            "tenantid", "tenant", "orgid", "organizationid", "organisationid",
-            "workspace", "workspaceid", "workspaceslug", "account", "accountid",
+            NameRule.Rule("tenant"), NameRule.Rule("org"), NameRule.Rule("organization"),
+            NameRule.Rule("organisation"), NameRule.Rule("workspace"), NameRule.Rule("account"),
         ];
 
-    private static readonly string[] ForbiddenPiiParams =
-        ["email", "phone", "name", "firstname", "lastname", "ssn", "dob", "dateofbirth"];
+    private static readonly NameRule[] ForbiddenPiiParams =
+        [
+            NameRule.Rule("email"), NameRule.Rule("phone"), NameRule.Rule("name"), NameRule.Rule("ssn"),
+            NameRule.Rule("dob"), NameRule.Rule("dateOfBirth"),
+        ];
+
+    internal static IReadOnlyList<NameRule> ForbiddenUrlNames { get; } =
+        [.. ForbiddenTenantParams, .. ForbiddenPiiParams];
 
     private IReadOnlyList<RouteEndpoint> RouteEndpoints() =>
         factory.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>().ToList();
@@ -126,13 +142,13 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
     [Fact]
     public void No_endpoint_exposes_a_tenant_or_pii_parameter()
     {
-        var forbidden = ForbiddenTenantParams.Concat(ForbiddenPiiParams).ToHashSet();
+        var isService = factory.Services.GetRequiredService<IServiceProviderIsService>();
 
         foreach (var endpoint in RouteEndpoints())
         {
-            foreach (var name in ParameterNames(endpoint))
+            foreach (var name in ParameterNames(endpoint, isService))
             {
-                Assert.False(forbidden.Contains(name.ToLowerInvariant()),
+                Assert.False(NameComparison.Matches(ForbiddenUrlNames, name),
                     $"Endpoint '{endpoint.RoutePattern.RawText}' exposes parameter '{name}' (TEN-1/SEC-3: tenant comes from the token, PII never travels in a URL).");
             }
         }
@@ -155,13 +171,11 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
     [Fact]
     public void No_endpoint_binds_a_tenant_or_pii_header()
     {
-        var forbidden = ForbiddenTenantParams.Concat(ForbiddenPiiParams).ToHashSet();
-
         foreach (var endpoint in RouteEndpoints())
         {
             foreach (var header in HeaderNames(endpoint))
             {
-                Assert.False(forbidden.Contains(NormalizeHeaderName(header)),
+                Assert.False(NameComparison.Matches(ForbiddenUrlNames, NormalizeHeaderName(header)),
                     $"Endpoint '{endpoint.RoutePattern.RawText}' binds header '{header}' (TEN-1/SEC-3: tenant comes from the token, and PII never travels in a header any more than in a URL).");
             }
         }
@@ -171,22 +185,67 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
     public void No_endpoint_binds_a_body_type_carrying_server_controlled_fields()
     {
         var isService = factory.Services.GetRequiredService<IServiceProviderIsService>();
+        var scanned = 0;
 
         foreach (var endpoint in RouteEndpoints())
         {
-            var method = endpoint.Metadata.OfType<MethodInfo>().FirstOrDefault();
-            if (method is null)
+            foreach (var body in BodyTypes(endpoint, isService))
             {
-                continue;
-            }
-
-            foreach (var parameter in method.GetParameters().Where(p => IsBodyDto(p.ParameterType, isService)))
-            {
-                foreach (var name in BindableMemberNames(parameter.ParameterType))
+                scanned++;
+                foreach (var name in BodyMemberWalk.MemberNames(body))
                 {
-                    Assert.False(ServerControlledFields.Names.Contains(name, StringComparer.OrdinalIgnoreCase),
-                        $"Endpoint '{endpoint.RoutePattern.RawText}' binds body type '{parameter.ParameterType.Name}' carrying server-controlled field '{name}' (SEC-2). Body DTOs belong in Kernel.Contracts and carry no server-owned field.");
+                    Assert.False(ServerControlledFields.Matches(name),
+                        $"Endpoint '{endpoint.RoutePattern.RawText}' binds body type '{body.Name}' carrying server-controlled field '{name}' (SEC-2). Body DTOs belong in Kernel.Contracts and carry no server-owned field.");
+
+                    // TEN-1's contract half, which no mechanism applied to a body member until E-22. The tenant
+                    // registry reached URL parameters only, so `tenantId` was caught by SEC-2's registry happening
+                    // to list it and every other spelling the claim forbids, `workspaceId`, `organisationId`,
+                    // `accountId`, was caught by nothing at all on any body.
+                    Assert.False(NameComparison.Matches(ForbiddenTenantParams, name),
+                        $"Endpoint '{endpoint.RoutePattern.RawText}' binds body type '{body.Name}' carrying tenant-shaped field '{name}' (TEN-1). Tenant comes from the validated credential, never from a request contract.");
                 }
+            }
+        }
+
+        // Non-vacuity. A body enumeration that finds nothing passes this test forever, and E-5's second instance
+        // is the record of a guard in this tree whose green and whose blindness were the same colour.
+        Assert.True(scanned > 0, "The SEC-2 body scan enumerated no body type at all, so its green result says nothing.");
+    }
+
+    /// <summary>
+    /// The body types an endpoint binds, taken from the framework's own answer FIRST.
+    ///
+    /// E-2's finding is that this file reimplemented ASP.NET's binding rules informally, in the assertion, and
+    /// could drift from the real binder in either direction without anything failing. Its proposed remedy was to
+    /// split the one predicate in two, because the same predicate served SEC-2 and SEC-3/TEN-1 with opposite
+    /// error directions. Measured against a real host, there is a better remedy available and this is it: the
+    /// framework publishes what it inferred, as <see cref="IAcceptsMetadata"/> on the composed endpoint, so the
+    /// enumeration can ASK instead of guessing. `RequestType` is what RequestDelegateFactory decided the body is.
+    ///
+    /// The parameter walk is kept as a second net, for the case the metadata is absent (a custom binder, a
+    /// non-minimal-API endpoint added later). It errs toward scanning: a type it wrongly treats as a body costs a
+    /// walk over members that are not posted, which is a false positive a human reads, while a body it misses is
+    /// invisible and green.
+    /// </summary>
+    private static IEnumerable<Type> BodyTypes(RouteEndpoint endpoint, IServiceProviderIsService isService)
+    {
+        var declared = endpoint.Metadata.GetMetadata<IAcceptsMetadata>()?.RequestType;
+        if (declared is not null)
+        {
+            yield return declared;
+        }
+
+        var method = endpoint.Metadata.OfType<MethodInfo>().FirstOrDefault();
+        if (method is null)
+        {
+            yield break;
+        }
+
+        foreach (var parameter in method.GetParameters())
+        {
+            if (parameter.ParameterType != declared && IsBodyDto(parameter.ParameterType, isService))
+            {
+                yield return parameter.ParameterType;
             }
         }
     }
@@ -252,7 +311,7 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
     [Fact]
     public void Body_member_walk_reaches_every_depth_and_terminates_on_a_cycle()
     {
-        var names = BindableMemberNames(typeof(DeepRequest)).ToList();
+        var names = BodyMemberWalk.MemberNames(typeof(DeepRequest)).ToList();
 
         Assert.Contains("Title", names);                       // depth 0
         Assert.Contains("CreatedBy", names);                   // depth 1, through a nested record property
@@ -263,13 +322,137 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
         Assert.Single(names.Where(n => n == "CreatedBy").Take(1));
 
         // A server-controlled field at depth 2 is what the registry has to see for SEC-2's statement to hold.
-        Assert.Contains(names, n => ServerControlledFields.Names.Contains(n, StringComparer.OrdinalIgnoreCase));
+        Assert.Contains(names, ServerControlledFields.Matches);
 
         // Self-reference terminates rather than stack-overflowing, which is why `seen` is a cycle set.
-        Assert.Contains("Next", BindableMemberNames(typeof(CyclicNode)).ToList());
+        Assert.Contains("Next", BodyMemberWalk.MemberNames(typeof(CyclicNode)).ToList());
     }
 
-    private static IEnumerable<string> ParameterNames(RouteEndpoint endpoint)
+    /// <summary>
+    /// The enumerations, checked against the REAL BINDER rather than against a reading of it. This is the test
+    /// E-2 says did not exist: "a second, informal implementation of ASP.NET's binding rules living in the
+    /// assertion, and it can drift from the real binder without anything failing, in either direction".
+    ///
+    /// So for every type in the corpus, a throwaway host maps an endpoint whose one parameter is named `tenantId`
+    /// and typed with it, and the framework itself decides what that parameter is. Then the two enumerations this
+    /// file runs on the composed route table are run on that endpoint, and the rule is exact: if the framework
+    /// did not take the parameter as the body, TEN-1's scan must see the name `tenantId`; if it did, SEC-2's scan
+    /// must see the type's members. Every parameter lands in one surface or the other, and neither surface may
+    /// claim a parameter the other one owns.
+    ///
+    /// The corpus is E-2's own measured list plus the shapes the old predicate got right, so a narrowing that
+    /// reintroduces the hole fails here rather than in a later audit.
+    /// </summary>
+    [Fact]
+    public void Both_enumerations_agree_with_the_real_binder_over_a_corpus_of_parameter_types()
+    {
+        var isService = factory.Services.GetRequiredService<IServiceProviderIsService>();
+
+        Type[] corpus =
+        [
+            // E-2's measured disagreements: every one of these bound from the URL and was rejected by the old
+            // closed enumeration, so its name was compared against nothing.
+            typeof(TenantKey), typeof(TimeSpan), typeof(Uri), typeof(System.Net.IPAddress), typeof(Int128),
+            typeof(LegacyTryParseKey), typeof(TenantKey?),
+            // What the old enumeration already had, which a repair may not lose.
+            typeof(string), typeof(Guid), typeof(int), typeof(decimal), typeof(DateTimeOffset), typeof(DateOnly),
+            typeof(TimeOnly), typeof(DayOfWeek),
+            // And the body shapes, including the two the old predicate called URL-bound: an array of a scalar and
+            // an array of a value object are both posted bodies on a POST.
+            typeof(DeepRequest), typeof(Guid[]), typeof(TenantKey[]), typeof(List<DeepRequest>),
+        ];
+
+        foreach (var type in corpus)
+        {
+            var endpoint = ProbeEndpoint(type);
+            var body = endpoint.Metadata.GetMetadata<IAcceptsMetadata>()?.RequestType;
+            var urlNames = ParameterNames(endpoint, isService).ToList();
+            var bodyMembers = BodyTypes(endpoint, isService).SelectMany(BodyMemberWalk.MemberNames).ToList();
+
+            if (body is null)
+            {
+                Assert.True(urlNames.Contains("tenantId", StringComparer.Ordinal),
+                    $"The framework binds a '{type.Name}' parameter from the URL and the TEN-1/SEC-3 enumeration does not see its name (E-2).");
+            }
+            else
+            {
+                Assert.True(bodyMembers.Count > 0,
+                    $"The framework takes a '{type.Name}' parameter as the request body and the SEC-2 enumeration walked no member of it (E-2).");
+            }
+        }
+
+        // The other direction, and the only place a name may leave the scanned surface: what the pipeline supplies
+        // is not what a caller spells. If this list ever swallows a real parameter, these two are the canary.
+        foreach (var type in new[] { typeof(CancellationToken), typeof(HttpContext) })
+        {
+            Assert.DoesNotContain("tenantId", ParameterNames(ProbeEndpoint(type), isService));
+        }
+    }
+
+    /// <summary>
+    /// One endpoint, in a throwaway host, whose only parameter is named `tenantId` and typed as asked. The host is
+    /// built rather than mocked because the point of the test above is to consult the binder that actually runs,
+    /// and RequestDelegateFactory publishes its inference as endpoint metadata at map time.
+    /// </summary>
+    private static RouteEndpoint ProbeEndpoint(Type parameterType)
+    {
+        var app = WebApplication.CreateBuilder().Build();
+        var handler = typeof(EndpointSpineTests)
+            .GetMethod(nameof(TenantIdParameter), BindingFlags.NonPublic | BindingFlags.Static)!
+            .MakeGenericMethod(parameterType);
+
+        app.MapPost("/probe", handler.CreateDelegate(typeof(Func<,>).MakeGenericType(parameterType, typeof(string))));
+
+        return ((IEndpointRouteBuilder)app).DataSources.SelectMany(source => source.Endpoints).OfType<RouteEndpoint>().Single();
+    }
+
+    private static string TenantIdParameter<T>(T tenantId) => "ok";
+
+    /// <summary>
+    /// A tenant id wrapped in a strong type, which is E-2's exhibit: it implements the framework's own parse
+    /// interface, so the real binder takes it from a route or a query string, and the old closed enumeration of
+    /// `string`, `Guid`, primitives, enums, `decimal` and the date types did not recognize it. Wrapping an id in
+    /// a value object is the direction a codebase drifts INTO, which is what made this the dangerous half.
+    /// </summary>
+    private readonly record struct TenantKey(Guid Value) : IParsable<TenantKey>
+    {
+        public static TenantKey Parse(string s, IFormatProvider? provider) => new(Guid.Parse(s));
+
+        public static bool TryParse(string? s, IFormatProvider? provider, out TenantKey result)
+        {
+            var parsed = Guid.TryParse(s, out var value);
+            result = new TenantKey(value);
+            return parsed;
+        }
+    }
+
+    /// <summary>The pre-IParsable spelling of the same thing, which the binder still honours and the old
+    /// enumeration also missed.</summary>
+    private sealed class LegacyTryParseKey
+    {
+        public static bool TryParse(string? s, out LegacyTryParseKey result)
+        {
+            result = new LegacyTryParseKey();
+            return s is not null;
+        }
+    }
+
+    /// <summary>
+    /// The caller-supplied parameter names an endpoint exposes outside its body, and the enumeration is INVERTED
+    /// from what it used to be, which is E-2's repair.
+    ///
+    /// It used to ask "does this type bind from a URL?" through `BindsFromUrl`, a closed positive enumeration of
+    /// `string`, `Guid`, primitives, enums, `decimal` and the date types. Under-inclusion there is silent and it
+    /// is the direction a codebase drifts INTO: wrapping a tenant id in a strong type (`TenantKey : IParsable`)
+    /// left TEN-1's named mechanism with nothing to compare, and so did `TimeSpan`, `Uri`, `IPAddress`, `Int128`
+    /// and every legacy `TryParse` type, all measured against a real host.
+    ///
+    /// So nothing here asks what binds from a URL. It asks what is accounted for otherwise: the framework's own
+    /// declared body type, a registered service, and the handful of infrastructure types the binder supplies
+    /// itself. Everything else is a value a caller can spell, and its name is compared. A type nobody has
+    /// thought of is inside the surface by default instead of outside it, which is the whole difference.
+    /// </summary>
+    private static IEnumerable<string> ParameterNames(RouteEndpoint endpoint, IServiceProviderIsService isService)
     {
         foreach (var parameter in endpoint.RoutePattern.Parameters)
         {
@@ -281,6 +464,8 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
         {
             yield break;
         }
+
+        var body = endpoint.Metadata.GetMetadata<IAcceptsMetadata>()?.RequestType;
 
         foreach (var parameter in method.GetParameters())
         {
@@ -295,13 +480,32 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
                 {
                     yield return property.Name; // every property of an [AsParameters] wrapper binds from route/query
                 }
+
+                continue;
             }
-            else if (BindsFromUrl(parameter.ParameterType))
+
+            if (parameter.ParameterType == body
+                || parameter.GetCustomAttributes(inherit: true).OfType<IFromBodyMetadata>().Any()
+                || IsInfrastructure(parameter.ParameterType)
+                || isService.IsService(parameter.ParameterType))
             {
-                yield return parameter.Name;
+                continue;
             }
+
+            yield return parameter.Name;
         }
     }
+
+    /// <summary>
+    /// The types the binder supplies from the request pipeline rather than from anything a caller writes in a URL.
+    /// This is a closed list on purpose and it is the one place a name can leave the scanned surface, so it holds
+    /// only types no caller can spell a value for. Getting it wrong costs a false positive, not a hole.
+    /// </summary>
+    private static bool IsInfrastructure(Type type) =>
+        type == typeof(HttpContext) || type == typeof(HttpRequest) || type == typeof(HttpResponse)
+        || type == typeof(CancellationToken) || type == typeof(ClaimsPrincipal)
+        || type == typeof(Stream) || type == typeof(System.IO.Pipelines.PipeReader)
+        || type == typeof(IFormFile) || type == typeof(IFormFileCollection) || type == typeof(IFormCollection);
 
     /// <summary>
     /// Every header name an endpoint declares a binding for, taken from the framework's own
@@ -347,11 +551,14 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
     /// <summary>
     /// Header names are spelled with separators and a conventional vendor prefix that carry no meaning:
     /// `X-Tenant-Id`, `Tenant-Id`, `tenant_id` and `TenantId` are one name. Reduced to alphanumerics and
-    /// lowercased so the existing whole-string registry matches them, with a leading `x` dropped only when the
-    /// source actually spelled a vendor prefix, so a header genuinely named `XTenant` is not silently rewritten.
+    /// lowercased, with a leading `x` dropped only when the source actually spelled a vendor prefix, so a header
+    /// genuinely named `XTenant` is not silently rewritten.
     ///
-    /// E-9's cost applies here too and is not hidden: this is equality against an enumerated registry, so a
-    /// novel spelling escapes it. What it no longer does is miss the spellings a caller would actually reach for.
+    /// Note what the normalization destroys and what now survives it. Compacting `X-Tenant-Id` to `tenantid`
+    /// removes every boundary, so a token matcher has nothing left to work with; E-9 measured that this is not an
+    /// incidental loss but a structural one on the header surface, since the sibling's runtime lowercases header
+    /// names before any hook sees them. The comparison this feeds resolves concatenations, so the compacted
+    /// spelling is matched by the base entry rather than by a list of pre-glued spellings.
     /// </summary>
     private static string NormalizeHeaderName(string header)
     {
@@ -363,33 +570,30 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
         return hasVendorPrefix && compact.Length > 1 ? compact[1..] : compact;
     }
 
-    private static bool BindsFromUrl(Type type)
-    {
-        type = Nullable.GetUnderlyingType(type) ?? type;
-
-        if (type.IsArray)
-        {
-            return BindsFromUrl(type.GetElementType()!);
-        }
-
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-        {
-            return BindsFromUrl(type.GetGenericArguments()[0]);
-        }
-
-        return type == typeof(string) || type == typeof(Guid) || type.IsPrimitive || type.IsEnum
-            || type == typeof(decimal) || type == typeof(DateTimeOffset) || type == typeof(DateTime)
-            || type == typeof(DateOnly) || type == typeof(TimeOnly);
-    }
-
+    /// <summary>
+    /// A type the binder fills from a single string, so it is never a body and has no members worth walking.
+    ///
+    /// This is what survives of `BindsFromUrl` after E-2, and the change is the question it answers. It used to
+    /// be asked "does this bind from a URL?", which made it a second, informal implementation of ASP.NET's
+    /// binding rules living in an assertion, free to drift from the real binder in either direction with nothing
+    /// failing. Nothing asks it that any more: the URL surface is enumerated by exclusion and the body surface
+    /// comes from the framework's own metadata. What is left is a question about the type itself.
+    ///
+    /// It deliberately does NOT unwrap arrays or collections. Measured against a real host, `Guid[]` on a POST
+    /// arrives as the body, so an array is a body candidate here even though each element is scalar.
+    /// </summary>
+    // The null-namespace exclusion is gone, which is the second half of E-6. It was never written down and it
+    // skipped every type declared in a file with top-level statements: a public DTO in `Program.cs` has no
+    // namespace, so it bound, returned 200, and was outside this scan entirely. E-15 records that the same file is
+    // exempted by NamingPlacementTests and was outside the TIME-1 scan too, so one DTO declared there escaped
+    // three mechanisms at once, by exemptions that were each written for an unrelated reason.
     private static bool IsBodyDto(Type type, IServiceProviderIsService isService)
     {
         type = Nullable.GetUnderlyingType(type) ?? type;
 
-        if (BindsFromUrl(type) || type == typeof(CancellationToken)
-            || type.Namespace is null
-            || type.Namespace.StartsWith("System", StringComparison.Ordinal)
-            || type.Namespace.StartsWith("Microsoft", StringComparison.Ordinal))
+        if (BodyMemberWalk.BindsAsScalar(type) || type == typeof(CancellationToken)
+            || type.Namespace?.StartsWith("System", StringComparison.Ordinal) == true
+            || type.Namespace?.StartsWith("Microsoft", StringComparison.Ordinal) == true)
         {
             return false;
         }
@@ -397,83 +601,5 @@ public sealed class EndpointSpineTests(KernelApiFactory factory) : IClassFixture
         // A DI service parameter is not a body; anything else the JSON binder fills from the request body, whether
         // via writable/init properties or a parameterized constructor (an immutable record or class).
         return !isService.IsService(type);
-    }
-
-    // Names the JSON binder can populate: public instance properties AND constructor parameters, because an
-    // immutable DTO carries its server-controlled field only as a get-only property fed by the constructor.
-    //
-    // Recursive since the E-10 repair, and the depth is the whole point of it. This walk was flat, and both
-    // `kernel/dotnet-react/README.md` and the SEC-2 row of conformance.json said it was not: they claimed the
-    // scan covered body DTOs "nested and immutable constructor-bound DTOs included", and the constructor half
-    // was true while the nested half had never been implemented. A request of the shape
-    // `CreateNoteRequest(string Title, AuthorDto Author)` with `CreatedBy` on `AuthorDto` passed both SEC-2
-    // guards. The general statement E-10 makes is that where a mechanism's surface is a nested declaration, the
-    // completeness obligation is not "the enumeration cannot miss a member" but "cannot miss a member AT ANY
-    // DEPTH", and a scan that stops at level zero satisfies a claim about level zero only.
-    //
-    // `seen` is cycle protection, not a depth cap: a self-referential DTO is legal and must terminate, and there
-    // is deliberately no maximum depth, because a maximum depth is the same bug with a larger constant.
-    private static IEnumerable<string> BindableMemberNames(Type type) =>
-        BindableMemberNames(type, []);
-
-    private static IEnumerable<string> BindableMemberNames(Type type, HashSet<Type> seen)
-    {
-        if (!seen.Add(type))
-        {
-            yield break;
-        }
-
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            yield return property.Name;
-
-            foreach (var nested in Bindable(property.PropertyType).SelectMany(t => BindableMemberNames(t, seen)))
-            {
-                yield return nested;
-            }
-        }
-
-        foreach (var parameter in type.GetConstructors().SelectMany(constructor => constructor.GetParameters()))
-        {
-            if (parameter.Name is not null)
-            {
-                yield return parameter.Name;
-            }
-
-            foreach (var nested in Bindable(parameter.ParameterType).SelectMany(t => BindableMemberNames(t, seen)))
-            {
-                yield return nested;
-            }
-        }
-    }
-
-    /// <summary>
-    /// The types reachable from a member's declared type that the JSON binder would itself populate: the type,
-    /// unwrapped through Nullable, arrays and generic arguments, and only where it is not a leaf the binder fills
-    /// from a scalar. `IReadOnlyList&lt;NoteInput&gt;` yields `NoteInput`; `string` and `Guid` yield nothing.
-    ///
-    /// Note what is NOT excluded here and IS excluded in IsBodyDto: a null namespace. E-6 records that
-    /// `IsBodyDto` carries a fifth, unwritten exclusion, `type.Namespace is null`, which skips a DTO declared in
-    /// `Program.cs` (top-level statements, so no namespace) entirely. A nested type has no reason to inherit that
-    /// exemption, so descent does not apply it.
-    /// </summary>
-    private static IEnumerable<Type> Bindable(Type type)
-    {
-        type = Nullable.GetUnderlyingType(type) ?? type;
-
-        if (type.IsArray)
-        {
-            return Bindable(type.GetElementType()!);
-        }
-
-        if (type.IsGenericType)
-        {
-            return type.GetGenericArguments().SelectMany(Bindable);
-        }
-
-        var framework = type.Namespace?.StartsWith("System", StringComparison.Ordinal) == true
-            || type.Namespace?.StartsWith("Microsoft", StringComparison.Ordinal) == true;
-
-        return BindsFromUrl(type) || type.IsPrimitive || framework ? [] : [type];
     }
 }

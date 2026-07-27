@@ -18,6 +18,63 @@ The quarantine at the time of writing each step 2: the `mechanism` column of `ke
 the generated conformance table in `kernel/dotnet-react/README.md`, `kernel/dotnet-react/server/tests/Kernel.Tests.Architecture/**`,
 and the proof tables in `kernel/dotnet-react/VERIFICATION.md`.
 
+## The research phase is closed (owner's direction, 2026-07-27)
+
+Step 2, the blind design written before the sibling is opened, is closed. No further claim gets one. The eight
+already written stand as recorded, unedited, and the protocol's definition stays in this file and in
+`kernel/node-react/BUILD-BRIEF.md` because it defines a method rather than describing a mechanism, which is what
+E-21 ruled is kept.
+
+**The owner's reason.** Step 2 existed to make portability findings falsifiable: a finding of the form "the claim
+did not say X" is worth nothing if the design that found X was written after reading a realization that supplied
+it. That purchase is real, and it is a purchase on FINDINGS. The remaining work is not hunting findings. It is
+planting violations against guards to establish whether each row is honest, and a blind design buys nothing
+there, because a plant is falsifiable on its own terms: the guard goes red naming the claim, or it does not.
+Paying the quarantine's cost for a benefit the work no longer needs is the trade being declined.
+
+**What closing it changes.** The 61 claims that never got a step 2 do not owe one. Any record that gates a status
+or a piece of work on "this claim's delta pass" is stating a fact about a closed procedure, not about a
+mechanism, and is corrected where it appears: `kernel/node-react/README.md`'s conformance section and the
+`Sixty-one claims still owe a step 2` section of `record/adjudication-digest.md`. For 36 of those 61 no delta was
+ever possible in any case, because the claim is `owed` in the .NET edition too and a delta needs two realizations
+to sit between.
+
+## What the quarantine does not cover, and what is done about it (ruled 2026-07-27)
+
+This register is not in the quarantine and cannot be. It is what a pass reads to know what has already been
+found, and findings quote realizations in order to be checkable at all: E-22 exists because the register could
+name a registry that had never been applied to a body member. So a finding about one claim informs another
+whenever it names that other claim's artifact, and S-12 asked whether the protocol survives that.
+
+It survives, and the size is measured rather than argued. `tools/docs-lint.mjs` now emits a **register leak
+report**: for each finding it takes the artifacts the finding names and the claim the finding is about, and
+reports every claim that OWNS a named artifact and is not the subject. It reports and never fails, because a
+blocking form would have refused both E-6 and E-22, the two findings that did the most work here.
+
+Three things make the report the whole answer, with no per-claim `[informed]` label behind it.
+
+- **The strong worry is refuted by this file's own history.** Every step 2 in it, round 1's included, was written
+  under the `Edition:` bullet the claim file carried, so all eight were informed before ruling 1 removed the
+  bullets. They produced A-1 through A-5, E-10 and E-22, and DATA-5's informed prediction was informed by a
+  sentence describing a facility the edition does not have: being informed handed that pass a false belief to
+  falsify, which an uninformed pass would not have had. Contamination has never been measured to cost a finding.
+  The one time it was reported to, in S-12, the premise was measured false.
+- **The report dated into a round's ledger IS the marking.** The register only grows, so a run today over-reports
+  what a step 2 written six rounds ago could have seen. A dated snapshot is the only honest answer to "was this
+  informed WHEN IT WAS WRITTEN", and a hand-maintained label per claim would drift where the snapshot cannot.
+- **The leak shrinks by design pressure, not by discipline.** Most of it comes from claims that share a
+  realization, so a claim given a realization of its own stops being leakable. That is a property of the edition,
+  which can be changed, rather than of the protocol, which cannot.
+
+**Standing instruction:** a build round begins by pasting the current report under its heading. A finding in that
+round that asserts a claim's independence ("the claim did not say X") is checked against the snapshot first.
+
+**Snapshot, 2026-07-27.** The .NET report names 12 of 69 claims. Seven are already burned by their own step 2,
+so the live cost is **five of the 61 claims that still owe one**: AI-1 (`ToolExecutor`), CON-1
+(`WireConventionTests`), MOD-2 and TEST-1 (`NamingPlacementTests`), SEC-4 (`HostSecurityTests`,
+`SessionVersionMiddleware`). The Node report names five, all of them already burned, so no owing claim is
+informed about the Node edition.
+
 ## Round 1 (2026-07-26): the four route-seam claims
 
 SEC-1, SEC-3, SEC-2 and TEN-1 all scan the route table, which the Phase 2 scaffold already bought. All four

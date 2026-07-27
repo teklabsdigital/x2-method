@@ -109,10 +109,26 @@ generated from that record: edit the JSON, never the table.
 
 The four statuses mean what they mean in the catalog: `proven` (a mechanism exists and a test proves it binds),
 `patterned` (the mechanism exists and is followed, with a named gap), `latent` (the mechanism exists but has had
-no real subject yet), `owed` (not built, with a named trigger). Every row here is `owed`, and every trigger names
-the claim's own delta pass, because the delta protocol requires the Node mechanism to be designed from the claim
-text before the sibling edition's realization is opened. Rows whose sibling is also `owed` carry that claim's
-product trigger too, since a claim waiting on the first message broker waits in every edition.
+no real subject yet), `owed` (not built, with a named trigger).
+
+**A row's status is what a guard does, never what a process has reached.** Until 2026-07-27 this section said
+every row was `owed` because the delta protocol required each Node mechanism to be designed from the claim text
+before the sibling's realization was opened. That sentence was false twice over. It was false as arithmetic, four
+rows already read `proven`. It was false in kind, and that is the part worth naming: it made an `owed` status
+mean "this claim has not had its delta pass" when the vocabulary defines it as "not built, with a named trigger".
+Those are different facts, and a reader seeding from this record cannot tell them apart. The delta pass is a
+research procedure this edition ran to make portability findings falsifiable; the owner closed its research phase
+on 2026-07-27 (see `record/delta-log.md`), so it can no longer gate anything, and it should not have gated a
+status while it was open.
+
+The measured consequence is that this record UNDERSTATES the tree, which is the rarer and less dangerous
+direction but is still a record that cannot be honestly seeded from. Several claims are realized in the shared
+tier, composed into this edition, and passing here while their rows read "not built": the token, lint, fidelity
+and smoke mechanisms behind the UI family, the redactor behind SEC-6, the naming and placement test behind MOD-2,
+and docs-lint itself behind DOC-1. Correcting them is planting work, one claim at a time, not a bulk flip: a row
+moves when a violation planted against that claim's own obligation turns that claim's own guard red, and not
+before. Rows whose sibling is also `owed` carry that claim's product trigger too, since a claim waiting on the
+first message broker waits in every edition.
 
 <!-- conformance:begin -->
 Generated from `conformance.json` by `tools/conformance.mjs`; edit the JSON, not the table.

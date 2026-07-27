@@ -1,11 +1,20 @@
 ---
 kind: decision
-status: authoritative
+status: archived
 ---
 
 # BUILD BRIEF: kernel/dotnet-react/ v1 edition
 
-Handover from the Fable extraction session (2026-07-10) to the builder session (Opus 4.8). This brief plus the claims catalog is the complete spec. If this brief and a claim file disagree, the claim file wins. If any document and running code disagree, the code wins and you surface the disagreement.
+**Archived 2026-07-27 (E-21). This is provenance, not a specification.** It records what v1 was built from on
+2026-07-10 and is deliberately not brought forward. Several mechanisms it describes have since been replaced: the
+anonymous allowlist is a `(Method, Pattern, Why)` record array with staleness and justification checks rather than
+the string set below (E-8), the fallback policy is resolved from `IAuthorizationPolicyProvider` and EVALUATED
+rather than asserted non-null (E-7), registry comparison is over base words rather than exact lowercase match
+(E-9), and `TimeTypeTests` derives its assemblies rather than naming three (E-15). For what the edition enforces
+today, read `conformance.json`, the generated table in `README.md`, and the tests themselves. Bringing this file
+forward instead would make it a second live description of the mechanisms, which is the defect E-19 records.
+
+Handover from the Fable extraction session (2026-07-10) to the builder session (Opus 4.8). This brief plus the claims catalog was the complete spec at that date. If this brief and a claim file disagree, the claim file wins. If any document and running code disagree, the code wins and you surface the disagreement.
 
 ## Standing constraints (non-negotiable)
 

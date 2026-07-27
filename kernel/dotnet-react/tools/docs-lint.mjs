@@ -412,6 +412,16 @@ for (const { file, rel } of allFiles) {
 // PascalCase directory convention into a portable gate: a Node edition puts the same two surfaces in
 // lowercase directories and would have failed HUM-1 for spelling. The categories cannot be dropped or renamed
 // by an edition, so declaring them costs an edition nothing it should have been free to skip.
+// The kernel repo is detected by BUILD-BRIEF.md and VERIFICATION.md, which the instantiation manifest keeps
+// behind: their presence means this tree is the kernel itself, so structural placeholders are legal here and
+// illegal everywhere downstream. Two claims read it, HUM-1's owner placeholder below and DEP-1's provenance pin.
+const kernelContext = existsSync(join(editionRoot, 'BUILD-BRIEF.md')) && existsSync(join(editionRoot, 'VERIFICATION.md'));
+
+// The owner the kernel ships is a placeholder by design; step 1 of the instantiation manifest renames it. It
+// matches the `\s@\S+` shape an owned entry needs, so before this check a seeded project passed HUM-1's whole
+// locally testable half with every irreversible surface owned by nobody (E-23).
+const PLACEHOLDER_OWNER = '@OWNER';
+
 const IRREVERSIBLE_SURFACES = {
   'schema-migrations': 'a schema migration is not revertible once it has run against real data',
   'wire-contracts': 'a published contract shape cannot be unpublished from its consumers',
@@ -440,8 +450,18 @@ if (edition) {
       // A declared surface no CODEOWNERS line covers is a surface with no named human, which is the whole of
       // what this half of HUM-1 asserts. The path may name a directory that does not exist yet: naming the owner
       // BEFORE the first migration lands is the point, not an oversight.
-      if (codeowners !== null && !codeowners.some((line) => line.includes(path) && /\s@\S+/.test(line))) {
+      if (codeowners === null) continue;
+      const covering = codeowners.filter((line) => line.includes(path) && /\s@\S+/.test(line));
+      if (covering.length === 0) {
         fail(`.github/CODEOWNERS: no owned entry covering '${path}' (the ${surface} surface) (HUM-1).`);
+        continue;
+      }
+      // Covered is not owned. An entry naming only the shipped placeholder names no human, so outside the kernel
+      // the surface is unowned and the merge gate it feeds has nobody to require a review from.
+      const named = covering.some((line) =>
+        (line.match(/\s@\S+/g) ?? []).some((owner) => owner.trim() !== PLACEHOLDER_OWNER));
+      if (!kernelContext && !named) {
+        fail(`.github/CODEOWNERS: '${path}' (the ${surface} surface) is owned only by the placeholder ${PLACEHOLDER_OWNER}, which names no human; instantiation renames it to the product owner (HUM-1).`);
       }
     }
   }
@@ -449,9 +469,8 @@ if (edition) {
 
 // DEP-1: the kernel a project is seeded from is itself a pinned, ledgered dependency. VERSIONS.md carries a
 // Kernel provenance section: structural placeholders in the kernel repo, filled mechanically at instantiation.
-// The kernel context is detected by BUILD-BRIEF.md and VERIFICATION.md, which the instantiation manifest keeps
-// behind: their presence means this tree is the kernel itself, and the placeholders are legal.
-const kernelContext = existsSync(join(editionRoot, 'BUILD-BRIEF.md')) && existsSync(join(editionRoot, 'VERIFICATION.md'));
+// The kernel context is detected above, by BUILD-BRIEF.md and VERIFICATION.md, which the instantiation manifest
+// keeps behind: their presence means this tree is the kernel itself, and the placeholders are legal.
 const provStart = versions.indexOf('## Kernel provenance');
 if (provStart < 0) {
   fail('VERSIONS.md: no Kernel provenance section; the kernel is a dependency and its pin lives here (DEP-1).');
@@ -588,6 +607,86 @@ if (!existsSync(registerFile)) {
   }
   for (const [id, where] of [...dangling].sort()) {
     fail(`finding id '${id}' is cited in ${[...where].sort().join(', ')} but has no entry in the findings register; a citation is not a definition.`);
+  }
+
+  // The register leak report (S-12). REPORTS, never fails, and the distinction is the finding.
+  //
+  // The delta protocol says a claim's second-edition mechanism is designed from the claim text alone, before its
+  // sibling's realization is opened, so that a finding of the form "the claim did not say X" is falsifiable. The
+  // quarantine covers the sibling's code. It cannot cover the register, because the register is what a pass must
+  // read to know what has already been found, and findings quote realizations to be checkable at all: E-22 exists
+  // because the register could name a registry that had never been applied to a body member.
+  //
+  // What is checkable is the route by which the register informs a claim other than the one a finding is about:
+  // the finding names an artifact that the conformance record attributes to a DIFFERENT claim. Two shapes reach
+  // this, and the first draft of this check saw only one. A fused realization leaks to every claim that shares
+  // it, which is the `EndpointSpineTests` case and the loud one. But a finding also reaches sideways and names a
+  // neighbour's artifact it does not share, which is how E-22, a finding about SEC-2 and TEN-1, informed CON-1.
+  // Requiring the artifact to be shared missed that entirely, so the rule is owner-differs-from-subject and
+  // nothing narrower.
+  //
+  // Reporting rather than failing is what #2 of the S-12 ruling settled, and a blocking form would have refused
+  // both E-6 and E-22, the two findings that did the most work in the whole exercise. What makes the report an
+  // instrument rather than a decoration is that its output is DATED into the round's ledger: the register only
+  // grows, so a run today over-reports what a step 2 written six rounds ago could have seen. The snapshot is the
+  // only honest answer to "was this informed WHEN IT WAS WRITTEN", and it is cheaper and less driftable than a
+  // hand-maintained `[informed]` label per claim.
+  //
+  // Two limits, both stated because a check whose reach is unstated gets read as a proof. It sees QUOTED
+  // artifacts, so a finding that describes a sibling's mechanism in prose without naming anything leaks and is
+  // invisible here; the report is a lower bound and the residual is the finding author's own honesty. And it
+  // over-reports in the other direction, because a mechanism string names framework vocabulary alongside its own
+  // artifacts: the Node edition's SEC-2 row cites `allOf` and `anyOf`, so those read as artifacts. Filtering them
+  // would mean maintaining a vocabulary registry, which is the drift this catalog already has findings about, and
+  // over-reporting into an advisory note is the safe direction. Read the claim list as the instrument and the
+  // token list as the citation to check by eye.
+  //
+  // An artifact is a backticked identifier that is either compound-cased or a file basename. That is deliberately
+  // stack-neutral: the .NET rows name test classes, the Node rows name functions, and a Tests-suffix convention
+  // would have read one edition and been blind to the other. The extension is stripped on both sides, because
+  // `HostSecurityTests.cs` in a finding and `HostSecurityTests` in a mechanism are the same artifact, and
+  // comparing them literally is the equality-versus-tokenized-match defect this catalog has now recorded twice.
+  if (conformance.record && conformance.errors.length === 0) {
+    const ARTIFACT = /`([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*)`/g;
+    // Both the whole token and its leading segment, because a register entry cites an artifact three ways: bare
+    // (`HostSecurityTests`), as a file (`HostSecurityTests.cs`), and member-qualified
+    // (`WireConventionTests.Unknown_route_returns_problem_json`, which is how CON-1 leaked and how the first
+    // draft of this check missed it). The compound-case filter is what keeps the segment split from producing
+    // noise: `builder.Build()` and `Type.Name` both yield a lowercase or single-word head and are dropped.
+    const artifacts = (text) =>
+      [...text.matchAll(ARTIFACT)]
+        .flatMap(([, token]) => [token.replace(/\.(cs|ts|tsx|mjs|js|json|md)$/, ''), token.split('.')[0]])
+        .filter((token) => /[a-z][A-Z]/.test(token));
+
+    const owner = new Map();
+    for (const [id, row] of Object.entries(conformance.record.claims)) {
+      for (const token of artifacts(row.mechanism ?? '')) {
+        owner.set(token, (owner.get(token) ?? new Set()).add(id));
+      }
+    }
+
+    // A finding is delimited by the next one, and its subject is its own `Claim:` line. Everything the finding
+    // names that some OTHER claim owns is what that other claim's step 2 can no longer un-see.
+    const informed = new Map();
+    for (const section of register.split(/^### /m).slice(1)) {
+      const subject = new Set(section.match(/\*\*Claim:\*\*[^\n]*/)?.[0].match(/\b[A-Z]{2,6}-\d+\b/g) ?? []);
+      for (const token of artifacts(section)) {
+        for (const claim of owner.get(token) ?? []) {
+          if (!subject.has(claim)) {
+            informed.set(claim, (informed.get(claim) ?? new Set()).add(token));
+          }
+        }
+      }
+    }
+    if (informed.size > 0) {
+      const listed = [...informed]
+        .sort()
+        .map(([claim, tokens]) => `${claim} (${[...tokens].sort().join(', ')})`)
+        .join('; ');
+      notes.push(
+        `register leak report (S-12), ${informed.size} of ${Object.keys(conformance.record.claims).length} claims informed by a finding about another claim: ${listed}`,
+      );
+    }
   }
 }
 

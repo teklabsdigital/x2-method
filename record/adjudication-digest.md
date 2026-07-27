@@ -74,6 +74,32 @@ window and carries GHSA-r28c-9q8g-f849. Under the ruling the advisory outranks t
 and never reconciled against either edition's mechanism column. 61 claims still owe a step 2, and that
 reconciliation would destroy it for all of them. Ruling 1 was applied under that constraint.
 
+## RULED, 2026-07-27: the three points the raise pass left with the owner
+
+Not part of the eleven. These are the questions the raise pass handed back rather than deciding, worked one at a
+time.
+
+| Point | Decision | Applied? |
+|---|---|---|
+| 1. `ContractShapeTests` versus MOD-2's step 2 | **No decision existed.** The premise was measured false | **Applied.** MOD-2's row names `NamingPlacementTests`; the file names MOD-2 zero times and its own summary names SEC-2. The repair the premise had blocked for three rounds was made: one shared `BodyMemberWalk`, the registry comparison through `NameComparison`, and E-22, a tenant registry that had never been applied to a body member on any surface. SEC-2 and TEN-1 back to `proven`, tally 21/6/2/40 to 23/6/2/38 |
+| 2. S-12's structural half: is the quarantine maintainable, given the register cannot be quarantined? | **Yes. Detect and report, do not prevent, and do not label.** The report never fails and nothing is redone | **Applied.** `docs-lint` gains the register leak report, composed into both editions, control-proven by plant (12 claims to 14, reverted). Measured: 12 of 69 in .NET, 7 already burned, so five of the 61 owing claims are informed. Ruling and snapshot written into `record/delta-log.md`; S-12 re-graded a second time |
+| 3. E-21: is `BUILD-BRIEF.md` an archive or a spec? | **Archive, for the .NET brief. Spec, for the Node one.** Neither is deleted | **Applied.** `kernel/dotnet-react/BUILD-BRIEF.md` moves to `status: archived` with a dated paragraph naming the four mechanisms that moved and pointing at the conformance record as what the edition enforces today. `kernel/node-react/BUILD-BRIEF.md` stays `authoritative`: it is the only definition of the delta protocol and of the A/B/C failure classes that type this register's findings |
+
+**Why point 3 deletes nothing.** The question arrived as a deletion, on the grounds that documentation drifts and
+that this file being about .NET rather than Node proved it already had. Both halves measured false. There are two
+briefs, one per edition, and the Node one is not documentation: it is the only place the delta protocol and the
+A/B/C failure classes are defined, so deleting it deletes the specification of the method that produced this
+digest. And neither is deletable as a documentation act, because `docs-lint` detects the kernel context by the
+presence of `BUILD-BRIEF.md` and `VERIFICATION.md`; moving the .NET brief aside produces three DEP-1 failures.
+The rule that survives: prose describing a mechanism drifts and should be archived, prose defining the method
+cannot drift and must not be.
+
+**Why point 2 rules out the label.** Contamination has never been measured to cost a finding. All eight step 2s
+in the delta log were written informed, through the `Edition:` bullet ruling 1 removed, and DATA-5's was informed
+by a sentence naming a facility the edition does not have. The report dated into a round's ledger does the work a
+per-claim `[informed]` label would, and does it better: the register only grows, so a snapshot is the only honest
+answer to what a step 2 could have seen when it was written, and a snapshot cannot drift.
+
 ## Decision sheet
 
 | # | Ruling | One-line question | Recommended | Falsifies a shipped `proven`? |
@@ -718,12 +744,24 @@ E-11 was demonstrated by injection throughout.
 The E-3 client bump, the .NET integration tier, `scripts/e2e.sh`, the UI-5 smoke, and CI never having executed
 on GitHub. Named so their absence from the rulings above is deliberate rather than an oversight.
 
-## Sixty-one claims still owe a step 2
+## Sixty-one claims owed a step 2, and no longer do (corrected 2026-07-27)
 
-Nothing above builds a claim. The reason this pass ran before another build round stands measured: 9 of 33
-non-`owed` rows in the catalog's own index already escape the status vocabulary in prose, 4 of 5 built claims
-with separable obligations cannot be honestly statused, and every further round re-injures itself on the same
-defect. Rulings 1 and 3 are what make the next round's result recordable.
+**The heading above was false in both of its halves and is kept so the correction is legible.**
+
+It was false in arithmetic. 36 of those 61 claims are `owed` in the .NET edition too. A delta is the difference
+between two realizations, so where there is no sibling realization there is nothing a step 2 could be measured
+against; those 36 could never have owed one.
+
+It was false in kind. The delta protocol's research phase was closed by the owner on 2026-07-27, so the debt it
+describes no longer exists for any of the 61. `record/delta-log.md` carries the closure and the reason: step 2
+buys falsifiability for FINDINGS, and the remaining work is planting violations against guards, which is
+falsifiable on its own terms.
+
+What the paragraph got right is worth keeping, because it is why this pass ran before another build round: 9 of
+33 non-`owed` rows in the catalog's own index escaped the status vocabulary in prose, 4 of 5 built claims with
+separable obligations could not be honestly statused, and every further round re-injured itself on the same
+defect. Rulings 1 and 3 are what make a round's result recordable, and the round that followed proved it twice
+over, once by lowering HUM-1 and TEST-3 onto per-obligation arrays whose weakest half is `owed` (E-23, E-24).
 
 # If the rulings land
 
