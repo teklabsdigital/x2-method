@@ -1304,3 +1304,49 @@ coverage line is red for that reason) and UI-5's composed-entrypoint smoke (it n
 Architecture 157, unit 58, integration 4 skipped (no engine), client 65, compose 39 shared files in 2 editions,
 both conformance records ok at 69 rows, both docs-lints ok, both self-tests ok, both gate-check self-tests ok,
 dash scans 0 and 0.
+
+## 2026-07-27, the instantiation manifest defects (E-25, E-26, E-27, E-65)
+
+Surveyed by a read-only agent at e82fc4a and verified independently before anything was applied. Two of its
+corrections changed what got done, so they are recorded rather than absorbed: E-26 names five documentation sites
+and there are eight across seven files, and E-27's status half had already been repaired, which makes its opening
+line stale as written.
+
+### E-26, measured both ways
+
+| state | boot, exactly as the runbook says | architecture suite |
+|-------|-----------------------------------|--------------------|
+| at ad8ff35 | `Now listening on: http://localhost:5000` | 157 pass |
+| plus `Properties/launchSettings.json` | `Now listening on: http://localhost:5080` | 157 pass |
+
+One file rather than eight rewrites, because port 5000 is claimed by the macOS AirPlay Receiver and is the likely
+reason 5080 was chosen. The suite result is the check that mattered: `SecretConfigShapeTests` scans committed
+JSON under `server/src` and this adds one.
+
+`scripts/e2e.sh` had justified its explicit `ASPNETCORE_URLS` with "because launchSettings.json only applies
+under `dotnet run`", naming a file that did not exist. That comment is plausibly why the gap survived a review.
+
+### E-25 and E-27
+
+Part A enumerates `.claude/` and `secret-scan.allow.json` and states that the enumeration is the file set. The
+straight-copy reading was wrong in both directions: it dropped two tracked files and it took the gitignored
+`.env`, which holds a live development SA password. `skills/seed/SKILL.md` had asserted the hook was in the file
+set while the manifest did not list it; the skill was right and the definition it executes was wrong.
+
+Part C gains the secret scan, which it had omitted while step 4 required the `secret-scan` job to be armed.
+
+Step 6 stops demanding an artifact that cannot exist when it runs and hands the import back to x2:lock, whose
+done-checks were already the same list.
+
+### E-65
+
+The node edition gains an instantiation manifest, written from the measured delta rather than copied. Step 4 says
+"every job the workflow declares" rather than a number, because this edition declares four and the sibling five;
+`gate-check.mjs` derives the names, so the readback line ports verbatim. Found while writing it: that README
+advertised the server as serving "on PORT (default 5080)", an env read `main.ts` had deliberately removed as
+CFG-1's own finding, so the README was still describing the anti-pattern the code was repaired to remove.
+
+### Gates
+
+Architecture 157, unit 58, integration 4 skipped, client 65, both docs-lints ok, both conformance records ok at
+69 rows, dash scans 0 and 0.

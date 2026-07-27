@@ -42,8 +42,10 @@ TOKEN_A="$(HARN_JWT_KEY="$JWT_KEY" HARN_JWT_ISSUER="$ISSUER" HARN_JWT_AUDIENCE="
 TOKEN_B="$(HARN_JWT_KEY="$JWT_KEY" HARN_JWT_ISSUER="$ISSUER" HARN_JWT_AUDIENCE="$AUDIENCE" node "$MINT" "$(uuidgen)" notes.read,notes.write)"
 
 # 3. Boot the server. Build first so the DLL runs as one killable process (dotnet run would fork a child the trap
-#    could miss). Development loads user-secrets; ASPNETCORE_URLS is set explicitly because launchSettings.json
-#    only applies under `dotnet run`.
+#    could miss). Development loads user-secrets; ASPNETCORE_URLS is set explicitly because this path runs the
+#    built DLL directly, where the launchSettings.json profile does not apply. That profile now exists and binds
+#    the documented 5080 for `dotnet run` and the .vscode task; until it did, this comment named a file that was
+#    not in the tree, which is plausibly why the gap survived (E-26).
 echo "Building the API..."
 dotnet build "$API_PROJECT" -clp:NoSummary >/dev/null
 echo "Starting the server (log: $SERVER_LOG)..."

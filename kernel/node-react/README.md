@@ -92,7 +92,7 @@ fails the build on any divergence, so a local edit to a composed copy cannot mer
 
 ```
 cd server && npm ci && npm run verify   # tsc, vitest, eslint
-cd server && npm start                  # serves /health on PORT (default 5080)
+cd server && npm start                  # serves /health on the port declared in server/config/settings.json
 cd client-web && npm ci && npm run verify
 node tools/docs-lint.mjs                # the documentation, ledger, and conformance gates
 node tools/conformance.mjs --check      # the record and its generated table
@@ -100,6 +100,72 @@ node tools/conformance.mjs --check      # the record and its generated table
 
 The server runs TypeScript directly on Node 24 (native type stripping), the same way the shared client's e2e
 harness does. `tsc --noEmit` is the type gate; there is no build step to keep in sync with the run step.
+
+## Instantiation manifest
+
+Same obligation and same shape as the sibling edition's, because it is the same kernel: a concrete file set, then
+ordered setup steps, then a verification set verified AS A SET rather than one bullet at a time from memory.
+x2:seed runs it and does not restate it. This edition shipped without one until 2026-07-27, so a seed would have
+reached step 2 of that skill and found no definition to run (E-65).
+
+**A. The file set** (copy into the new repo root): `server/`, `client-web/`, `docs/`, `tools/`, `design/`,
+`.github/` (workflow AND CODEOWNERS), `.gitignore`, `.gitattributes`, `VERSIONS.md`, `conformance.json`,
+`edition.json`, `secret-scan.allow.json`.
+
+This enumeration IS the file set, not a straight copy of the edition directory: a copy takes `node_modules/` and
+`dist/`. BUILD-BRIEF.md and VERIFICATION.md stay behind (kernel provenance, not project material), and so does
+THIS README, because the seeded project writes its own. Two things the sibling ships that this edition does not,
+listed here so their absence is a decision rather than an oversight: there is no `scripts/` and no `.vscode/`,
+and there is no `.claude/` prompt-submit hook, which the sibling carries as the mechanical defence against
+standing constraints decaying under a long session. If any of the three is added it joins this list in the same
+commit.
+
+**B. Setup steps, in order:**
+
+1. **Rename the product.** `name` in `server/package.json` and `client-web/package.json`; the paths under
+   `dependencySurfaces` and `irreversibleSurfaces` in `edition.json`; the matching `.github/CODEOWNERS` paths,
+   which docs-lint fails on if the two disagree; and the `file` paths in `secret-scan.allow.json`, whose header
+   says an entry matching nothing fails the scan. This edition has no `.sln`, no `UserSecretsId` and no
+   `ConnectionStrings` key, so the sibling's config-value list does not apply; what does apply is
+   `server/config/settings.json`, whose `auth.issuer` and `auth.audience` are kernel placeholders and rename with
+   the product.
+2. **Git setup.** `git init`; the canonical `.gitignore` and `.gitattributes` (`eol=lf`) are in the file set;
+   first commit only when directed.
+3. **Write the kernel pin (DEP-1).** Fill `VERSIONS.md`'s Kernel provenance section mechanically from the kernel
+   checkout the file set was copied from: remote (`git remote get-url origin`), commit (`git rev-parse HEAD`) and
+   the catalog pass date. Mechanical means the seed runs the commands; a human is never asked to transcribe a
+   hash.
+4. **Arm the gates (TEST-3 + HUM-1, the step that gets skipped).** Move `.github/workflows/ci.yml` to the repo
+   root; branch protection requires EVERY job the workflow declares plus code-owner review; replace `@OWNER` in
+   CODEOWNERS with the product owner. Until this step the loop runs and blocks nothing. Arming stays a human
+   step, which is how both claims word it; what the kernel owes is the readback, so finish with
+   `node tools/gate-check.mjs` and do not treat this step as done until it exits ok. It derives the required job
+   names from the workflow rather than listing them, which is why this step says "every job it declares" and not
+   a number: this edition's workflow declares four jobs and the sibling's declares five.
+5. **Dev environment.** `cd server && npm ci`, then `cd client-web && npm ci`. Node 24 or newer, because the
+   server and the harness run TypeScript directly through native type stripping and there is no build step. The
+   port and host are declared configuration, not a default and not an environment read: `server/config/settings.json`
+   carries `http.port` and `http.host`, validated at startup and overridable per environment through a name
+   derived from the key. Client 5173.
+6. **Design home (INV-01), carried forward deliberately.** As the sibling edition, and for the same reason: the
+   export is two skills downstream of the seed, so the placeholder ships and the debt is recorded in
+   `design/prototype/README.md` rather than pretended away.
+
+**C. Verify as a set** (the seed is not done until all pass):
+
+- `npm run verify` in `server/` (tsc, vitest, eslint)
+- `npm ci && npm run verify` in `client-web/`
+- `node tools/docs-lint.mjs --self-test`, then `node tools/docs-lint.mjs`
+- `node tools/conformance.mjs --check`
+- `node tools/secret-scan.mjs --self-test`, then `node tools/secret-scan.mjs`
+- `node tools/gate-check.mjs --self-test`, then `node tools/gate-check.mjs`
+- The dash check standalone, with the literal-byte pattern (BSD grep false-negatives on a BRE class):
+  `grep -rn "$(printf '\342\200\224')" <authored paths>` and `grep -rn "$(printf '\342\200\223')" <authored paths>`
+
+Two gaps this list does not paper over. There is no e2e bullet, because this edition ships `client-web/tools/harness/`
+and `client-web/tools/smoke/` with no runner binding them to a running server, where the sibling has `scripts/e2e.sh`.
+And step 5 points at no runbook, because `docs/runbooks/` here holds only `_template.md`. Both belong to this
+edition's next build pass, and both are named rather than left for a seeder to discover.
 
 ## Conformance
 

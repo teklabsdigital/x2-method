@@ -2482,6 +2482,27 @@ path works and the documented developer path does not. Following the runbook, th
 points at a port nothing is listening on. UI-5's whole subject is that a headline flow which never reaches the
 server is the failure mode, and the documented local loop is in exactly that state.
 
+**Repaired 2026-07-27 at ad8ff35+.** Measured live first, because the finding was written from a boot that
+nobody had repeated: with the tree clean and the API started exactly as the runbook says, `Now listening on:
+http://localhost:5000`. Eight sites across seven files document 5080 (the manifest, the runbook twice, the
+`.vscode` task's detail string, the client composition root, the harness, the smoke and `e2e.sh`), and every one
+of them is an assertion with nothing behind it: only `e2e.sh` and CI bind a URL, and both do it explicitly, so
+neither is on the documented developer path.
+
+The finding said five places; it is eight. Corrected here rather than left, because the number was the argument
+for which side to change.
+
+Repaired by adding `server/src/Kernel.Api/Properties/launchSettings.json`, one file, rather than rewriting eight
+sites to 5000. Port 5000 is claimed by the macOS AirPlay Receiver, which is the likely reason 5080 was chosen in
+the first place, so making the code match the worse number would have cost more and bought less. Re-measured
+after: `Now listening on: http://localhost:5080`. The 157 architecture tests stay green, which is the check that
+mattered, because `SecretConfigShapeTests` scans committed JSON under `server/src` and this adds one.
+
+A second defect surfaced while verifying, not in the original finding and plausibly the reason it survived:
+`scripts/e2e.sh` justified its explicit `ASPNETCORE_URLS` with "because launchSettings.json only applies under
+`dotnet run`". No such file existed. The comment described the developer path as covered by a file that was not
+in the tree. Corrected with the repair.
+
 ### E-27. UI-1 is `proven` against the kernel's own placeholder, and manifest step 6 cannot run when it is told to
 
 **Claim:** UI-1. **Status carried:** `proven`, with no instantiation asterisk. **Found:** 2026-07-27.
@@ -2502,6 +2523,21 @@ design does not exist.
 So UI-1 reads `proven` in a seeded project on the strength of the kernel's own filler. TEST-3 and HUM-1 both
 carry "mechanism built, not yet armed". UI-1 needs the same asterisk and does not have it. This is the same shape
 as E-23: a check that confirms a placeholder is shaped like the real thing.
+
+**Repaired 2026-07-27 at ad8ff35+.** Part A now enumerates `.claude/` and `secret-scan.allow.json`, and says
+plainly that the enumeration IS the file set rather than carrying both readings in one sentence. The
+straight-copy reading is not merely redundant, it is wrong in the other direction too: it takes the gitignored
+`.env`, which holds a live development SA password.
+
+`skills/seed/SKILL.md` had already asserted the hook was "part of the manifest's file set" while the manifest did
+not list it, so the skill and the definition it executes disagreed, and the skill was right.
+
+Step 1's rename list gains `secret-scan.allow.json`, because one of its entries names a test file whose path
+renames with the product and its own header says an entry matching nothing fails the scan: carrying it unrenamed
+converts one defect into another.
+
+Part C gains the secret scan. It had omitted it while step 4 told the seeder to require the `secret-scan` job, so
+the one list whose purpose is catching a gate that cannot go green on day one could not see that gate.
 
 ### E-28. docs-lint is fixture-free, and the documented edit path disables it with every gate green
 
@@ -2554,6 +2590,20 @@ one breaks this test and has to be argued rather than discovered by a red build.
 
 **Still open:** E-30, the same defect in the shared eslint config, which has no fixture surface and is not a node
 script, so it needs a vitest suite driving ESLint's API rather than a `--self-test` flag.
+
+**Repaired 2026-07-27 at ad8ff35+, the manifest half.** The status half needed no repair and the finding's first
+line is stale as written: UI-1 was lowered from `proven` to `latent` earlier the same day, so the asterisk this
+finding said it lacked is present.
+
+Step 6 now says what is true. The export cannot exist when the step runs, because x2:seed's Next is decompose,
+decompose produces D-000, and x2:design runs only once D-000 exists, so the step demanded an artifact two skills
+downstream of the skill executing it, offered no fallback, and sat under a part C that says the seed is not done
+until all of it passes. Read literally, seeding could never complete. In practice the step was skipped, the
+placeholder stayed, `npm run verify` went green, and nothing could tell the difference.
+
+The repair carries the debt instead of pretending: the placeholder ships, `design/prototype/README.md` is written
+with a line that says so, and the real import plus the re-pointing and re-transcription move to x2:lock, whose
+done-checks were already that same list. The manifest had been duplicating another skill's contract.
 
 ### E-29. CFG-1's registry can be reduced to reaching nothing with all 100 tests green
 
@@ -3426,6 +3476,26 @@ this pass. Trigger: node Phase B, which is where that edition's shipped surface 
 The general shape is worth keeping separately from the instance. Two editions of one kernel, and the check that
 both are complete is that a human reads both READMEs. `conformance.json` is machine-checked in both, 69 rows in
 each, because it is a data file with a tool. The manifest is the same kind of obligation with no tool.
+
+**Repaired 2026-07-27 at ad8ff35+.** `kernel/node-react/README.md` gains an `## Instantiation manifest` section
+in the same A/B/C shape and the same position as the sibling's, written from the measured delta between the two
+trees rather than copied: eleven travelling items rather than thirteen, because this edition ships no `scripts/`
+and no `.vscode/`; a rename list with no `.sln`, no `UserSecretsId` and no connection-string key, but with
+`server/config/settings.json`'s placeholder issuer and audience; and no e2e bullet in part C, because this
+edition binds its harness and smoke to no runner.
+
+Step 4 is worded "every job the workflow declares" rather than a number. The sibling says "all five jobs" and
+this edition's workflow declares four, so a number would have been wrong here the day it was written;
+`gate-check.mjs` derives the names from the workflow, so the readback line ports verbatim.
+
+Two absences are named in the manifest rather than left for a seeder to discover: no e2e runner, and
+`docs/runbooks/` holding only a template, so step 5 points at no runbook.
+
+Found while writing it: this README's "Running it" block described the server as serving "on PORT (default
+5080)". `server/src/main.ts` deliberately REMOVED `process.env.PORT ?? 5080` as CFG-1's own finding, recording
+that an env read is not a literal in code, is not committed configuration, and that the `??` was a silent default
+of exactly the kind DATA-5 forbids. The README was still advertising the anti-pattern the code was repaired to
+remove. Corrected to name the settings seam.
 
 ### E-66. TEST-1's ban on fake in-memory providers was never measured, and measuring it moves two of its own claims
 

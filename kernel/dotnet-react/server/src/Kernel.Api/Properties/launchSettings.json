@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "comment": "CFG-1/E-26: the one place the development port is bound. Eight documentation and client sites name 5080 (the manifest, the runbook twice, the .vscode task, the client composition root, the harness, the smoke and e2e.sh) and until this file existed nothing told the host to listen there, so `dotnet run` and the .vscode task both took the framework default of 5000. CI and e2e.sh are unaffected: both set the URL explicitly and CI passes --no-launch-profile.",
+  "profiles": {
+    "Kernel.Api": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

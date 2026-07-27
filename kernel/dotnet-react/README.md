@@ -92,9 +92,16 @@ acceptance test verifies that instantiation ships and arms the whole set, extend
 seeding is a finding for the invariants pass, logged as a turn.
 
 **A. The file set** (copy into the new repo root): `server/`, `client-web/`, `docs/`, `tools/`, `scripts/`,
-`design/`, `.github/` (workflow AND CODEOWNERS), `.vscode/`, `.gitignore`, `.gitattributes`, `VERSIONS.md`,
-`conformance.json`, `edition.json`. The edition tree is already composed, so this is a straight copy of the edition directory:
-seeding never reaches into `kernel/shared/`. BUILD-BRIEF.md and VERIFICATION.md stay behind (kernel provenance,
+`design/`, `.github/` (workflow AND CODEOWNERS), `.vscode/`, `.claude/` (the prompt-submit hook, PC-10),
+`.gitignore`, `.gitattributes`, `VERSIONS.md`, `conformance.json`, `edition.json`, `secret-scan.allow.json`.
+
+This enumeration IS the file set. It is not a straight copy of the edition directory, and the difference runs
+both ways (E-25). A copy takes what is gitignored: `.env`, which holds a live development SA password, plus
+`node_modules/`, every `bin/` and `obj/`, and any scratch project left under `server/src/`. The enumeration used
+to drop two tracked files the edition needs: `.claude/settings.json`, which `skills/seed/SKILL.md` already
+asserted was part of this set, and `secret-scan.allow.json`, without which the `secret-scan` job that step 4
+tells you to arm cannot pass on day one. The edition tree is already composed, so seeding never reaches into
+`kernel/shared/`. BUILD-BRIEF.md and VERIFICATION.md stay behind (kernel provenance,
 not project material), and so does THIS README: the seeded project writes its own.
 
 `conformance.json` travels, because it is the project's own conformance statement from that point on, pinned to
@@ -113,7 +120,9 @@ passing silently:
 
 1. **Rename the product.** Replace `Kernel` with the product name across project file names, namespaces, the
    `.sln`, the `UserSecretsId` in `Kernel.Api.csproj`, the connection-string key `ConnectionStrings:Kernel`, the
-   scripts' container/volume names, `.vscode/tasks.json` labels, and CODEOWNERS paths. Then the CONFIG VALUES the
+   scripts' container/volume names, `.vscode/tasks.json` labels, CODEOWNERS paths, and the `file` paths in
+   `secret-scan.allow.json`, whose own header says an entry matching nothing fails the scan, so carrying it
+   unrenamed turns one defect into another. Then the CONFIG VALUES the
    pilot missed (INV-06): `Jwt:Issuer` and `Jwt:Audience` in `appsettings.json` are `kernel` and rename with the
    product. The HUM-1 paths are renamed in TWO places, `.github/CODEOWNERS` and `edition.json`'s
    `irreversibleSurfaces`, and docs-lint fails if they disagree, so renaming one and forgetting the other is
@@ -138,11 +147,19 @@ passing silently:
    submodule: `git submodule update --init` joins this step (docs-lint auto-skips `.gitmodules` paths). If the
    product needs a provider key (the pilot's Anthropic key): it goes to user-secrets here, and the bootstrap line
    is added to `dev-setup.sh`, never a manual copy no script covers.
-6. **Design home (INV-01).** Import the COMPLETE Claude Design export via the design MCP into
-   `design/prototype/` (the `.dc.html` plus the full `_ds/`, both themes, more than fifty variables; never values
-   scraped from the `.dc.html`); fill in `design/prototype/README.md` (the lock record); re-point
-   `tokenCoverage.test.ts` at the real export path under `_ds/` and re-transcribe `src/theme/tokens.ts` until it
-   is green. Each slice lock adds its `design/ledger/slice-NNN.md`.
+6. **Design home (INV-01), carried forward deliberately.** The Claude Design export cannot exist when this step
+   runs. x2:seed's Next is decompose, decompose produces D-000, and x2:design runs only once D-000 exists, so the
+   export this step used to demand is two skills downstream of the skill executing it, with no fallback branch and
+   no deferred state, while part C says the seed is not done until all of it passes (E-27). Seeding therefore
+   ships the kernel's placeholder `design/prototype/_ds/` and records the debt instead of pretending: delete
+   nothing, and write into `design/prototype/README.md` the single line `PLACEHOLDER: kernel filler, no product
+   design yet; replaced at the first x2:lock`, so the lock record is false until it is true. The real import (the
+   `.dc.html` plus the full `_ds/`, both themes, more than fifty variables, never values scraped from the
+   `.dc.html`), re-pointing `tokenCoverage.test.ts` at the real export path, and re-transcribing
+   `src/theme/tokens.ts` until it is green all belong to x2:lock, whose done-checks are that same list; the
+   manifest does not duplicate them. Until the first lock, UI-1 in this project's `conformance.json` reads
+   `latent` and not `proven`, for the reason its own note gives. Each slice lock adds its
+   `design/ledger/slice-NNN.md`.
 
 **C. Verify as a set** (the seed is not done until all pass):
 
@@ -151,6 +168,9 @@ passing silently:
 - `scripts/e2e.sh` (harness with completeness self-audit, then the composed-entrypoint smoke)
 - `node tools/docs-lint.mjs` (DOC-1 placement, DEC-1 provenance, DEP-1 image pins and the filled kernel-provenance
   pin, HUM-1 CODEOWNERS coverage, MET-08 dashes)
+- `node tools/secret-scan.mjs --self-test`, then `node tools/secret-scan.mjs` (SEC-5, over every tracked text
+  surface). Part C used to omit this while step 4 told you to require the `secret-scan` job, so the one list that
+  exists to catch an unarmable gate could not see it (E-25).
 - The dash check standalone, with the literal-byte pattern (BSD grep false-negatives on a BRE class):
   `grep -rn "$(printf '\342\200\224')" <authored paths>` and `grep -rn "$(printf '\342\200\223')" <authored paths>`
 - `node tools/gate-check.mjs --self-test`, then `node tools/gate-check.mjs`: the merge gate read back off the
