@@ -99,7 +99,8 @@ describe('the composed app realizes every contract the shared fixture pins (CON-
 // had ever run.
 type Page = Readonly<{ items: { id: string }[]; nextCursor: string | null }>;
 
-const grant = (...permissions: string[]): Credential => Object.freeze({ subject: 'contract-parity', permissions });
+const grant = (...permissions: string[]): Credential =>
+  Object.freeze({ subject: 'contract-parity', tenantId: 'contract-parity-tenant', sessionVersion: 1, permissions });
 
 const authenticatedApp = (credential: Credential) => composeApp({}, { authenticate: () => credential });
 

@@ -134,7 +134,7 @@ describe('SEC-1: the fallback denies, and denying is not the same as being regis
     // reachable by every authenticated caller in the system, cross-tenant, with no permission. That satisfies
     // the claim's "unreachable, not public" only on the narrowest reading of public. Deny by default here means
     // deny, and holding a valid credential changes nothing.
-    const app = createApp(SETTINGS, {}, { authenticate: () => ({ subject: 'u', permissions: ['notes:read', 'notes:write'] }) });
+    const app = createApp(SETTINGS, {}, { authenticate: () => ({ subject: 'u', tenantId: 't', sessionVersion: 1, permissions: ['notes:read', 'notes:write'] }) });
     app.get('/ungated', { schema: { querystring: NO_QUERY } }, async () => ({ payload: 'served' }));
     await app.ready();
 
@@ -143,7 +143,7 @@ describe('SEC-1: the fallback denies, and denying is not the same as being regis
   });
 
   it('answers 401 without a credential and 403 with an insufficient one, on a properly gated route', async () => {
-    const app = createApp(SETTINGS, {}, { authenticate: (request) => (request.headers['x-test-cred'] === undefined ? null : { subject: 'u', permissions: ['notes:read'] }) });
+    const app = createApp(SETTINGS, {}, { authenticate: (request) => (request.headers['x-test-cred'] === undefined ? null : { subject: 'u', tenantId: 't', sessionVersion: 1, permissions: ['notes:read'] }) });
     app.get('/read', { config: { policy: POLICIES['notes.read'] }, schema: { querystring: NO_QUERY } }, async () => ({ ok: 1 }));
     app.get('/write', { config: { policy: POLICIES['notes.write'] }, schema: { querystring: NO_QUERY } }, async () => ({ ok: 1 }));
     await app.ready();

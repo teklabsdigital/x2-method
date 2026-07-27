@@ -144,11 +144,21 @@ describe('the composed app satisfies the endpoint spine', () => {
     await app.close();
   });
 
-  it('refuses every gated route without a credential, because the mint is owed', async () => {
-    // SEC-4 and TEN-6 are owed in both editions, so this edition can produce no credential at all and every
-    // gated route answers 401. Asserted rather than left implicit: this is what fail-closed looks like while a
-    // dependency is missing, and if a mint ever lands without wiring, this test goes red rather than the server
-    // quietly opening.
+  it('refuses every gated route to a caller presenting no credential', async () => {
+    // Renamed and rewritten when the verifier landed, because both its name and its reason had become false and
+    // its stated purpose was the one thing it cannot do (E-90). It read "because the mint is owed", and the mint
+    // is no longer owed: `composeApp` installs `bearerCredential`, so these 401s are now a verifier refusing an
+    // absent Authorization header rather than a seam that can produce nothing.
+    //
+    // The claim it used to make was that "if a mint ever lands without wiring, this test goes red rather than the
+    // server quietly opening". Measured on the day the mint landed: deleting the wiring from `composeApp` left
+    // this test GREEN, because an unwired seam answers 401 and so does a wired one with no header, and a test that
+    // asserts a status code cannot tell the two apart. The tests that DID go red are the ones asserting 200, 201
+    // and 403 in `tokenVerification.test.ts`, because only a success can distinguish a gate that works from a gate
+    // that is missing.
+    //
+    // What this test is actually worth is stated plainly instead: no gated route is reachable anonymously, and
+    // `/health` is. That is SEC-1's sentence, it is true, and it is not a statement about SEC-4 at all.
     const app = await composeApp();
 
     const seen: Array<[string, number]> = [];

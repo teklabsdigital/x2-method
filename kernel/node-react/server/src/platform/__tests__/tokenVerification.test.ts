@@ -1,7 +1,10 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { composeApp } from '../../compose.ts';
+import { decideCredential } from '../bearerCredential.ts';
 import { systemClock } from '../clock.ts';
-import { DEVELOPMENT_RELAXATION, resolveSettings } from '../settings.ts';
+import { DEVELOPMENT_RELAXATION, resolveSettings, type Settings } from '../settings.ts';
+import { INITIAL_SESSION_VERSION, inMemorySessionVersions } from '../sessionVersions.ts';
 import { ADMITTED_ALGORITHMS, verifyToken, type VerificationKeys } from '../tokenVerification.ts';
 
 // SEC-4's token-validation half, proved by input rather than by configuration. The sibling proves its equivalent
@@ -275,5 +278,169 @@ describe('malformed input is refused and never thrown (the seam has no try/catch
     const signature = createHmac('sha256', signingKey).update(`${header}.${payload}`).digest('base64url');
 
     expect(reasonFor(`${header}.${payload}.${signature}`)).toContain('payload segment is not JSON');
+  });
+});
+
+// The store and the adapter, then the composed app. Everything above is a statement about a function; these are
+// statements about the server, and SEC-4's revocation half is only reachable here because a version has to be
+// bumped on a store the app is actually using.
+
+describe('the session version store (SEC-4)', () => {
+  it('reads an unknown principal as the initial version, which is a property and not an accident', () => {
+    // Named and asserted rather than left to be discovered. A store with no user table behind it cannot tell "a
+    // principal at version 1" from "a principal it has never heard of", and the sibling's store has the identical
+    // property through GetOrAdd(userId, 1). It is not a hole in revocation, which only has to invalidate what it
+    // has seen; it is the absence of a principal store, which is a different claim and a different pass.
+    const versions = inMemorySessionVersions();
+    expect(versions.current('never-seen')).toBe(INITIAL_SESSION_VERSION);
+  });
+
+  it('bumps a principal without touching any other', () => {
+    const versions = inMemorySessionVersions();
+    expect(versions.bump('a')).toBe(INITIAL_SESSION_VERSION + 1);
+    expect(versions.current('a')).toBe(INITIAL_SESSION_VERSION + 1);
+    expect(versions.current('b')).toBe(INITIAL_SESSION_VERSION);
+  });
+
+  it('gives each store its own state, so one test cannot revoke a principal another test relies on', () => {
+    const versions = inMemorySessionVersions();
+    versions.bump('a');
+    expect(inMemorySessionVersions().current('a')).toBe(INITIAL_SESSION_VERSION);
+  });
+});
+
+describe('the Authorization header becomes a credential, or does not (SEC-4, TEN-1)', () => {
+  const versions = inMemorySessionVersions();
+  const decide = (header: unknown) => decideCredential(header, KEYS, versions, NOW);
+
+  it.each([
+    ['no header', undefined],
+    ['an empty header', ''],
+    ['a non-string header', 7],
+    ['a Basic header', 'Basic dXNlcjpwYXNz'],
+    ['a bare token with no scheme', mint()],
+    ['a Bearer scheme with no token', 'Bearer '],
+    ['a scheme smuggled after another', `Basic x Bearer ${mint()}`],
+  ])('refuses %s', (_label, header) => {
+    expect(decide(header).ok).toBe(false);
+  });
+
+  it('carries the tenant from the token and from nowhere else (TEN-1)', () => {
+    // TEN-1's resolution rule, which had no mechanism at all while the mint was owed (S-8). The tenant on the
+    // credential is read off a signed token; `app.ts` has already stripped every tenant-shaped header before this
+    // runs, and nothing here reads a route parameter, a query value or a body.
+    const decision = decide(`Bearer ${mint()}`);
+    expect(decision.ok).toBe(true);
+    if (!decision.ok) {
+      return;
+    }
+    expect(decision.credential.tenantId).toBe('11111111-2222-3333-4444-555555555555');
+    expect(decision.credential.sessionVersion).toBe(1);
+    expect(decision.credential.permissions).toEqual(['notes:read', 'notes:write']);
+  });
+
+  it('refuses a token minted before the current session version, naming both (SEC-4)', () => {
+    const revoking = inMemorySessionVersions();
+    const token = `Bearer ${mint({ claims: { sub: 'revoked-user' } })}`;
+    expect(decideCredential(token, KEYS, revoking, NOW).ok).toBe(true);
+
+    revoking.bump('revoked-user');
+
+    const after = decideCredential(token, KEYS, revoking, NOW);
+    expect(after.ok).toBe(false);
+    if (after.ok) {
+      return;
+    }
+    expect(after.reason).toContain('minted at session version 1');
+    expect(after.reason).toContain('current version is 2');
+  });
+
+  it('refuses a token minted AHEAD of the current version rather than tolerating it', () => {
+    // Equality, not `>=`. A token from a version the server has never issued is not a token from the future to be
+    // waved through; it is one the server cannot account for.
+    expect(decide(`Bearer ${mint({ claims: { sv: 99 } })}`).ok).toBe(false);
+  });
+});
+
+describe('the composed app answers with the wired verifier (SEC-4, E-89)', () => {
+  // Settings are injected because the resolver, under a test or a fresh clone, hands back the development
+  // relaxation for the signing key, and the verifier refuses to verify with it. That refusal is the point of
+  // E-89, so it is exercised below rather than configured around.
+  const base = resolveSettings();
+  const withKey = (key: string): Settings => Object.freeze({ ...base, auth: Object.freeze({ ...base.auth, signingKey: key }) });
+
+  it('admits a correctly minted token through the gate', async () => {
+    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+
+    const created = await app.inject({
+      method: 'POST',
+      url: '/notes',
+      headers: { authorization: `Bearer ${mint()}` },
+      payload: { title: 'minted', body: 'through the real gate' },
+    });
+
+    expect(created.statusCode).toBe(201);
+    await app.close();
+  });
+
+  it('answers 403 when the token authenticates and lacks the permission, so the credential came from the token', async () => {
+    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+
+    const written = await app.inject({
+      method: 'POST',
+      url: '/notes',
+      headers: { authorization: `Bearer ${mint({ claims: { perm: ['notes:read'] } })}` },
+      payload: { title: 'a', body: 'b' },
+    });
+
+    expect(written.statusCode).toBe(403);
+    expect((written.json() as { reason: string }).reason).toContain('notes:write');
+    await app.close();
+  });
+
+  it('stops admitting a token the moment that principal has its session version bumped', async () => {
+    // The end-to-end shape of SEC-4's revocation sentence: the same token, the same server, one write in between.
+    const versions = inMemorySessionVersions();
+    const app = await composeApp({}, { sessionVersions: versions }, undefined, withKey(signingKey));
+    const token = `Bearer ${mint({ claims: { sub: 'signed-out-everywhere' } })}`;
+
+    expect((await app.inject({ method: 'GET', url: '/notes', headers: { authorization: token } })).statusCode).toBe(200);
+
+    versions.bump('signed-out-everywhere');
+
+    expect((await app.inject({ method: 'GET', url: '/notes', headers: { authorization: token } })).statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('refuses a token signed with another key', async () => {
+    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+    const reply = await app.inject({
+      method: 'GET',
+      url: '/notes',
+      headers: { authorization: `Bearer ${mint({ key: wrongPhrase })}` },
+    });
+
+    expect(reply.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('refuses every token when the process is running on the development relaxation key (E-89)', async () => {
+    // The measured hazard, end to end. A deploy that forgets NODE_ENV resolves the signing key to a literal
+    // committed in this repository; without this refusal the server would authenticate anyone who read it.
+    const app = await composeApp({}, {}, undefined, withKey(DEVELOPMENT_RELAXATION));
+    const reply = await app.inject({
+      method: 'GET',
+      url: '/notes',
+      headers: { authorization: `Bearer ${mint({ key: DEVELOPMENT_RELAXATION })}` },
+    });
+
+    expect(reply.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('still answers 401 with no Authorization header at all', async () => {
+    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+    expect((await app.inject({ method: 'GET', url: '/notes' })).statusCode).toBe(401);
+    await app.close();
   });
 });

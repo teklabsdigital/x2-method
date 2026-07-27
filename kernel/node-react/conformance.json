@@ -4,9 +4,9 @@
   "claims": {
     "TEN-1": {
       "title": "Tenant comes from the credential only",
-      "status": "owed",
+      "status": "patterned",
       "mechanism": "the prohibition half IS built and proven on all four surfaces: `scanEndpointSpine` rejects tenant-shaped route, query and body-contract names by tokenized run, and a runtime `onRequest` strip in `createApp` removes tenant-shaped request headers before any handler, which is the only reachable mechanism for a surface that cannot be closed. The strip's registry carries the concatenated spellings (`tenantid`, `orgid`, `organisationid`) explicitly, because Node lowercases header names before any hook runs, so `X-TenantId` arrives as `x-tenantid` and the tokenizer's camel-case half is unavailable on this surface by construction",
-      "note": "trigger: the credential mint (SEC-4, TEN-6). Read the status conservatively rather than as nothing built. TEN-1's statement is a prohibition plus a resolution rule; the prohibition is realized and red-green proven, and the resolution rule ('tenant is resolved solely from the validated credential') has no mechanism because no credential can be minted here. No status in the four-value vocabulary says that, which is S-8. Round 4 audit: the prohibition half was itself overstated, because `X-TenantId` and `X-OrgId` walked past the strip over real HTTP until the concatenated entries landed, which is evidence for the conservative status rather than against it. Findings: A-2, E-9, E-10, S-8.",
+      "note": "Lifted off `owed` 2026-07-27 at 53b1eec, and the roll-up rule is what lifted it: the mint half of SEC-4 and TEN-6 is still owed, but the VERIFY half landed 2026-07-27 at 53b1eec and moved the second obligation off `owed`. TEN-1's statement is a prohibition plus a resolution rule; the prohibition is realized and red-green proven, and the resolution rule had no mechanism for as long as no credential existed to resolve from, which is S-8. It has one now. Round 4 audit: the prohibition half was itself overstated, because `X-TenantId` and `X-OrgId` walked past the strip over real HTTP until the concatenated entries landed, which is evidence for the conservative status rather than against it. Findings: A-2, E-9, E-10, S-8.",
       "obligations": [
         {
           "name": "tenant identity never travels as a request parameter",
@@ -15,8 +15,8 @@
         },
         {
           "name": "the tenant is resolved solely from the validated credential",
-          "status": "owed",
-          "text": "no credential can be minted in this edition, so the resolution rule has nothing to resolve from and no mechanism can assert it (trigger: the credential mint, SEC-4 and TEN-6)."
+          "status": "patterned",
+          "text": "Built 2026-07-27 at 53b1eec, and it is the S-8 gap closing. The trigger, the credential mint, has half fired: this edition now VERIFIES a credential even though it still does not mint one, and verification is the half this obligation needed. `decideCredential` reads the Authorization header, verifies the signature, and puts the token's `tenant_id` on a frozen credential; it reads no route parameter, no query value, no body and no other header, and `app.ts` has already deleted every tenant-shaped header before it runs. So a tenant reaching a handler has come through a verified signature and through nothing else. Planted at 53b1eec: a token carrying no `tenant_id`, or an array in its place, is refused rather than defaulted. `patterned` and not `proven` for a reason this row should say plainly: NOTHING DOWNSTREAM READS `request.credential` YET, so the resolution rule is proven at the point of resolution and unexercised at every point of use. The first store query that scopes by tenant is the first seam that has to take it from here rather than from an argument, and each such seam owes its own test."
         }
       ]
     },
@@ -74,8 +74,30 @@
     "TEN-6": {
       "title": "Tenant is minted from membership, never asserted",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: first identity slice (shared with SEC-4's version store and SEC-10)."
+      "mechanism": "`tokenVerification.ts` refuses a token that does not carry exactly one non-empty `tenant_id`; `bearerCredential.ts` puts it on the credential and reads no other surface; `app.ts` strips every tenant-shaped header before the seam runs",
+      "note": "Half built 2026-07-27 at 53b1eec. The verifier half of this claim is real: a credential now carries exactly one tenant and it comes from a signed token. The MINT half is what the claim is named for and it needs membership data, which this edition has no store for, so it stays owed and named rather than borrowing credit from the half that landed. Findings: E-84.",
+      "obligations": [
+        {
+          "name": "the credential carries exactly one active tenant",
+          "status": "proven",
+          "text": "Planted 2026-07-27 at 53b1eec: a token with no `tenant_id`, or with an array in its place, is refused by reason rather than defaulted, and a verified token's `tenantId` is asserted to be the value the token carried. `Credential` has a single `tenantId` field, so 'exactly one' is the type rather than a convention."
+        },
+        {
+          "name": "a tenant never travels as a header, a parameter, or mutable session state",
+          "status": "proven",
+          "text": "Three mechanisms, none of them new here and all of them now load-bearing because there is finally a credential for them to be the alternative to: `app.ts` deletes every tenant-shaped header in the first onRequest hook, before the credential seam; `scanEndpointSpine` refuses a tenant-shaped name on the route, query and body surfaces of the composed table; and `decideCredential` reads the Authorization header and nothing else, so there is no code path by which a tenant reaches a handler except through a verified signature. The credential is frozen, so it is not mutable session state either."
+        },
+        {
+          "name": "entering or switching a tenant mints a new credential through the real sign-in surface",
+          "status": "owed",
+          "text": "Unbuilt, and this is the clause the claim is named for. There is no sign-in surface, no tenant selector, and no membership data to validate a selection against, so nothing here mints anything: tokens are minted out of process by the shared harness minter, which is legitimate for a kernel with no identity module and is exactly the premise `mintToken.mjs` records as invalidated by the first identity slice. trigger: a membership store, which arrives with the persistence layer (G); the mint surface is then TEN-1's one sanctioned carve-out and `CARVE_OUTS` in endpointSpine.ts is the empty list waiting for it."
+        },
+        {
+          "name": "revoking a membership bumps the session version, so credentials for that tenant die immediately",
+          "status": "owed",
+          "text": "Composes with SEC-4, and SEC-4's half of it is built: `sessionVersions.bump` exists and a bumped principal's token is refused end to end. What is missing is the thing that would CALL it, because there is no membership to revoke. trigger: the same membership store; this obligation is a one-line call at the point where a membership is removed, and it is recorded now so that point is not written without it."
+        }
+      ]
     },
     "SEC-1": {
       "title": "Every endpoint gated",
@@ -174,8 +196,40 @@
     "SEC-4": {
       "title": "JWT hardening and revocation",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the credential mint (shared with TEN-6 and SEC-10)."
+      "mechanism": "`server/src/platform/tokenVerification.ts` verifies a bearer token as a pure function over a token, a key set and an instant; `bearerCredential.ts` turns an Authorization header into a credential and applies the session-version check; `sessionVersions.ts` holds the server-side version; `composeApp` wires all three, and `tokenVerification.test.ts` proves them by input",
+      "note": "Built 2026-07-27 at 53b1eec, and proved by INPUT rather than by configuration, because this stack has no validation object to read back off a host. That difference is not a handicap here: E-88 planted five of the sibling's seven validation properties permissive and all 261 of its tests stayed green, for want of a violating token to send. Every rejection below is asserted by REASON and not by status, for the reason E-90 gives: a refusal cannot distinguish a mechanism that works from one that is absent, because absence refuses everything, so only a success separates them. Findings: E-54, E-55, E-88, E-89, E-90.",
+      "obligations": [
+        {
+          "name": "the signing algorithm is pinned to exactly one",
+          "status": "proven",
+          "text": "`ADMITTED_ALGORITHMS` is an exported frozen value asserted whole, not probed one exclusion at a time. E-54 is why: the sibling's pin was proven by minting one HS384 token, which says nothing about what the set ADMITS, and adding RS256 to it left its whole suite green. Planted 2026-07-27 at 53b1eec: HS384, HS512, RS256, ES256 and none are each refused with a reason naming the declared alg, and a token signed correctly with HS256 while DECLARING HS384 is refused for declaring it rather than for failing to verify, which is what makes this a comparison and not a negotiation."
+        },
+        {
+          "name": "tokens must be signed, on a branch the algorithm pin cannot shadow",
+          "status": "proven",
+          "text": "Checked before the header is read at all, with its own reason. E-55 measured why the two must be independent: with the sibling's pin still `[HS256]` and `RequireSignedTokens` false, an alg:none token AUTHENTICATED, because an unsigned token never reaches signature validation so the pin never runs. Planted at 53b1eec: a token that is BOTH unsigned AND declares an inadmissible algorithm is refused for carrying no signature, which is the ordering the independence rests on."
+        },
+        {
+          "name": "the premise the claim rests on: tokens expire, and come from the configured issuer and audience",
+          "status": "proven",
+          "text": "Recorded as its own obligation rather than folded into the ones above, because SEC-4's sentences name none of the three and this row should not pretend they do. E-88 is the argument: the revocation half says revocation takes effect `rather than at token expiry`, which PRESUPPOSES that tokens expire, and a guard set built from a claim's words alone does not cover a premise the claim states as background. Planted at 53b1eec: a wrong issuer, a wrong audience, an absent exp, a non-integer exp, a past exp and a future nbf are each refused by reason, and the exp boundary is asserted at one second so it is not off by one. Issuer and audience are read from resolved settings and never written twice (CFG-1, E-75)."
+        },
+        {
+          "name": "a token minted before the current session version is refused",
+          "status": "proven",
+          "text": "`decideCredential` compares the token's `sv` against the server-side version on every request that presents a token, and it is the only path by which `request.credential` is ever set, so there is no request that reaches a handler without passing it. Equality and not `>=`: a token minted AHEAD of the server's version is refused too, because it is one the server cannot account for. Planted at 53b1eec by disabling the comparison, which turned three tests red including the end-to-end one; and proven positively rather than only negatively, which E-90 says is the half that distinguishes a working gate from an absent one: the same token, the same server, 200 before the bump and 401 after it."
+        },
+        {
+          "name": "every principal carries a server-side version, and it is the server that carries it",
+          "status": "proven",
+          "text": "The version lives in `sessionVersions.ts` on the server; the token carries only the version it was minted at, so no token can argue with a revocation. An unknown principal reads as `INITIAL_SESSION_VERSION`, which is asserted as a property rather than left to be discovered: a store with no user table behind it cannot distinguish a principal at version 1 from one it has never heard of, so any validly signed token bearing sv=1 for an unbumped subject is accepted. That is not a hole in revocation, which only has to invalidate what it has seen, and revoking requires having seen it; it is the absence of a principal store, which is a different claim and arrives with G."
+        },
+        {
+          "name": "revocation reaches every process serving the principal",
+          "status": "owed",
+          "text": "The store is a Map inside one process. For the shape this edition ships, one process, revocation is immediate and is proven above. For any deployment that runs more than one, a bump reaches the process that received it and no other, so a revoked token keeps working everywhere else and the claim's word `immediately` is false of the system even though it is true of each process. Split out rather than argued away inside the obligation above, because someone seeding from this record will choose a replica count without reading a paragraph. trigger: the first deployment running more than one process, or the persistence layer, whichever lands first; the upgrade is a shared store behind the same `SessionVersions` interface. SEC-4's weakening note about a short-TTL cache attaches HERE and not before: there is no cache in front of a Map, so the revocation delay is currently zero and the note's named-and-tested-bound obligation has no surface yet."
+        }
+      ]
     },
     "SEC-5": {
       "title": "No secrets in config",

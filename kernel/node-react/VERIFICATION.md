@@ -829,3 +829,75 @@ because the other rows lifted in those passes have not been read the same way.
 Server 172, client 65, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, docs-lint `--self-test`
 28 caught / 27 ignored, `compose --check` ok at 39 shared files. All plants restored byte-for-byte, verified by
 hash, and every backup deleted in this round (E-59).
+
+## 2026-07-27, the credential verifier: SEC-4 built, TEN-6 half built, and what four plants said about it
+
+Measured at `1302d7a` and `53b1eec`, tree clean before and after every plant. Server suite 172 before, 236 after.
+
+E-84 named the credential mint as the first of three things blocking the e2e tier, and the only one that does not
+need a store. This round built the half of it that does not need one: the edition now VERIFIES a credential. It
+still mints nothing, and TEN-6's row says so rather than borrowing credit from the half that landed.
+
+### The measurement that set the design
+
+The sibling proves its equivalent by reading a validation object back off the host. This stack has no such
+object, so validation is a function, and the question was whether that is a handicap. It is not, and E-88 is why:
+five of the sibling's seven validation properties were planted permissive at 1302d7a, all at once, and 203 + 58
+tests stayed green. Its harness mints every token through one builder that always passes the right issuer, the
+right audience and a thirty-minute expiry, so no violating input exists to send. **Proving by configuration
+cannot be stronger than the inputs the harness can produce.** So this verifier is proved by input: 64 tests in
+the file, every rejection asserted by reason.
+
+### E-89, found before the code and designed against rather than recorded after it
+
+With `NODE_ENV` unset and no secret store, `auth.signingKey` resolves to a literal committed in this repository.
+Harmless for as long as nothing verified. **The change that closes SEC-4 is the change that arms it**: a deploy
+that forgets one environment variable would accept any token signed with a string anyone can read here, silently,
+on a process that started cleanly. The refusal is at the verifier and not at the resolver, because the relaxation
+is legitimate for a process that verifies nothing and it is the ACT of verifying with it that is not, and the
+verifier is the only place that can tell those apart.
+
+### Four plants
+
+| plant | outcome |
+|---|---|
+| unwire the verifier from `composeApp` | red-correct, 3 tests. **And the three tests asserting 401 stayed green.** |
+| disable the E-89 relaxation refusal | red-correct, 2 tests, unit and end to end |
+| disable the session-version comparison | red-correct, 3 tests, including the end-to-end revocation |
+| the first draft's issuer written as a literal | caught by the CFG-1 scan on the pass that wrote it, not four rounds later |
+
+The first plant produced E-90, which is worth more than the wiring it was checking. `endpointSpine.test.ts`
+carried a test whose comment said "if a mint ever lands without wiring, this test goes red rather than the server
+quietly opening". Unwiring left it green, and it could never have gone red: an absent seam answers 401, a working
+verifier with no header answers 401, and the test compares status codes. The tests that DID move were the three
+asserting 200, 201 and 403.
+
+**A refusal cannot distinguish a mechanism that works from a mechanism that is absent, because absence refuses
+everything. Only a success separates them.** A security suite made entirely of denial assertions is consistent
+with the feature not existing, and it reads as thorough precisely because every case is a denial. That test now
+claims only what it proves, which is SEC-1's sentence and not SEC-4's.
+
+### What the rows say, including where they refuse to round up
+
+SEC-4 has six obligations, five `proven` and one `owed`, so the row is `owed`. The owed one is
+**revocation reaches every process serving the principal**, and it is split out rather than argued away inside
+another obligation's text. The store is a Map in one process: for the shape this edition ships revocation is
+immediate and proven end to end, and for any deployment with more than one process a bump reaches one process and
+no other, so `immediately` is true of each process and false of the system. Someone seeding from this record picks
+a replica count without reading a paragraph, so it is an obligation with a trigger rather than a sentence.
+
+TEN-6 is half built: the credential carries exactly one tenant and it comes from a signed token, both `proven`;
+the mint from membership and the revoke-on-membership-change are `owed` and wait on G.
+
+TEN-1 moved from `owed` to `patterned`, which closes S-8. Its resolution rule had no mechanism for as long as no
+credential existed to resolve from. It has one now, and it is `patterned` and not `proven` because **nothing
+downstream reads `request.credential` yet**: the rule is proven at the point of resolution and unexercised at
+every point of use.
+
+Non-owed rows: 8 to 9. Three rows gained substantial mechanism and one of them moved.
+
+### Gates
+
+Server 236, client 65, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, docs-lint `--self-test`
+28 caught / 27 ignored, secret-scan ok with 2 justified exceptions, `compose --check` ok. All plants restored
+byte-for-byte, verified by hash, every backup deleted in this round (E-59).

@@ -1,7 +1,10 @@
 import type { FastifyInstance, FastifyServerOptions } from 'fastify';
 import { createApp, type CreateAppSeams } from './app.ts';
 import { assertEndpointSpine } from './architecture/endpointSpine.ts';
+import { bearerCredential } from './platform/bearerCredential.ts';
+import { systemClock } from './platform/clock.ts';
 import { resolveSettings, type Settings } from './platform/settings.ts';
+import { inMemorySessionVersions, type SessionVersions } from './platform/sessionVersions.ts';
 import { registerHealth } from './routes/health.ts';
 import { registerNotes } from './routes/notes.ts';
 
@@ -35,15 +38,40 @@ import { registerNotes } from './routes/notes.ts';
 
 export type Surface = (app: FastifyInstance) => Promise<void>;
 
+// `CreateAppSeams` plus the session-version store, which `createApp` has no business knowing about: it is the
+// composition's choice of where revocation state lives, not a property of the instance.
+export type ComposeSeams = CreateAppSeams & Readonly<{ sessionVersions?: SessionVersions }>;
+
 const SURFACES: readonly Surface[] = Object.freeze([registerHealth, registerNotes]);
 
+// The credential seam is wired HERE and not inside `createApp`, for the same reason the spine assertion is: this
+// is the composition, and `createApp` is the thing being composed. It also keeps the fail-closed default where it
+// belongs. `createApp` still falls back to `noCredential`, so an app assembled without a credential seam denies;
+// what this function does is choose the real one, which means the choice is visible in the composition rather
+// than buried as a default two files down.
+//
+// `sessionVersions` is a seam and not a private local because SEC-4's revocation half is only provable from
+// outside: a test has to be able to bump a principal's version and then present the token minted before it. A
+// store nothing can reach is a store whose revocation nobody has watched work, and that is the state the sibling
+// left its own in until `Bumped_session_version_rejects_the_old_token` was written.
 export async function composeApp(
   options: FastifyServerOptions = {},
-  seams: CreateAppSeams = {},
+  seams: ComposeSeams = {},
   surfaces: readonly Surface[] = SURFACES,
   settings: Settings = resolveSettings(),
 ): Promise<FastifyInstance> {
-  const app = createApp(settings, options, seams);
+  const versions = seams.sessionVersions ?? inMemorySessionVersions();
+  const authenticate =
+    seams.authenticate ??
+    bearerCredential(
+      // Read from the resolved settings and from nowhere else. CFG-1's whole sentence: a second copy of the
+      // issuer would be a value that can drift from the one the minter uses, which is E-75 exactly.
+      { signingKey: settings.auth.signingKey, issuer: settings.auth.issuer, audience: settings.auth.audience },
+      versions,
+      systemClock,
+    );
+
+  const app = createApp(settings, options, { ...seams, authenticate });
 
   for (const register of surfaces) {
     await register(app);

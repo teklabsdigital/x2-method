@@ -4313,6 +4313,35 @@ verifier and not at the resolver, with its own red proof. Refusing at the resolv
 is legitimate for a process that never verifies anything, and DATA-5's note licenses it. It is the ACT of
 verifying with it that is not legitimate, so the refusal belongs where the verifying happens.
 
+### E-90. A test whose stated purpose was the one thing it could not do, and the general rule about refusals
+
+**Claim:** SEC-1, SEC-4. **Found:** 2026-07-27. **Measured at 53b1eec.** **Repaired here.**
+
+`endpointSpine.test.ts` carried a test asserting that gated routes answer 401 and `/health` answers 200, with
+this reason written next to it:
+
+    if a mint ever lands without wiring, this test goes red rather than the server quietly opening.
+
+The mint landed. Deleting the wiring from `composeApp`, so the composition falls back to `noCredential`, left
+this test **green**. It cannot go red for that reason and never could: a seam that produces no credential answers
+401, and a working verifier handed no Authorization header answers 401, and the test compares status codes.
+
+The tests that did go red under the same plant were the three asserting **200, 201 and 403**. That is the general
+rule and it is worth more than the one test:
+
+**A refusal cannot distinguish a mechanism that works from a mechanism that is absent, because absence refuses
+everything. Only a SUCCESS separates them.** A security test suite made entirely of "this is rejected" assertions
+is consistent with the feature not existing, and it reads as thorough precisely because every case is a denial.
+
+This is the same shape as E-42 (a scan over an empty set reports success) and E-11 (a lint over a clean tree
+reports ok), arriving through the assertion rather than through the subject: all three are mechanisms whose
+passing state is indistinguishable from their doing nothing. It is also why the same plant that produced this
+finding was worth running at all. The wiring was correct; what the plant measured was which tests were holding it.
+
+Repaired by rewriting the test to claim only what it proves, which is SEC-1's sentence about anonymous
+reachability and not SEC-4's about the mint. The load it was believed to carry is carried by the three
+success-asserting tests, which is where it now says it lives.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

@@ -76,14 +76,26 @@ export const ANONYMOUS_ROUTES: readonly AnonymousRoute[] = Object.freeze([
   }),
 ]);
 
-export type Credential = Readonly<{ subject: string; permissions: readonly string[] }>;
+// Widened when the verifier landed, and the two new fields are not conveniences. `tenantId` is TEN-1's resolution
+// rule made structural: the claim says the tenant a request operates in is resolved solely from the validated
+// credential, and a credential type with nowhere to put a tenant guarantees it is resolved from somewhere else.
+// `sessionVersion` is SEC-4's revocation half: the version a token was minted at has to survive verification for
+// anything downstream to reason about it, and dropping it here would make the check a fact known only to the
+// function that performed it.
+export type Credential = Readonly<{
+  subject: string;
+  tenantId: string;
+  sessionVersion: number;
+  permissions: readonly string[];
+}>;
 
 export type Authenticate = (request: FastifyRequest) => Credential | null;
 
-// The credential seam, deliberately empty. Minting a credential is SEC-4 and TEN-6, both owed in both editions,
-// so this edition has no way to produce one and says so in code rather than in a comment on an absent file. The
-// consequence is honest and fail-closed: every gated route in the composed server answers 401 until the mint
-// exists. The conformance record carries that, and no claim reads better than it is.
+// The seam's fail-closed default, and it is no longer the composed one. It was, for as long as this edition could
+// mint nothing: SEC-4 and TEN-6 were owed, so the honest answer was that no credential existed and every gated
+// route answered 401. `bearerCredential` is now what `composeApp` installs. This stays as the default INSIDE
+// `createApp` on purpose, so that an app built without a credential seam denies rather than admits: the failure
+// mode of forgetting to pass one is a 401, not an open door.
 export const noCredential: Authenticate = () => null;
 
 export function satisfies(policy: Policy, credential: Credential): boolean {
