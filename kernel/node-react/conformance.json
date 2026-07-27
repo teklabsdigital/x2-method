@@ -22,19 +22,19 @@
     },
     "TEN-2": {
       "title": "Ambient scope, fail-closed",
-      "status": "owed",
-      "mechanism": "`TenantId` is a branded type produced only by `tenantOf(credential)`; every `NoteStore` method takes it as its first parameter; every statement in `STATEMENTS` carries `tenant_id`",
-      "note": "Built 2026-07-27 at 31278db, and realized differently from the sibling on purpose. The sibling uses an ambient scope whose accessor throws when unset, because an EF `SaveChanges` override has no parameter list to put a tenant in. This edition has one, so a store call without a tenant does not fail at runtime, it fails to compile. Unrepresentable and rejected are different mechanism classes and the difference is recorded rather than smoothed over. Findings: E-50. trigger: a request-level assertion that a handler cannot reach the store with a tenant other than its caller's, which needs a seam the store does not currently have.",
+      "status": "patterned",
+      "mechanism": "`TenantId` is a branded type produced only by `tenantOf(credential)`, with the testing hatch pinned out of production by lint; every `NoteStore` method takes it as its first parameter; `architecture/statementSurface.ts` asserts every statement in every `STATEMENTS` set constrains `tenant_id` to a parameter; `persistence/notes/__tests__` and `routes/__tests__` assert two tenants are separated at the engine and on the wire",
+      "note": "Re-measured 2026-07-27. Three of the four obligations moved and the row stays `owed` on the fourth. The cross-tenant scan E-77 says the sibling cannot have is built: every statement is a literal in one object, so 'every query is tenant-scoped' is a statement about the store rather than about the methods somebody remembered to check. It reads the PREDICATE rather than the statement, because a SELECT can name `tenant_id` in its column list and read every tenant, which is the shape a substring check passes. Two findings came out of planting against it: E-100, that E-50's own divergence had no test on the delete side in either edition, and E-102, that a uniformly wrong tenant is self-consistent so no single-tenant test can see it. Findings: E-99, E-100, E-101, E-102.",
       "obligations": [
         {
           "name": "no store operation can run without a tenant",
           "status": "proven",
-          "text": "Every method of `NoteStore` takes `TenantId` first, and `TenantId` is a branded type whose only producer is `tenantOf(credential)`. There is no value of that type that did not come from a verified signature, and no call that omits it, because omitting it is a type error."
+          "text": "Every method of `NoteStore` takes `TenantId` first, and `TenantId` is a branded type whose only producer is `tenantOf(credential)`. There is no value of that type that did not come from a verified signature, and no call that omits it, because omitting it is a type error. Strengthened 2026-07-27 at the one end the type could not hold: `tenantForTesting` is the hatch that produces a `TenantId` from an arbitrary string, its own comment said a lint could pin it, and nothing did. It is now refused outside `__tests__`, as the named import and as the call, in both spellings so a namespace import does not walk past. Red-proven against the real route module."
         },
         {
           "name": "cross-tenant access is uniformly not-found",
           "status": "proven",
-          "text": "Read, get and delete all carry `tenant_id` in their own predicate, so a cross-tenant request is an absence at the store rather than an error to be translated at the route. E-50 is why this is stated as uniformity rather than as correctness: in the sibling a cross-tenant read answered 404 while a cross-tenant delete with a forgotten filter answered 500, and a caller could tell the difference, which is an existence oracle. Proven end to end by the harness's `cross-tenant-404` scenario, green at 31278db."
+          "text": "Read, get and delete all carry `tenant_id` in their own predicate, so a cross-tenant request is an absence at the store rather than an error to be translated at the route. E-50 is why this is stated as uniformity rather than as correctness: in the sibling a cross-tenant read answered 404 while a cross-tenant delete with a forgotten filter answered 500, and a caller could tell the difference, which is an existence oracle. Proven end to end by the harness's `cross-tenant-404` scenario, green at 31278db. Strengthened twice on 2026-07-27. Statically: the scan reads every statement's predicate and refuses one that does not constrain `tenant_id` to a parameter, so uniformity is a property of the statement set rather than of three methods. Behaviourally: read, list and delete are each asked as a second tenant, in process and over the wire, and the delete is asserted to leave the row where it was, because a delete that reported not-found and removed the row anyway passes a status-code assertion."
         },
         {
           "name": "every execution path entry establishes a tenant",
@@ -43,8 +43,8 @@
         },
         {
           "name": "a guard refuses rather than defaulting",
-          "status": "owed",
-          "text": "There is no runtime guard to refuse, because the type system removes the case. What that does NOT cover is a caller who obtains a real `TenantId` and passes the WRONG one: nothing compares the tenant a handler used against the tenant on its credential. trigger: a request-level assertion that a handler cannot reach the store with a tenant other than its caller's, which needs a seam the store does not currently have."
+          "status": "patterned",
+          "text": "Lifted from `owed`. The hole this obligation names is a handler that obtains a REAL `TenantId` and passes the wrong one, which no type can close, and it is now asserted per request: three tests drive the composed app with a credential seam and assert against the DATABASE rather than the response, because a response only shows what the handler chose to send back. Planted exactly, `tenantOf({ ...request.credential, tenantId: 'someone-else' })`, and eslint is clean on it while two of the three tests go red. `patterned` and not `proven` because the assertion is per route: the fifth handler owes its own, and nothing enumerates handlers to check that each has one. trigger for `proven`: a seam recording the tenant each store call received, compared against the credential on the request that caused it, so the obligation is discharged once for the surface rather than once per route."
         }
       ]
     },
@@ -371,14 +371,14 @@
     },
     "DATA-1": {
       "title": "Stores, records, downward deps",
-      "status": "owed",
-      "mechanism": "`app/notes/noteStore.ts` declares the store interface and the record; `persistence/notes/sqliteNoteStore.ts` is the only implementation; `app/notes/noteService.ts` sits between; `compose.ts` is the only module that names the implementation",
-      "note": "Built 2026-07-27 at 31278db, with the store that G exists for. `patterned` and not `proven` for a reason worth stating rather than leaving to be inferred: the DIRECTION is real but nothing MEASURES it. The sibling proves this claim with `DependencyDirectionTests`, seven reflection assertions over four assemblies, and this stack has no assemblies to reflect over; the equivalent here is a lint or a source scan over import graphs and it is not built. Findings: E-93. The row is `owed` and not `patterned` because the roll-up counts the weakest obligation, and the weakest here is the enumeration. trigger: an import-graph scan over `src/`, buildable today, which is this row's whole distance from proven.",
+      "status": "patterned",
+      "mechanism": "`architecture/importGraph.ts` scans every module under `server/src` and holds each layer to a declared allowlist of the layers it may import; `app/notes/noteStore.ts` declares the store interface and the record; `persistence/notes/sqliteNoteStore.ts` is the only implementation; `app/notes/noteService.ts` sits between; `compose.ts` is the only module that names the implementation, which the scan asserts rather than describes",
+      "note": "Re-measured 2026-07-27 and lifted from `owed` to `patterned`. The import-graph scan the row's own trigger named is built, and it closed four of the six obligations. **The rule set is ports and adapters, not a stack**, and the graph was read before the rules were written for that reason: `persistence/` imports `app/` because `app/` owns the store interface, which under a tower reading is an upward edge and forbidden. A rule set derived from the claim's words rather than from the design would have failed this tree on its correct edges. The row's sixth obligation also said the scan was 'this row's whole distance from proven', and that was wrong: the third obligation's second half, an endpoint calling ONE service method, is a second distance and no scan covers it. Findings: E-99.",
       "obligations": [
         {
           "name": "data access lives behind a store interface",
-          "status": "patterned",
-          "text": "`NoteStore` is an interface in `app/`, `sqliteNoteStore` is its only implementation and lives in `persistence/`, and the route module imports neither. Per-seam: each new store owes the same split, and nothing yet refuses a second one written the other way round. trigger for `proven`: an import-graph scan asserting no module under `routes/` or `app/` names a module under `persistence/`."
+          "status": "proven",
+          "text": "`NoteStore` is an interface in `app/`, `sqliteNoteStore` is its only implementation and lives in `persistence/`, and no module under `routes/` or `app/` may import `persistence/` at all. Enforced rather than described: the rule is a scan over every module in the tree, and planting the import into the real `routes/notes.ts` turns two tests red. A type-only import is counted, with its own red proof, because a layer that needs another's types to compile cannot be changed without it."
         },
         {
           "name": "records are pure data holders with zero behaviour",
@@ -388,40 +388,40 @@
         {
           "name": "an endpoint never touches a store, and calls one service method",
           "status": "patterned",
-          "text": "Each of the four handlers calls exactly one `NoteService` method and nothing else; the route module imports `NoteService` and never `NoteStore`, `sqliteNoteStore` or `Database`. Per-seam and not proven for the same reason as the first obligation: no scan enforces it, so the fifth handler is on its author."
+          "text": "Two halves, and only one of them is now enforced. **A handler cannot touch a store**: `routes/` may import `app/` and `platform/` and nothing else, asserted by the import-graph scan and red-proven against the real route module. **A handler calls ONE service method** is still held by reading: each of the four does, and nothing refuses a fifth that calls two, or that calls a service method and then reaches for another. trigger for `proven`: an AST assertion over the handler bodies in `routes/`, which is the shape that would close it and which was deliberately not attempted in this pass, because a positional check over call expressions is the kind of brittle predicate E-2 records the cost of."
         },
         {
           "name": "dependencies flow downward only",
-          "status": "patterned",
-          "text": "`app/` imports nothing from `persistence/` or `routes/`; `persistence/` imports `app/` types only. Held by construction and by review, not by a check. trigger for `proven`: the same import-graph scan."
+          "status": "proven",
+          "text": "Declared per layer and enforced over every module: `app` may import `app` and `platform`; `routes` and `persistence` may import `app` and `platform`; `platform` may import only itself; `architecture` may not import the layers it scans; `main.ts` may reach only `compose.ts`. Four upward edges are red-proven, including a scan importing the store it scans and the entrypoint reaching past the composition. A layer no rule describes is a violation rather than a default, and a rule whose layer imports nothing is reported as the residue of a rename."
         },
         {
           "name": "cross-boundary collaborators are interfaces registered at the composition root",
           "status": "proven",
-          "text": "`composeApp` is the only module in the server that names `sqliteNoteStore`, `openDatabase` or `noteService`, and it hands the service to the route surface as a parameter. A route cannot reach the store because it is never given one, which is the composition-root obligation discharged by construction rather than by a rule."
+          "text": "`composeApp` is the only module in the server that names `sqliteNoteStore`, `openDatabase` or `noteService`, and it hands the service to the route surface as a parameter. That was true by construction and is now a fact the suite asserts: the set of modules outside `persistence/` with an edge into it is compared against `{compose.ts}` exactly, so the composition root's privilege is measured rather than assumed."
         },
         {
           "name": "the enumeration reaches every endpoint, record and store",
-          "status": "owed",
-          "text": "Nothing enumerates anything here: the five obligations above are statements about the four handlers and one store that exist, checked by reading them. That is exactly the state the sibling was in before `DependencyDirectionTests`, and its E-40 and E-41 are what enumeration found there. trigger: a source scan over the import graph, which is buildable today and is this row's whole distance from `proven`."
+          "status": "proven",
+          "text": "Built. `scanImportGraph` walks `server/src` and reads 51 edges in the tree as it stands. It reports finding no imports at all as a violation, so it cannot go silently vacuous the way E-11 and E-92 describe, and `importEdges` is a second view a test names its expectations against: eleven specific layer pairs are asserted present, because a green scan is the same output whether it read fifty edges or none. Tests are excluded from the walk with a stated reason: a test imports across every layer by design, and holding test files to the production graph makes the rule unusable and the pressure is to delete it."
         }
       ]
     },
     "DATA-2": {
       "title": "Bounded reads",
-      "status": "owed",
-      "mechanism": "`sqliteNoteStore.list` pages by keyset over `(created_at_utc, id)` and clamps to `MAX_PAGE_SIZE` at the store; the cursor crosses the wire opaque; `STATEMENTS` holds every query the store can run",
-      "note": "Built 2026-07-27 at 31278db. The sibling's E-48 is the warning this was built against: there, three separate plants (no-tracking removed, the clamp removed, `Take` removed outright) each left 113 architecture and 19 unit tests green, because the store was inside the tested path and nothing asserted how it READS. trigger: an assertion over `STATEMENTS` that every SELECT carries a LIMIT, buildable today because the statement set is a frozen value rather than strings scattered across methods.",
+      "status": "proven",
+      "mechanism": "`architecture/statementSurface.ts` reads every `STATEMENTS` set in the tree statically and asserts each SELECT carries a LIMIT and no statement pages by OFFSET; `sqliteNoteStore.list` pages by keyset over `(created_at_utc, id)` and clamps to `MAX_PAGE_SIZE` at the store; the cursor crosses the wire opaque",
+      "note": "Re-measured 2026-07-27 and lifted from `owed` to `proven`. The assertion over `STATEMENTS` that the row's own trigger named is built, and it is stronger than the trigger asked for: it also refuses OFFSET, refuses a statement it cannot read statically, and refuses SQL that reaches the engine outside the declared set at all, so the set is the whole surface rather than the queries whose author chose to put them there. Its first run reported a real defect in this edition: `STATEMENTS.get` carried no LIMIT. The key already bounded that read to one row, so the read was never unbounded; what was missing is that the bound lived in the SCHEMA and the scan reads statements. `LIMIT 1` was added rather than teaching the scan the primary key, which would be a second copy of the migration living in an architecture test. Findings: E-99.",
       "obligations": [
         {
           "name": "list reads are paginated by keyset, not offset",
           "status": "proven",
-          "text": "The SQL carries no OFFSET and cannot: `STATEMENTS.listAfter` is a row comparison `(created_at_utc, id) > (?, ?)`, and the whole statement set is one frozen object a test reads. The cursor carries both ordering columns, so equal timestamps neither drop a row nor serve one twice; the sibling's index history is the reason the tiebreak is not optional."
+          "text": "The SQL carries no OFFSET and cannot: `STATEMENTS.listAfter` is a row comparison `(created_at_utc, id) > (?, ?)`, and the whole statement set is one frozen object a test reads. The cursor carries both ordering columns, so equal timestamps neither drop a row nor serve one twice; the sibling's index history is the reason the tiebreak is not optional. Now enforced as well as true: the scan refuses any statement containing OFFSET, with a red proof, so the keyset form is the only paging this store can express."
         },
         {
           "name": "the bound is explicit and lives at the store",
           "status": "proven",
-          "text": "`MAX_PAGE_SIZE` is a constant on the interface and `boundedLimit` clamps there, not at the route. A bound applied only at a handler is a bound on that handler, and the next caller of the store gets none, which is what E-48 measured when the sibling's clamp was removed and nothing noticed."
+          "text": "`MAX_PAGE_SIZE` is a constant on the interface and `boundedLimit` clamps there, not at the route. A bound applied only at a handler is a bound on that handler, and the next caller of the store gets none, which is what E-48 measured when the sibling's clamp was removed and nothing noticed. Proven behaviourally as of 2026-07-27 rather than by reading: asking the store for more than `MAX_PAGE_SIZE` returns exactly the maximum, and asking for 0, -1 or 1.5 returns the default rather than nothing."
         },
         {
           "name": "reads run untracked",
@@ -430,8 +430,8 @@
         },
         {
           "name": "every list read is bounded, not merely every list endpoint",
-          "status": "owed",
-          "text": "The bound is at the store, which is stronger than at the endpoint, and it is still one store method checked by reading it. A second list method added to `NoteStore` without a clamp is caught by nothing. trigger: an assertion over `STATEMENTS` that every SELECT carries a LIMIT, which is buildable today because the statement set is a value."
+          "status": "proven",
+          "text": "Built, and it covers the whole surface rather than one method. `scanStatementSurface` reads every `STATEMENTS` object declared anywhere in `server/src`, statically, and refuses a SELECT with no LIMIT. A second list method added without a clamp is caught the moment it is written. Three things make the enumeration real rather than nominal: a statement whose value is not a plain literal is reported by name rather than skipped, because a query assembled at runtime defeats the chokepoint whatever it turns out to say; SQL handed to `prepare` or `exec` outside the set is a violation with two named exemptions carrying their reasons; and the scan reports finding NO statements as a violation of its own, so a renamed directory cannot make it silently vacuous. Red proofs for every branch, plus a live plant against the shipped store."
         }
       ]
     },

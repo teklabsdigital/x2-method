@@ -45,6 +45,19 @@ export type Clock = Readonly<{
   offsetMinutesAt: (instant: Date, zone: string) => number;
 }>;
 
+// The one construction affordance for tests, named and narrow, in the discipline `tenantForTesting` established
+// in `app/tenancy.ts` and for the same reason. A test that needs two instants a known distance apart has to build
+// them, and there are exactly two ways to allow that: name the test files in the lint, which exempts every clock
+// read in those files rather than the construction, or put the affordance in the seam where it is greppable and
+// costs one line to review. The second keeps the exemption list from growing by a file per test, and it keeps the
+// ban itself absolute: `new Date` still appears in this module and nowhere else.
+//
+// Production code has no reason to call it. What makes that safe enough today is that every production path
+// already holds a `Clock`.
+export function instantForTesting(epochMilliseconds: number): Date {
+  return new Date(epochMilliseconds);
+}
+
 export const systemClock: Clock = Object.freeze({
   now: () => new Date(),
 

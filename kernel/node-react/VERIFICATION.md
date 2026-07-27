@@ -1181,3 +1181,105 @@ invoke them, which is the property, and which E-80 and E-95 are both instances o
 Server 241, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, docs-lint self-test 33/32, gate-check
 self-test 6/7, secret-scan ok, `node scripts/e2e.ts` green. Every plant restored from a copy and its backup
 deleted in the same round (E-59), each restoration confirmed against the baseline count before the next plant.
+
+## 2026-07-27, the enumerations: three of the four owed obligations, and four findings from planting against them
+
+Measured at `3ac6f25`. Server suite 241 before, **283** after. Non-owed rows 9 before, **12** after: DATA-2 to
+`proven`, DATA-1 and TEN-2 to `patterned`.
+
+G left four obligations `owed`, each with a written trigger. Three were buildable and are built. The fourth,
+TEN-3's enumeration over tenant-owned tables, waits on a second table and is the one case where waiting is the
+right answer rather than the easy one: an enumeration over a set of size one cannot fail, so building it now
+would produce a mechanism whose first real test is the day somebody trusts it.
+
+### The statement chokepoint, which the sibling cannot have
+
+`architecture/statementSurface.ts` reads every `STATEMENTS` object in the tree statically and asserts each
+statement constrains `tenant_id` to a parameter, each SELECT carries a LIMIT, and nothing pages by OFFSET. E-77
+records why this is available here and not there: in the sibling a cross-tenant read is the ABSENCE of a
+`.Where(...)` clause, and absence has no syntax, so a scan for it is green forever.
+
+It reads the PREDICATE rather than the statement, and that distinction has its own test. `SELECT tenant_id, id
+FROM notes WHERE id = ? ORDER BY tenant_id LIMIT 10` mentions the tenant column twice and constrains nothing; a
+substring check passes it.
+
+Three things keep the set from being a habit rather than a surface: a statement whose value is not a plain
+literal is reported by name rather than skipped, SQL reaching `prepare` or `exec` outside the set is a violation
+with two named exemptions carrying their reasons, and **the scan reports finding no statements at all as a
+violation of its own**, so a renamed directory cannot make it quietly vacuous.
+
+Its first run found a real defect: `STATEMENTS.get` carried no LIMIT. The primary key already bounded that read
+to one row, so it was never unbounded; the bound lived in the SCHEMA and the scan reads statements. `LIMIT 1` was
+added rather than teaching the scan which columns form the key, which would put a second copy of the migration in
+an architecture test.
+
+### The import graph, and why the obvious rule set would have been wrong
+
+`architecture/importGraph.ts` holds each layer to a declared allowlist. **The graph was read before the rules
+were written**, and that ordering is the finding rather than a habit: "dependencies flow downward only" suggests
+a tower with endpoints on top and the database at the bottom, and this tree is not that shape. `persistence/`
+imports `app/`, because `app/` owns the store interface. Under a tower reading that edge is upward and forbidden,
+so a rule set derived from the claim's words would have failed this tree on its correct edges and passed it on
+nothing at all.
+
+Type-only imports are counted, with their own red proof. They erase at runtime, so nothing would ever notice; the
+dependency is still real, because a layer that needs another's types cannot be changed without it.
+
+### Plants
+
+| plant | outcome |
+|---|---|
+| the tenant filter dropped from `STATEMENTS.remove`, call site untouched | red, 5 tests, and **3 of them on parameter arity rather than tenancy**: E-101 |
+| the same, with the parameter dropped too | red-correct, 3 tests, one behavioural and two static |
+| `LIMIT` removed from `STATEMENTS.listFirst` | red-correct, 5 tests |
+| the real `routes/notes.ts` importing the store | red-correct, 2 tests, one of them the composition-root assertion |
+| the `scripts` surface removed from the configuration scan | red-correct, one test, while the green scan reported ok |
+| `tenantForTesting` called in a production module | red-correct, both lint selectors |
+| `tenantOf({ ...credential, tenantId: 'someone-else' })` in every handler | red-correct, 2 of 3, and **the third stayed green**: E-102 |
+
+### E-99 through E-102
+
+**E-99, the scan reported itself and the credential verifier.** The chokepoint check looks for calls to `prepare`
+and `exec`, and `exec` is `RegExp.prototype.exec` as well as `DatabaseSync.prototype.exec`. It matched
+`/^INSERT.../i.exec(flat)` inside the scan and `BEARER.exec(header)` in the verifier. E-9's finding from the
+other side: there a name predicate under-reached on morphology, here it over-reaches on homonymy, and both say
+that the only thing a name-shaped predicate knows is spelling. Scoped to `persistence/`, which is sound exactly
+as far as DATA-1's rule holds, and that rule is now a scan built in this same pass rather than review.
+
+**E-100, the register named a divergence and the suite tested one side.** Planting E-50's defect turned two tests
+red and both were the new static scan. `sqliteNoteStore` had no test file at all, and the only cross-tenant proof
+in the edition was the harness's `cross-tenant-404`, a READ. E-50 is specifically about a read and a delete
+answering differently. The scenario nobody had written, in either edition, was the second path.
+
+**E-101, the plant that was caught by the wrong thing.** Three of the first plant's five failures were SQLite
+refusing a parameter count, which would have fired for a perfectly tenant-scoped statement that merely miscounted.
+Red-for-a-different-reason is usually imagined as a different TEST firing; it also covers the same test firing for
+a different CAUSE, and that looks identical in the output.
+
+**E-102, the test that stayed green.** Under a uniformly wrong tenant, the single-caller test still passes: the
+write and the read use the same wrong value, so the system is consistent with itself. E-90 in the other
+direction, where a suite of refusals could not tell a working mechanism from an absent one. The discriminator in
+both cases is a second, differently-positioned actor.
+
+### Two seams pinned, one added
+
+`tenantForTesting` produces a `TenantId` from an arbitrary string and its own comment said "a lint could pin
+that". Nothing did. It is now refused outside `__tests__`, as the named import and as the call, in both spellings
+so a namespace import does not walk past it. `instantForTesting` was added to the clock seam in the same
+discipline rather than by naming a third test file in the lint's exemption list: a file-level exemption would
+exempt every clock read in that file, and the affordance in the seam is one greppable line.
+
+### What did not move, and why
+
+TEN-2's row is `patterned` and not better because the request-level assertion is per route: the fifth handler
+owes its own, and nothing enumerates handlers. DATA-1's is `patterned` because its third obligation has two
+halves and only one is enforced; a handler cannot touch a store, and "calls ONE service method" is still held by
+reading. **The row's own text used to say the import-graph scan was its whole distance from `proven`, and that
+sentence was wrong**, which is E-87's shape once more: a row can be mistaken about what remains, and nobody
+re-derives that sentence on the day the trigger fires.
+
+### Gates
+
+Server 283, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok, self-test 33/32, secret-scan ok,
+`node scripts/e2e.ts` green. Every plant restored from a copy and its backup deleted in the same round (E-59),
+each restoration confirmed against the baseline count before the next plant.

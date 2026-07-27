@@ -4656,6 +4656,109 @@ sibling's obligation would open at a realized status and needs a plant against `
 and node's opens `owed` with a trigger. **Trigger: the next pass in either edition, which owes its row a fifth
 obligation before it touches anything else in TEST-2.**
 
+### E-99. A predicate that matches a method NAME cannot tell two unrelated APIs apart
+
+**Claim:** TEN-2. **Found:** 2026-07-27, on the statement scan's first run. **Measured at 3ac6f25.**
+**Repaired here.**
+
+The chokepoint check refuses SQL that reaches the engine outside the declared `STATEMENTS` set, and it looks for
+calls to `prepare` and `exec`, because those are the two `node:sqlite` entry points that take a statement. On its
+first run over the tree it reported two violations, and both were correct about what they matched and wrong about
+what it meant:
+
+    server/src/architecture/statementSurface.ts  line 81, exec()
+    server/src/platform/bearerCredential.ts      line 40, exec()
+
+The first is `/^INSERT\s+INTO.../i.exec(flat)`, inside the scan itself. The second is `BEARER.exec(header)`, the
+credential verifier reading its Authorization header. **`exec` is `RegExp.prototype.exec` as well as
+`DatabaseSync.prototype.exec`**, and a check that resolves on spelling gets both, because spelling is shared
+between APIs that have nothing to do with each other.
+
+This is E-9's finding arriving from a new direction. There it was the name registries matching `emailAddress`
+against an entry for `email`, a predicate under-reaching on morphology. Here the same class over-reaches on
+homonymy, and the two are the same fact: **a name is not a type, and the only thing a name-shaped predicate
+actually knows is how something is spelled.**
+
+Repaired by scoping the check to `server/src/persistence/`, which is not a dodge and is worth being explicit
+about. Nothing outside that directory can execute SQL, because nothing outside it is handed a `Database`:
+`compose.ts` opens one and passes it to the store. So the check is sound exactly as far as DATA-1's
+downward-dependency rule holds, and that rule is now enforced by a scan built in the same pass rather than by
+review. Two mechanisms, each naming what it rests on. The alternative was a type checker over the whole program
+to ask what the receiver IS, which is the correct answer and costs a `ts.Program`; it is the named upgrade if the
+directory argument ever stops holding.
+
+### E-100. The register named a divergence between two paths and the suite tested one of them
+
+**Claim:** TEN-2. **Found:** 2026-07-27, by a plant. **Measured at 3ac6f25.** **Repaired here.**
+
+Planting E-50's exact defect into node's store, a `DELETE` that lost its tenant predicate, turned two tests red.
+Both were the new static scan. **Nothing in the suite executed a cross-tenant delete**, because nothing in the
+suite executed the store at all: `sqliteNoteStore` had no test file, and its behaviour was covered only through
+the out-of-process harness, whose `cross-tenant-404` scenario is a READ.
+
+E-50 is specifically about a read and a delete answering differently. It records that in the sibling a
+cross-tenant read answered 404 while a cross-tenant delete with a forgotten filter answered 500, and that the
+difference is an existence oracle. So the register held a finding whose entire content is "these two paths
+diverged", and the one scenario nobody had written was the second path. In both editions.
+
+**A finding that names two paths behaving differently obliges a test on BOTH, and the instinct is to test the one
+the finding describes as correct.** The read is where the desired behaviour is stated, so the read is what gets
+asserted, and the delete keeps its 500 until somebody plants against it.
+
+Repaired with a store test covering read, list and delete isolation for two tenants, plus a request-level test
+that asserts the same three routes answer in one shape. Re-planted afterwards: three red, one behavioural and two
+static.
+
+### E-101. A plant that changes two properties at once is caught by the wrong one
+
+**Claim:** methodological; found against TEN-2. **Found:** 2026-07-27. **Measured at 3ac6f25.**
+
+The first version of the plant above changed the statement and left the call site alone:
+
+    remove: 'DELETE FROM notes WHERE id = ?'          // one parameter
+    db.prepare(STATEMENTS.remove).run(tenant, id)     // two arguments
+
+Five tests went red, and three of them went red on ARITY. SQLite refuses a statement handed more parameters than
+it has placeholders, so those three would have failed for a statement that was perfectly tenant-scoped and merely
+miscounted. Only two of the five were about tenancy.
+
+That is a scoring error waiting to happen, and it is the more dangerous half of the planting protocol rather than
+the obvious one. The protocol says to score three outcomes, red-correct, green, and red-for-a-different-reason,
+and the third is normally imagined as a different TEST firing. It also covers the same test firing for a
+different CAUSE, which looks identical in the output: a count of failures and a list of names, all of them
+plausible.
+
+Sharpened by dropping the parameter with the predicate, so only tenancy changed. Three red, one behavioural and
+two static, and every one of them about the tenant. **A plant has to be the minimal edit that violates only the
+property under test; if it breaks a second thing, the redness is ambiguous and the proof is of nothing in
+particular.**
+
+### E-102. A system uniformly wrong about tenancy is self-consistent, so a single-tenant test cannot see it
+
+**Claim:** TEN-2, TEN-1. **Found:** 2026-07-27, by a plant against the new request-level tests.
+**Measured at 3ac6f25.**
+
+TEN-2's last obligation names a hole the type system cannot close: a handler that obtains a REAL `TenantId` and
+passes the wrong one. Planted exactly, in the one line every handler routes through:
+
+    return tenantOf({ ...request.credential, tenantId: 'someone-else' });
+
+eslint is clean on it, and correctly so: it is an ordinary expression over a legitimately obtained credential,
+and the branded type has done its job by insisting the value came from one. Two of the three request-level tests
+went red.
+
+**The third stayed green, and it is the informative one.** It creates a note and reads it back as the same
+caller, and under a uniformly wrong tenant that still works: the write and the read use the same wrong value, so
+the system is consistent with itself and every single-tenant assertion holds. A tenancy suite made of one
+tenant's happy path is consistent with the tenant being ignored entirely, and reads as thorough because every
+operation succeeds.
+
+This is E-90's rule in the other direction. There, a suite of refusals could not distinguish a working mechanism
+from an absent one, because absence refuses everything. Here a suite of successes cannot distinguish correct
+tenancy from uniformly wrong tenancy, because a consistent error succeeds at everything. **The discriminator in
+both cases is a second, differently-positioned actor**, and the assertions that moved are the ones comparing what
+one caller wrote against what a DIFFERENT caller can see, plus the one reading the row rather than the response.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

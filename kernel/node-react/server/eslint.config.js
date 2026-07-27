@@ -108,6 +108,33 @@ const clockBans = [
   },
 ];
 
+// The testing hatches, pinned. `tenantForTesting` and `instantForTesting` exist because a test needs a tenant
+// without minting a JWT and two instants a known distance apart, and both modules say in their own comments that
+// production has no reason to call them and that a lint could hold that. This is the lint. Without it the two
+// functions are exactly the hole they were written to replace, with a name: `tenantForTesting('anything')` in a
+// handler produces a `TenantId` that came from no credential at all, which is the one thing the branded type
+// exists to make impossible (TEN-1, TEN-2).
+//
+// Both spellings are banned, the named import and the call, because a namespace import walks past a check on
+// either one alone.
+const testingHatchBans = [
+  {
+    selector: "ImportSpecifier[imported.name=/^(tenantForTesting|instantForTesting)$/]",
+    message:
+      'A testing hatch is for tests. tenantForTesting produces a TenantId that came from no credential, and instantForTesting a Date that came from no clock; in production each is the hole its branded type or its seam exists to close (TEN-1, TEN-2, TIME-1).',
+  },
+  {
+    selector: "CallExpression[callee.name=/^(tenantForTesting|instantForTesting)$/]",
+    message:
+      'A testing hatch is for tests. Obtain a TenantId from tenantOf(credential) and an instant from the clock seam (TEN-1, TEN-2, TIME-1).',
+  },
+  {
+    selector: "CallExpression[callee.property.name=/^(tenantForTesting|instantForTesting)$/]",
+    message:
+      'A testing hatch is for tests, and reaching it through a namespace import is the same call. Obtain a TenantId from tenantOf(credential) and an instant from the clock seam (TEN-1, TEN-2, TIME-1).',
+  },
+];
+
 const listenBan = {
   selector: "CallExpression[callee.property.name='listen']",
   message:
@@ -132,7 +159,7 @@ const rawServerBan = {
 // the rest. Each override below starts from this list and removes exactly what it is exempt from, by name. The
 // previous version of this config restated the whole array in every block, which is how a five-item list becomes
 // a four-item list in the one block nobody re-reads.
-const allSyntaxBans = [...dynamicImportBans, listenBan, rawServerBan, environmentBan, ...clockBans];
+const allSyntaxBans = [...dynamicImportBans, listenBan, rawServerBan, environmentBan, ...clockBans, ...testingHatchBans];
 
 const except = (...exempt) => allSyntaxBans.filter((ban) => !exempt.includes(ban));
 
@@ -150,6 +177,14 @@ export default tseslint.config(
         { patterns: [frameworkBan, escapeHatchBan, socketBan, filesystemBan] },
       ],
       'no-restricted-syntax': ['error', ...allSyntaxBans],
+    },
+  },
+  {
+    // Every test, and only for the two testing hatches. A test IS the caller they exist for, so the exemption is
+    // the whole point rather than a concession; what the ban buys is that no other caller exists.
+    files: ['**/__tests__/**/*.{ts,tsx,js,jsx,mjs,cjs}'],
+    rules: {
+      'no-restricted-syntax': ['error', ...except(...testingHatchBans)],
     },
   },
   {

@@ -33,7 +33,13 @@ export const STATEMENTS = Object.freeze({
     'SELECT tenant_id, id, title, body, created_at_utc FROM notes WHERE tenant_id = ? ORDER BY created_at_utc, id LIMIT ?',
   listAfter:
     'SELECT tenant_id, id, title, body, created_at_utc FROM notes WHERE tenant_id = ? AND (created_at_utc, id) > (?, ?) ORDER BY created_at_utc, id LIMIT ?',
-  get: 'SELECT tenant_id, id, title, body, created_at_utc FROM notes WHERE tenant_id = ? AND id = ?',
+  // `LIMIT 1` on a full primary-key lookup returns nothing the key did not already guarantee, and that is the
+  // point. `PRIMARY KEY (tenant_id, id)` bounds this read to one row by construction, so the read was never
+  // unbounded; what was missing is that the bound lived in the SCHEMA and the scan reads STATEMENTS. The
+  // alternative was teaching the scan which columns form the primary key, which is a second copy of the migration
+  // living in an architecture test. One word here buys an invariant with no exceptions in it: every SELECT this
+  // server can run carries a LIMIT, and a rule with no carve-outs is a rule nobody has to interpret.
+  get: 'SELECT tenant_id, id, title, body, created_at_utc FROM notes WHERE tenant_id = ? AND id = ? LIMIT 1',
   remove: 'DELETE FROM notes WHERE tenant_id = ? AND id = ?',
 });
 
