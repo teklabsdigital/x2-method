@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { composeApp } from '../../compose.ts';
+import { freshDatabase } from '../../persistence/__tests__/support.ts';
 import type { Credential } from '../../platform/authorization.ts';
 import type { RecordedRoute } from '../../platform/routeTable.ts';
 import {
@@ -65,7 +66,7 @@ describe('the shared fixture is a corpus and not an empty file (CON-2)', () => {
 
 describe('the composed app realizes every contract the shared fixture pins (CON-2)', () => {
   it('has no parity finding against the fixture the client asserts against', async () => {
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
     expect(contractParityFindings(FIXTURE, app.routeTable)).toEqual([]);
     await app.close();
   });
@@ -75,7 +76,7 @@ describe('the composed app realizes every contract the shared fixture pins (CON-
     // matched on the first run and the third was bound by nothing, so a per-route check alone reported a clean
     // pass over the only contract that had drifted. Naming the count here means deleting a binding fails this
     // test as well as the scan.
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
     const bound = app.routeTable
       .flatMap((entry) => Object.values((entry.config.contracts ?? {}) as Record<string, string>))
       .sort();
@@ -102,7 +103,7 @@ type Page = Readonly<{ items: { id: string }[]; nextCursor: string | null }>;
 const grant = (...permissions: string[]): Credential =>
   Object.freeze({ subject: 'contract-parity', tenantId: 'contract-parity-tenant', sessionVersion: 1, permissions });
 
-const authenticatedApp = (credential: Credential) => composeApp({}, { authenticate: () => credential });
+const authenticatedApp = (credential: Credential) => composeApp({}, { authenticate: () => credential, database: freshDatabase() });
 
 describe('what the server emits is what the contract declares (CON-2)', () => {
   it('emits the fixture field set on create, not merely a schema that names it', async () => {

@@ -3,6 +3,9 @@
     "port": 5080,
     "host": "127.0.0.1"
   },
+  "database": {
+    "file": ".data/kernel.db"
+  },
   "logging": {
     "level": "info"
   },

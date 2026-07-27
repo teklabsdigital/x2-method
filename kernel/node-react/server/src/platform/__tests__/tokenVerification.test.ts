@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { composeApp } from '../../compose.ts';
+import { freshDatabase } from '../../persistence/__tests__/support.ts';
 import { decideCredential } from '../bearerCredential.ts';
 import { systemClock } from '../clock.ts';
 import { DEVELOPMENT_RELAXATION, resolveSettings, type Settings } from '../settings.ts';
@@ -370,7 +371,7 @@ describe('the composed app answers with the wired verifier (SEC-4, E-89)', () =>
   const withKey = (key: string): Settings => Object.freeze({ ...base, auth: Object.freeze({ ...base.auth, signingKey: key }) });
 
   it('admits a correctly minted token through the gate', async () => {
-    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+    const app = await composeApp({}, { database: freshDatabase() }, undefined, withKey(signingKey));
 
     const created = await app.inject({
       method: 'POST',
@@ -384,7 +385,7 @@ describe('the composed app answers with the wired verifier (SEC-4, E-89)', () =>
   });
 
   it('answers 403 when the token authenticates and lacks the permission, so the credential came from the token', async () => {
-    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+    const app = await composeApp({}, { database: freshDatabase() }, undefined, withKey(signingKey));
 
     const written = await app.inject({
       method: 'POST',
@@ -401,7 +402,7 @@ describe('the composed app answers with the wired verifier (SEC-4, E-89)', () =>
   it('stops admitting a token the moment that principal has its session version bumped', async () => {
     // The end-to-end shape of SEC-4's revocation sentence: the same token, the same server, one write in between.
     const versions = inMemorySessionVersions();
-    const app = await composeApp({}, { sessionVersions: versions }, undefined, withKey(signingKey));
+    const app = await composeApp({}, { sessionVersions: versions, database: freshDatabase() }, undefined, withKey(signingKey));
     const token = `Bearer ${mint({ claims: { sub: 'signed-out-everywhere' } })}`;
 
     expect((await app.inject({ method: 'GET', url: '/notes', headers: { authorization: token } })).statusCode).toBe(200);
@@ -413,7 +414,7 @@ describe('the composed app answers with the wired verifier (SEC-4, E-89)', () =>
   });
 
   it('refuses a token signed with another key', async () => {
-    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+    const app = await composeApp({}, { database: freshDatabase() }, undefined, withKey(signingKey));
     const reply = await app.inject({
       method: 'GET',
       url: '/notes',
@@ -427,7 +428,7 @@ describe('the composed app answers with the wired verifier (SEC-4, E-89)', () =>
   it('refuses every token when the process is running on the development relaxation key (E-89)', async () => {
     // The measured hazard, end to end. A deploy that forgets NODE_ENV resolves the signing key to a literal
     // committed in this repository; without this refusal the server would authenticate anyone who read it.
-    const app = await composeApp({}, {}, undefined, withKey(DEVELOPMENT_RELAXATION));
+    const app = await composeApp({}, { database: freshDatabase() }, undefined, withKey(DEVELOPMENT_RELAXATION));
     const reply = await app.inject({
       method: 'GET',
       url: '/notes',
@@ -439,7 +440,7 @@ describe('the composed app answers with the wired verifier (SEC-4, E-89)', () =>
   });
 
   it('still answers 401 with no Authorization header at all', async () => {
-    const app = await composeApp({}, {}, undefined, withKey(signingKey));
+    const app = await composeApp({}, { database: freshDatabase() }, undefined, withKey(signingKey));
     expect((await app.inject({ method: 'GET', url: '/notes' })).statusCode).toBe(401);
     await app.close();
   });

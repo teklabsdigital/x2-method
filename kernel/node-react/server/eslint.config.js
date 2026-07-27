@@ -174,6 +174,18 @@ export default tseslint.config(
     },
   },
   {
+    // The migration runner. It reads `.sql` files off disk, which is what a migration runner does, and it is named
+    // here rather than folded into the persistence directory as a whole so that the server's own modules stay
+    // unable to read a file. `compose.ts` imports `persistence/database.ts`, and nothing in the request path
+    // imports this module: the migrate script does, and test fixtures do. Splitting the two was the alternative to
+    // widening the ban, and it is the better one, because it removes the capability from the serving process
+    // rather than licensing it there.
+    files: ['src/persistence/migrator.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', { patterns: [frameworkBan, escapeHatchBan, socketBan] }],
+    },
+  },
+  {
     // The clock seam. One file reads a clock, wall or monotonic, for the reason TIME-1 gives: a duration is
     // measured from the monotonic source, never computed by subtracting two wall-clock readings.
     files: ['src/platform/clock.ts'],

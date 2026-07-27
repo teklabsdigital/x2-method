@@ -23,14 +23,53 @@
     "TEN-2": {
       "title": "Ambient scope, fail-closed",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first background job or any second scope entry point."
+      "mechanism": "`TenantId` is a branded type produced only by `tenantOf(credential)`; every `NoteStore` method takes it as its first parameter; every statement in `STATEMENTS` carries `tenant_id`",
+      "note": "Built 2026-07-27 at 31278db, and realized differently from the sibling on purpose. The sibling uses an ambient scope whose accessor throws when unset, because an EF `SaveChanges` override has no parameter list to put a tenant in. This edition has one, so a store call without a tenant does not fail at runtime, it fails to compile. Unrepresentable and rejected are different mechanism classes and the difference is recorded rather than smoothed over. Findings: E-50. trigger: a request-level assertion that a handler cannot reach the store with a tenant other than its caller's, which needs a seam the store does not currently have.",
+      "obligations": [
+        {
+          "name": "no store operation can run without a tenant",
+          "status": "proven",
+          "text": "Every method of `NoteStore` takes `TenantId` first, and `TenantId` is a branded type whose only producer is `tenantOf(credential)`. There is no value of that type that did not come from a verified signature, and no call that omits it, because omitting it is a type error."
+        },
+        {
+          "name": "cross-tenant access is uniformly not-found",
+          "status": "proven",
+          "text": "Read, get and delete all carry `tenant_id` in their own predicate, so a cross-tenant request is an absence at the store rather than an error to be translated at the route. E-50 is why this is stated as uniformity rather than as correctness: in the sibling a cross-tenant read answered 404 while a cross-tenant delete with a forgotten filter answered 500, and a caller could tell the difference, which is an existence oracle. Proven end to end by the harness's `cross-tenant-404` scenario, green at 31278db."
+        },
+        {
+          "name": "every execution path entry establishes a tenant",
+          "status": "patterned",
+          "text": "Every HTTP path does: the gate hook sets `request.credential` before any handler, and each handler calls `tenantFor(request)`. There are no non-HTTP paths in this edition, so the register of `Begin` sites the claim asks for has nothing to list. Per-seam: the first background job, scheduled task or CLI owes its own answer, and the only answer available is a credential."
+        },
+        {
+          "name": "a guard refuses rather than defaulting",
+          "status": "owed",
+          "text": "There is no runtime guard to refuse, because the type system removes the case. What that does NOT cover is a caller who obtains a real `TenantId` and passes the WRONG one: nothing compares the tenant a handler used against the tenant on its credential. trigger: a request-level assertion that a handler cannot reach the store with a tenant other than its caller's, which needs a seam the store does not currently have."
+        }
+      ]
     },
     "TEN-3": {
       "title": "Tenant-leading composite keys",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first tenant-owned entity in this edition."
+      "mechanism": "`0001_initial.sql` declares `PRIMARY KEY (tenant_id, id)`, so the tenant leads row identity",
+      "note": "Built 2026-07-27 at 31278db. One tenant-owned table exists, so the key shape is right and nothing enumerates it. trigger: the second tenant-owned table, which is the first moment an enumeration has more than one thing to enumerate.",
+      "obligations": [
+        {
+          "name": "the primary key leads with the tenant id",
+          "status": "proven",
+          "text": "`PRIMARY KEY (tenant_id, id)` in the shipped migration, applied by the real migration file in every test fixture rather than by a hand-written CREATE beside it. A row cannot be addressed without naming its tenant, and a query that forgets the tenant cannot use the key at all."
+        },
+        {
+          "name": "the assertion covers every tenant-owned entity",
+          "status": "owed",
+          "text": "There is exactly one table and no marker, no registry and no scan. The sibling's `TenantKeyTests` is the shape this takes, and its E-43 is the warning: narrowing the registry and stripping the marker there left 113 tests green, both halves going vacuous together. trigger: the second table, which is the first moment an enumeration has more than one thing to enumerate; the scan is over the migration SQL rather than over an ORM model, because this edition has no model to reflect over."
+        },
+        {
+          "name": "a tenant-shaped column implies the tenant-owned marker",
+          "status": "owed",
+          "text": "The comparison the sibling makes between its marked set and the set of entities carrying a tenant column. Neither side exists here yet: no marker, one table. trigger: the same second table."
+        }
+      ]
     },
     "TEN-4": {
       "title": "Save-time guard and write provenance",
@@ -333,14 +372,68 @@
     "DATA-1": {
       "title": "Stores, records, downward deps",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first store implementation."
+      "mechanism": "`app/notes/noteStore.ts` declares the store interface and the record; `persistence/notes/sqliteNoteStore.ts` is the only implementation; `app/notes/noteService.ts` sits between; `compose.ts` is the only module that names the implementation",
+      "note": "Built 2026-07-27 at 31278db, with the store that G exists for. `patterned` and not `proven` for a reason worth stating rather than leaving to be inferred: the DIRECTION is real but nothing MEASURES it. The sibling proves this claim with `DependencyDirectionTests`, seven reflection assertions over four assemblies, and this stack has no assemblies to reflect over; the equivalent here is a lint or a source scan over import graphs and it is not built. Findings: E-93. The row is `owed` and not `patterned` because the roll-up counts the weakest obligation, and the weakest here is the enumeration. trigger: an import-graph scan over `src/`, buildable today, which is this row's whole distance from proven.",
+      "obligations": [
+        {
+          "name": "data access lives behind a store interface",
+          "status": "patterned",
+          "text": "`NoteStore` is an interface in `app/`, `sqliteNoteStore` is its only implementation and lives in `persistence/`, and the route module imports neither. Per-seam: each new store owes the same split, and nothing yet refuses a second one written the other way round. trigger for `proven`: an import-graph scan asserting no module under `routes/` or `app/` names a module under `persistence/`."
+        },
+        {
+          "name": "records are pure data holders with zero behaviour",
+          "status": "proven",
+          "text": "`Note` is a `Readonly<{...}>` type alias of five fields. It is a TYPE and not a class, so it cannot carry a method: there is no object to hang one on. Unrepresentable rather than refused, which is this edition's answer wherever the platform allows it."
+        },
+        {
+          "name": "an endpoint never touches a store, and calls one service method",
+          "status": "patterned",
+          "text": "Each of the four handlers calls exactly one `NoteService` method and nothing else; the route module imports `NoteService` and never `NoteStore`, `sqliteNoteStore` or `Database`. Per-seam and not proven for the same reason as the first obligation: no scan enforces it, so the fifth handler is on its author."
+        },
+        {
+          "name": "dependencies flow downward only",
+          "status": "patterned",
+          "text": "`app/` imports nothing from `persistence/` or `routes/`; `persistence/` imports `app/` types only. Held by construction and by review, not by a check. trigger for `proven`: the same import-graph scan."
+        },
+        {
+          "name": "cross-boundary collaborators are interfaces registered at the composition root",
+          "status": "proven",
+          "text": "`composeApp` is the only module in the server that names `sqliteNoteStore`, `openDatabase` or `noteService`, and it hands the service to the route surface as a parameter. A route cannot reach the store because it is never given one, which is the composition-root obligation discharged by construction rather than by a rule."
+        },
+        {
+          "name": "the enumeration reaches every endpoint, record and store",
+          "status": "owed",
+          "text": "Nothing enumerates anything here: the five obligations above are statements about the four handlers and one store that exist, checked by reading them. That is exactly the state the sibling was in before `DependencyDirectionTests`, and its E-40 and E-41 are what enumeration found there. trigger: a source scan over the import graph, which is buildable today and is this row's whole distance from `proven`."
+        }
+      ]
     },
     "DATA-2": {
       "title": "Bounded reads",
       "status": "owed",
-      "mechanism": "",
-      "note": "trigger: the first list endpoint."
+      "mechanism": "`sqliteNoteStore.list` pages by keyset over `(created_at_utc, id)` and clamps to `MAX_PAGE_SIZE` at the store; the cursor crosses the wire opaque; `STATEMENTS` holds every query the store can run",
+      "note": "Built 2026-07-27 at 31278db. The sibling's E-48 is the warning this was built against: there, three separate plants (no-tracking removed, the clamp removed, `Take` removed outright) each left 113 architecture and 19 unit tests green, because the store was inside the tested path and nothing asserted how it READS. trigger: an assertion over `STATEMENTS` that every SELECT carries a LIMIT, buildable today because the statement set is a frozen value rather than strings scattered across methods.",
+      "obligations": [
+        {
+          "name": "list reads are paginated by keyset, not offset",
+          "status": "proven",
+          "text": "The SQL carries no OFFSET and cannot: `STATEMENTS.listAfter` is a row comparison `(created_at_utc, id) > (?, ?)`, and the whole statement set is one frozen object a test reads. The cursor carries both ordering columns, so equal timestamps neither drop a row nor serve one twice; the sibling's index history is the reason the tiebreak is not optional."
+        },
+        {
+          "name": "the bound is explicit and lives at the store",
+          "status": "proven",
+          "text": "`MAX_PAGE_SIZE` is a constant on the interface and `boundedLimit` clamps there, not at the route. A bound applied only at a handler is a bound on that handler, and the next caller of the store gets none, which is what E-48 measured when the sibling's clamp was removed and nothing noticed."
+        },
+        {
+          "name": "reads run untracked",
+          "status": "proven",
+          "text": "Unrepresentable rather than enforced: this engine has no change tracker to disable. `node:sqlite` returns plain row objects, so there is no identity map, no tracked graph and no tracked-read-only-query to forbid. Recorded as satisfied by the platform rather than by a mechanism, so nobody builds a guard whose subject cannot occur."
+        },
+        {
+          "name": "every list read is bounded, not merely every list endpoint",
+          "status": "owed",
+          "text": "The bound is at the store, which is stronger than at the endpoint, and it is still one store method checked by reading it. A second list method added to `NoteStore` without a clamp is caught by nothing. trigger: an assertion over `STATEMENTS` that every SELECT carries a LIMIT, which is buildable today because the statement set is a value."
+        }
+      ]
     },
     "DATA-3": {
       "title": "Two-layer at-most-once",

@@ -53,6 +53,12 @@ export const SETTINGS_SPEC = Object.freeze({
   logging: Object.freeze({
     level: setting('string', 'raised during an incident without a redeploy, which is the whole point of it being config'),
   }),
+  // DB2: the engine is declared in `edition.json`; WHERE its data lives is per-environment and therefore a
+  // setting. A developer, a test run and a deploy each want a different file, and the alternative is the ambient
+  // environment read CFG-1's fourth-home finding is about.
+  database: Object.freeze({
+    file: setting('string', 'a laptop, a test run and a deploy each put the database somewhere different; it is deployment shape, not behaviour'),
+  }),
   auth: Object.freeze({
     issuer: setting('string', 'CFG-1 harm paragraph: a script duplicated this value and the two copies drifted'),
     audience: setting('string', 'as issuer; the e2e harness reads it from here rather than carrying its own copy'),
@@ -62,6 +68,7 @@ export const SETTINGS_SPEC = Object.freeze({
 
 export type Settings = Readonly<{
   http: Readonly<{ port: number; host: string }>;
+  database: Readonly<{ file: string }>;
   logging: Readonly<{ level: string }>;
   auth: Readonly<{ issuer: string; audience: string; signingKey: string }>;
 }>;
@@ -141,11 +148,19 @@ export function resolveSettings(sources: SettingsSources = defaultSources()): Se
     );
   }
 
-  return Object.freeze({
-    http: Object.freeze(resolved.http),
-    logging: Object.freeze(resolved.logging),
-    auth: Object.freeze(resolved.auth),
-  }) as Settings;
+  // Built from the SPEC's own keys, not from a second list written by hand.
+  //
+  // It used to name three groups in a literal here, and adding a fourth to `SETTINGS_SPEC` produced a setting that
+  // was declared, validated, refused when missing, resolved from the right layer, and then DROPPED on the way out,
+  // with no error anywhere (E-93). The `as Settings` cast is what let it happen: without a cast the compiler would
+  // have reported the missing property, and the cast was there to silence exactly that complaint.
+  //
+  // The cast survives because `Object.fromEntries` cannot be typed to the shape of `Settings`, so it is still an
+  // assertion. What changed is that it now asserts about an object built by enumerating the one registry, rather
+  // than about a list a person maintains beside it, and `settings.test.ts` asserts the two key sets are equal.
+  return Object.freeze(
+    Object.fromEntries(Object.keys(SETTINGS_SPEC).map((group) => [group, Object.freeze(resolved[group])])),
+  ) as Settings;
 }
 
 // The environment variable name a key may be overridden by. Derived, never invented, so the env channel cannot

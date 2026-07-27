@@ -1010,3 +1010,80 @@ rather than agreeing with one file it happened to find.
 
 Server 236, client 65, shared client 65, docs-lint ok in both editions, self-test 33/32 in both, conformance ok at
 69 rows in both, `compose --check` ok. Both plants restored byte-for-byte, verified by hash, backups deleted.
+
+## 2026-07-27, G: the store, and the first fully green e2e run this edition has had
+
+Measured at `31278db`. Server suite 236 before, 238 after. **Harness 5 of 7 before, 7 of 7 after, exit 0.**
+
+The engine is `node:sqlite`, chosen by the owner, declared in `edition.json` under `engine` and nowhere else. It
+adds no dependency and therefore no supply-chain surface, and its version IS the runtime version, which is why the
+runtime pin landed first and is load-bearing rather than hygienic.
+
+### What replaced what
+
+A module-level `Map` in the route file became a schema at the path `edition.json` and CODEOWNERS have both been
+declaring as irreversible since before it existed, a store behind an interface, a service between the route and the
+store, and a tenant that comes from a verified signature.
+
+`PRIMARY KEY (tenant_id, id)`, so the tenant LEADS row identity and a query that forgets it cannot use the key.
+`STRICT`, because a column declared TEXT that accepts an integer describes intent rather than content. CHECK
+constraints on the lengths, which is worth naming: E-66 recorded `value past max length is refused: NO` for SQLite
+as a provider capability, and that measurement is about SQLite's TYPE system, which has no length on TEXT. A CHECK
+is not the type system and does enforce it.
+
+### Three inherited lessons, taken rather than rediscovered
+
+- The cursor carries `(createdAtUtc, id)`, not the timestamp alone, and the index is NOT unique. The sibling's
+  build brief still documents the abandoned version as settled; its shipped code does the opposite because a unique
+  index on a timestamp threw the moment two notes were created inside one clock tick.
+- Delete carries the tenant in its own predicate, so a cross-tenant delete changes no rows and arrives as an
+  absence. E-50 measured the alternative: a cross-tenant read answered 404 while a cross-tenant delete with a
+  forgotten filter answered 500, and a caller could tell the difference.
+- The bound is at the STORE, not at the route. E-48 measured three read plants each staying green in the sibling
+  because the store was inside the tested path and nothing asserted how it read.
+
+### The chokepoint the sibling structurally cannot have
+
+Every statement this store can execute is in one frozen `STATEMENTS` object and every one names `tenant_id`. E-77
+records why that matters: in the sibling, read tenancy is a hand-written `Where` repeated per method, so a
+cross-tenant read is the ABSENCE of a predicate, absence has no syntax, and a scan for it would be green forever.
+Here the statement set is a value a test can read. The scan over it is not built yet and the DATA-2 row says so
+with a trigger; what changed is that it is now buildable, which it is not there.
+
+### Two findings the build produced, both from things going wrong
+
+**E-93.** `resolveSettings` validated by enumerating `SETTINGS_SPEC` and RETURNED a hand-written literal naming
+three groups. The fourth group was declared, refused when absent, resolved, frozen, and dropped on the way out.
+The `as Settings` cast is what allowed it: without a cast the compiler reports the missing property, and the cast
+was there to quiet a different objection. Repaired to build from the registry's own keys, with two tests.
+
+**E-94.** `requireDeclaredSurfaces` demands a body contract from every body-bearing method, and DELETE is
+body-bearing. Fastify then ENFORCES the declared schema, so `DELETE /notes/x` with no body answered
+`400 body must be object`, which is every DELETE the client and the harness send. The rule and the framework were
+each right and together they forbade the normal case for a whole method. Repaired by making the decision
+expressible, `config.body: 'none'`, rather than by widening the ban: forgetting stays indistinguishable from
+nothing, and deciding is greppable.
+
+### One lint that improved the design rather than being satisfied
+
+The filesystem ban refused `node:fs` in `persistence/database.ts`. It was right, and the fix was not an exemption:
+`compose.ts` imports that module, so the migration runner's file reads would have entered the SERVER's import
+graph for code the server never calls. Split into `database.ts` (opens, no fs) and `migrator.ts` (reads, named in
+one eslint exemption). The serving process can now open a database and cannot read a file.
+
+### The rows, and why four of them still read `owed`
+
+DATA-1, DATA-2, TEN-2 and TEN-3 each gained five or six obligations, several `proven`, and each rolls up to `owed`
+on one unbuilt ENUMERATION obligation. That is the roll-up rule working: the mechanisms are real and nothing counts
+them. Non-owed rows are unchanged at 9, and the honest reading of this round is in the obligations rather than in
+the count, exactly as it was for CON-2.
+
+Two obligations are recorded as satisfied by the PLATFORM rather than by a mechanism, so that nobody builds a guard
+whose subject cannot occur: records carry no behaviour because `Note` is a type alias and not a class, and reads
+run untracked because this engine has no change tracker to disable.
+
+### Gates
+
+Server 238, tsc and eslint clean, conformance ok at 69 rows, docs-lint ok. Harness 7 of 7 against the composed
+server booted with a real signing key and a migrated database, both of which existed only for the measurement and
+were deleted after it.

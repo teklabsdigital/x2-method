@@ -3,6 +3,7 @@ import {
   DEVELOPMENT_RELAXATION,
   EDITION_ROOT,
   SECRET_STORE,
+  SETTINGS_SPEC,
   environmentNameFor,
   resolveSettings,
   type SettingsSources,
@@ -16,6 +17,7 @@ import path from 'node:path';
 
 const complete = {
   http: { port: 5080, host: '127.0.0.1' },
+  database: { file: '.data/kernel.db' },
   logging: { level: 'info' },
   auth: { issuer: 'https://kernel.invalid/issuer', audience: 'kernel-api', signingKey: '' },
 };
@@ -157,5 +159,24 @@ describe('SEC-5: no secret in committed configuration', () => {
     expect(() => resolveSettings(sources({ secrets: undefined, environment: { NODE_ENV: name } }))).toThrow(
       /auth\.signingKey is missing/,
     );
+  });
+});
+
+describe('what the spec declares is what the resolver returns (DATA-5, E-93)', () => {
+  it('delivers every group the spec declares, not a hand-written subset', () => {
+    // The guard for E-93. `resolveSettings` used to validate by enumerating `SETTINGS_SPEC` and then RETURN a
+    // literal naming three groups, so a fourth group added to the spec was declared, validated, refused when
+    // missing, resolved from the correct layer, and then dropped on the way out with no error anywhere. The
+    // `as Settings` cast is what stopped the compiler from reporting it, and a cast is not a check.
+    expect(Object.keys(resolveSettings()).sort()).toEqual(Object.keys(SETTINGS_SPEC).sort());
+  });
+
+  it('delivers every leaf of every group, so a dropped key inside a group is caught too', () => {
+    // The same defect one level down, which the group-level assertion above cannot see: a group can arrive with
+    // some of its leaves missing and still be present by name.
+    const resolved = resolveSettings() as unknown as Record<string, Record<string, unknown>>;
+    for (const [group, leaves] of Object.entries(SETTINGS_SPEC)) {
+      expect(Object.keys(resolved[group]).sort()).toEqual(Object.keys(leaves).sort());
+    }
   });
 });

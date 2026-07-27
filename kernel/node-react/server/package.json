@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node src/main.ts",
+    "migrate": "node tools/migrate.ts",
     "dev": "node --watch src/main.ts",
     "test": "vitest run",
     "lint": "eslint .",

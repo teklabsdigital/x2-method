@@ -4,3 +4,7 @@ coverage/
 # Local dev secrets (SEC-5): never committed. .env.local holds the Vite dev token.
 .env
 .env.local
+# The local database file. DB2: the engine is node:sqlite and its data is a working artefact, not source.
+# Ignored rather than placed outside the tree because it holds no secret; SEC-5 governs credentials, and the
+# signing key still resolves from the out-of-tree store or the derived environment variable and never from here.
+.data/

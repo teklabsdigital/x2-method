@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { composeApp } from '../../compose.ts';
+import { freshDatabase } from '../../persistence/__tests__/support.ts';
 import { ANONYMOUS_ROUTES, POLICIES } from '../../platform/authorization.ts';
 import { registerHealth } from '../../routes/health.ts';
 import { scanEndpointSpine } from '../endpointSpine.ts';
@@ -15,7 +16,7 @@ const NO_QUERY = { type: 'object', properties: {}, additionalProperties: false }
 
 describe('the composed app satisfies the endpoint spine', () => {
   it('has no violation of SEC-1, SEC-2, SEC-3 or TEN-1', async () => {
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
     expect(scanEndpointSpine(app.routeTable)).toEqual([]);
     await app.close();
   });
@@ -25,7 +26,7 @@ describe('the composed app satisfies the endpoint spine', () => {
     // all while looking identical. The composed app carries a gated read, a gated read with a path parameter, a
     // gated write with a body contract, an anonymous liveness route, and the HEAD Fastify synthesizes for each
     // GET, which is what gives every branch of the scan something to look at.
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
 
     expect(app.routeTable.length).toBeGreaterThanOrEqual(7);
     expect(app.routeTable.some((route) => route.schema.body !== undefined)).toBe(true);
@@ -37,7 +38,7 @@ describe('the composed app satisfies the endpoint spine', () => {
   });
 
   it('gates every route it serves, and allowlists exactly one anonymous surface', async () => {
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
 
     const anonymous = app.routeTable.filter((route) => typeof route.config.policy === 'string');
     expect(anonymous.map((route) => `${route.method} ${route.url}`).sort()).toEqual([
@@ -99,12 +100,15 @@ describe('the composed app satisfies the endpoint spine', () => {
     ];
 
     for (const [claim, label, register] of violating) {
-      await expect(composeApp({}, {}, [registerHealth, register]), `${claim}: ${label}`).rejects.toThrow(claim);
+      await expect(
+        composeApp({}, { database: freshDatabase() }, [registerHealth, register]),
+        `${claim}: ${label}`,
+      ).rejects.toThrow(claim);
     }
 
     // Non-vacuity: the same call with the real surfaces composes, so the rejections above are the violation and
     // not the seam itself failing.
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
     expect(app.routeTable.length).toBeGreaterThan(0);
     await app.close();
   });
@@ -113,7 +117,7 @@ describe('the composed app satisfies the endpoint spine', () => {
   // green for the same reason an empty scan is, so the exemplar carries one and it is declared in the permitted
   // shape.
   it('carries a real time value on the contract surface, declared offset-bearing', async () => {
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
 
     const timeFields = app.routeTable.flatMap((route) => {
       const response = (route.schema.response ?? {}) as Record<string, { properties?: Record<string, { format?: string }> }>;
@@ -133,7 +137,7 @@ describe('the composed app satisfies the endpoint spine', () => {
   // The settings are on the instance because `createApp` cannot be constructed without them, so a composition
   // that skipped resolution would not compile. The frozen check is the same discipline the route table gets.
   it('composes with settings resolved before the instance exists, and does not let them be rewritten', async () => {
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
 
     expect(app.settings.http.port).toBe(5080);
     expect(Object.isFrozen(app.settings)).toBe(true);
@@ -159,7 +163,7 @@ describe('the composed app satisfies the endpoint spine', () => {
     //
     // What this test is actually worth is stated plainly instead: no gated route is reachable anonymously, and
     // `/health` is. That is SEC-1's sentence, it is true, and it is not a statement about SEC-4 at all.
-    const app = await composeApp();
+    const app = await composeApp({}, { database: freshDatabase() });
 
     const seen: Array<[string, number]> = [];
     for (const route of app.routeTable.filter((candidate) => candidate.method === 'GET')) {

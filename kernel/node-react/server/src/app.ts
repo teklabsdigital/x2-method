@@ -138,7 +138,7 @@ export function createApp(
     for (const route of registered) {
       const methods = methodsOf(route);
       const schema = (route.schema ?? {}) as ContractSchema;
-      requireDeclaredSurfaces(methods, route.url, schema);
+      requireDeclaredSurfaces(methods, route.url, schema, (route.config ?? {}) as Record<string, unknown>);
       const constraints = Object.freeze({ ...((route.constraints ?? {}) as Record<string, unknown>) });
       const config = Object.freeze((route.config ?? {}) as Record<string, unknown>);
       for (const method of methods) {
@@ -167,7 +167,12 @@ declare module 'fastify' {
 // The completeness obligation, made mechanical and made loud. A route that exposes a surface without declaring
 // it would pass every downstream scan while carrying fields no scan can see, so it is refused before the server
 // can serve. Throwing here fails `ready()`, which fails the process and fails any test that boots the app.
-function requireDeclaredSurfaces(methods: string[], url: string, schema: ContractSchema): void {
+function requireDeclaredSurfaces(
+  methods: string[],
+  url: string,
+  schema: ContractSchema,
+  config: Record<string, unknown>,
+): void {
   const bodyless = methods.filter((method) => BODYLESS_METHODS.has(method));
   const bodyBearing = methods.filter((method) => !BODYLESS_METHODS.has(method));
   const at = `${methods.join(',')} ${url}`;
@@ -187,7 +192,26 @@ function requireDeclaredSurfaces(methods: string[], url: string, schema: Contrac
     throw new Error(`${at}: wildcard routes are unenumerable; declare the parameters.`);
   }
 
-  if (bodyBearing.length > 0) {
+  // A method that carries no body has to SAY so, and saying so is not the same as staying silent.
+  //
+  // E-94: the obligation below was written when the only body-bearing method in this edition was POST, and it made
+  // an ordinary DELETE unserveable. Fastify does not merely accept a declared body schema, it ENFORCES it, so a
+  // route declaring the closed empty object answered `400 body must be object` to a DELETE sent without one, which
+  // is every DELETE the client and the harness send. The rule and the framework were each right and together they
+  // forbade the normal case.
+  //
+  // The repair keeps the property the rule exists for. The point was never that every method has a body; it was
+  // that no route exposes a surface it has not declared, so forgetting is indistinguishable from deciding. A route
+  // that binds no body exposes no body surface, and `config.body: 'none'` is that decision written down: greppable,
+  // reviewable, and refused if it contradicts a schema that is also present.
+  if (config.body === 'none') {
+    if (schema.body !== undefined) {
+      throw new Error(`${at}: declares config.body 'none' AND a body schema; one of them is wrong.`);
+    }
+    if (bodyless.length > 0) {
+      throw new Error(`${at}: declares config.body 'none' on a method that could never carry one; the declaration says nothing.`);
+    }
+  } else if (bodyBearing.length > 0) {
     requireShape(at, 'body', schema.body);
   } else if (schema.body !== undefined) {
     throw new Error(`${at}: a bodyless method declares schema.body; the framework will never bind it.`);

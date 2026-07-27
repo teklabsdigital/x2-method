@@ -4461,6 +4461,62 @@ so: install, run both editions' suites, record the result with its commit, then 
 Recorded as a deliberate cost, because a five month old runtime carries five months of unapplied fixes, and the
 honest trade is visible rather than silent.
 
+### E-93. The resolver enumerated the spec to validate and a hand-written list to return
+
+**Claim:** DATA-5, CFG-1. **Found:** 2026-07-27. **Measured at 31278db.** **Repaired here.**
+
+`resolveSettings` validates by iterating `SETTINGS_SPEC`, which is the one registry of declared settings. It then
+returned this:
+
+    return Object.freeze({
+      http: Object.freeze(resolved.http),
+      logging: Object.freeze(resolved.logging),
+      auth: Object.freeze(resolved.auth),
+    }) as Settings;
+
+Adding a fourth group for the database file produced a setting that was declared in the spec, refused when absent,
+resolved from the correct layer, frozen, and then **dropped on the way out**, with no error anywhere. The composed
+app then failed at `settings.database.file` with `Cannot read properties of undefined`, which names the symptom and
+not the cause.
+
+**The `as Settings` cast is what allowed it.** Without a cast the compiler reports the missing property the moment
+the type gains it, which is exactly the check that was wanted; the cast was there to silence a complaint about
+`resolved` being a loose record, and it silenced this one too. A cast is not a check, and a cast placed to quiet
+one objection quiets every objection of that shape.
+
+Same family as E-51, E-53 and E-92: a registry exists, something enumerates it, and something else beside it keeps
+a parallel list by hand. Repaired by building the returned object from `Object.keys(SETTINGS_SPEC)`. The cast
+survives, because `Object.fromEntries` cannot be typed to the shape of `Settings`, but it now asserts about an
+object built from the one registry. Two tests guard it: the returned group set equals the spec's group set, and
+every group's leaf set equals its spec's leaf set, because a group can arrive by name with leaves missing.
+
+### E-94. A completeness rule written for POST made an ordinary DELETE unserveable
+
+**Claim:** SEC-2, and the shape of a completeness obligation. **Found:** 2026-07-27. **Measured at 31278db.**
+**Repaired here.**
+
+`requireDeclaredSurfaces` refuses to boot a route where a body-bearing method declares no body contract, and it is
+right to: an undeclared body is a surface no scan can see, and the method allowlist was already inverted once so
+that only GET and HEAD are treated as bodyless. DELETE is body-bearing, so `DELETE /notes/:noteId` declared the
+closed empty object, which is the honest description of a route that accepts no fields.
+
+Fastify does not treat a declared body schema as a description. It ENFORCES it. Measured:
+
+    DELETE /notes/x, no body            400  {"code":"FST_ERR_VALIDATION","message":"body must be object"}
+    DELETE /notes/x, body {}            404  {"error":"not found"}
+
+Every DELETE the client's `NotesRepo.remove` and the harness's `delete-note` scenario send is the first form. **The
+rule and the framework were each correct, and together they forbade the normal case for a whole HTTP method.**
+
+The rule was written when the only body-bearing method in this edition was POST, and it silently encoded that: it
+reads as "every method that CAN carry a body must describe one", where the property actually wanted is "no route
+exposes a surface it has not declared". A route that binds no body exposes no body surface.
+
+Repaired by making the decision expressible instead of widening the ban. `config.body: 'none'` declares that a
+method carries no body; it is refused if a body schema is also present, and refused on GET or HEAD where it would
+say nothing. Forgetting is still indistinguishable from nothing, which is what the obligation is for; deciding is
+now greppable.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

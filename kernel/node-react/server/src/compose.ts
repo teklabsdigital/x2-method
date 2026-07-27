@@ -1,12 +1,15 @@
 import type { FastifyInstance, FastifyServerOptions } from 'fastify';
 import { createApp, type CreateAppSeams } from './app.ts';
 import { assertEndpointSpine } from './architecture/endpointSpine.ts';
+import { noteService } from './app/notes/noteService.ts';
+import { sqliteNoteStore } from './persistence/notes/sqliteNoteStore.ts';
+import { openDatabase, type Database } from './persistence/database.ts';
 import { bearerCredential } from './platform/bearerCredential.ts';
 import { systemClock } from './platform/clock.ts';
 import { resolveSettings, type Settings } from './platform/settings.ts';
 import { inMemorySessionVersions, type SessionVersions } from './platform/sessionVersions.ts';
 import { registerHealth } from './routes/health.ts';
-import { registerNotes } from './routes/notes.ts';
+import { notesSurface } from './routes/notes.ts';
 
 // The composition, in one place, used by the process entrypoint AND by every architecture test.
 //
@@ -40,9 +43,8 @@ export type Surface = (app: FastifyInstance) => Promise<void>;
 
 // `CreateAppSeams` plus the session-version store, which `createApp` has no business knowing about: it is the
 // composition's choice of where revocation state lives, not a property of the instance.
-export type ComposeSeams = CreateAppSeams & Readonly<{ sessionVersions?: SessionVersions }>;
-
-const SURFACES: readonly Surface[] = Object.freeze([registerHealth, registerNotes]);
+export type ComposeSeams = CreateAppSeams &
+  Readonly<{ sessionVersions?: SessionVersions; database?: Database }>;
 
 // The credential seam is wired HERE and not inside `createApp`, for the same reason the spine assertion is: this
 // is the composition, and `createApp` is the thing being composed. It also keeps the fail-closed default where it
@@ -57,7 +59,7 @@ const SURFACES: readonly Surface[] = Object.freeze([registerHealth, registerNote
 export async function composeApp(
   options: FastifyServerOptions = {},
   seams: ComposeSeams = {},
-  surfaces: readonly Surface[] = SURFACES,
+  surfaces: readonly Surface[] | undefined = undefined,
   settings: Settings = resolveSettings(),
 ): Promise<FastifyInstance> {
   const versions = seams.sessionVersions ?? inMemorySessionVersions();
@@ -71,9 +73,20 @@ export async function composeApp(
       systemClock,
     );
 
+  // DB2: the engine is `node:sqlite`, declared in `edition.json`, and this is the only place it is opened. The
+  // database is a seam for the same reason the session store is: a test has to be able to hand in a fresh one, and
+  // an in-process engine with no seam would make every test in a run share a schema and a row set, which is
+  // exactly the accumulation E-86 recorded of the Map this replaces.
+  //
+  // **This does not migrate.** `migrate` is exported from `persistence/database.ts` and called by the migrate
+  // script and by test fixtures, never here. A host that migrates on boot makes every replica a schema author, and
+  // rolling replacement then runs two schema versions against each other in an order nobody chose.
+  const database = seams.database ?? openDatabase(settings.database.file);
+  const service = noteService(sqliteNoteStore(database), systemClock);
+
   const app = createApp(settings, options, { ...seams, authenticate });
 
-  for (const register of surfaces) {
+  for (const register of surfaces ?? [registerHealth, notesSurface(service)]) {
     await register(app);
   }
   await app.ready();

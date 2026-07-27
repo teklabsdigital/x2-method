@@ -35,6 +35,7 @@ describe('CFG-1 and SEC-5 hold over the shipped tree', () => {
       'auth.audience',
       'auth.issuer',
       'auth.signingKey',
+      'database.file',
       'http.host',
       'http.port',
       'logging.level',
