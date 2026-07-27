@@ -1522,3 +1522,50 @@ pointed at the client tiers, which have their own package, runner and roots.
 
 Server 292, client-web 65, e2e green, docs-lint ok at 37/40, conformance ok at 69 rows, compose ok, loop-check
 ok, dash scan 0 with a live control.
+
+## 2026-07-28, two obligations, one walk: DATA-1's "one service method" and TEN-2's "from THIS request"
+
+Measured at 138fe8f. Both were held by reading, and both rows said so. They are two questions about the same
+three lines of every handler, so they are one scan: `server/src/architecture/handlerBodies.ts`.
+
+The service binding is DERIVED, not named: a parameter whose declared TYPE is imported from `app/`. A second
+service under a second parameter is covered the day it is written, which a test asserts with a `TagService` the
+scan was never told about. Registrations are recognized by SHAPE, a url string and a function last, so renaming
+`app` does not turn the scan vacuous, and an ordinary `cache.delete(key)` is not mistaken for a route.
+
+| plant, against the shipped route module | outcome |
+|---|---|
+| the list handler gains a second `service.read` | red-correct (DATA-1), naming both methods and the url |
+| one handler's `tenantFor(request)` becomes `tenantOf(request.credential!)` | red-correct (TEN-2), naming the url |
+| the same plant, under `tsc --noEmit` and `eslint` | **both silent** |
+
+The third row is the evidence that matters: this scan is the only view of the property, not a second view of one
+already guarded.
+
+### A hole found by writing the row's own text
+
+The first version checked that the tenant argument was a call to `tenantFor`, and nothing about its argument. So
+`tenantFor(someOtherRequest)` would have passed: the sanctioned resolver, a real `TenantId`, belonging to a
+different caller. That is E-99 arriving inside the repair for E-102, and it was closed before it shipped by
+checking the resolver call's own argument against the handler's request parameter. **Stating a mechanism in prose
+is what exposed its gap, for the third time this session.**
+
+### A scan caught this scan, again
+
+`const CREDENTIAL = 'credential'` was reported by SEC-5's own configuration scan as a committed credential,
+correctly: the registry treats `credential` as a run, and a rule cannot know that this constant is a selector.
+Renamed to `REQUEST_PROPERTY` rather than exempted, because an exemption is a pre-authorized hole and this
+binding has no need of one. Fourth time this session a shipped scan has reported code written minutes earlier.
+
+### What moved
+
+**DATA-1 to `proven`**, all six obligations. **TEN-2's fourth obligation to `proven`**; the row stays `patterned`
+on "every execution path entry establishes a tenant", which waits on this edition having a non-HTTP entry point
+at all, and inventing one to satisfy a row would be the wrong direction.
+
+Two limits are stated in both rows rather than left to be discovered. The tenant argument must be the resolver
+call INLINE, so a handler that binds it to a local first is refused although that code is correct; that is the
+point, because it puts the whole property on one line. And "the tenant argument" means "the first argument",
+which holds because every `NoteService` method takes its `TenantId` first.
+
+Server tier 292 to 306. Rows: 5 proven, 4 patterned, 3 latent, 57 owed.
