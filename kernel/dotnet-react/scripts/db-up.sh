@@ -38,11 +38,17 @@ if [ -z "${MSSQL_SA_PASSWORD:-}" ]; then
   fi
 fi
 
-# Pinned tag@digest (DEP-1 / INV-05): the exact engine build in VERSIONS.md, the same value CI and the
-# Testcontainers fixture use, never :latest.
-IMAGE="mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04@sha256:c1aa8afe9b06eab64c9774a4802dcd032205d1be785b1fd51e1c0151e7586b74"
-NAME="kernel-mssql"
-VOLUME="kernel-mssql-data"
+# DB2 / CFG-1: the engine choice is declared once, in edition.json, and read here. This script used to restate
+# the pinned tag@digest, which made it the fourth of five independent copies of a value that has to be identical
+# in all of them (E-64). The pin is still exactly as pinned (DEP-1 / INV-05, never :latest); it is just no longer
+# asserted here. docs-lint compares the declaration against every other surface naming the image, so a drift
+# between this script and the ledger is now a failed build rather than a container running the wrong engine.
+EDITION="$REPO/edition.json"
+READ="const e=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).engine; process.stdout.write(String(e[process.argv[2]]))"
+IMAGE="$(node -e "$READ" "$EDITION" image)"
+NAME="$(node -e "$READ" "$EDITION" container)"
+VOLUME="$(node -e "$READ" "$EDITION" volume)"
+PORT="$(node -e "$READ" "$EDITION" port)"
 
 # Apple Silicon precheck (INV-04): SQL Server is amd64-only, and colima's default qemu backend is too slow and
 # memory-light for its readiness probe, which fails in a way that reads as a broken Integration tier. Require the
@@ -59,12 +65,12 @@ if [ -z "$(docker ps -q -f "name=^${NAME}$")" ]; then
   docker rm -f "$NAME" >/dev/null 2>&1 || true
   docker run -d --name "$NAME" \
     -e ACCEPT_EULA=Y -e "MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}" \
-    -p 1433:1433 \
+    -p "${PORT}:${PORT}" \
     -v "${VOLUME}:/var/opt/mssql" \
     "$IMAGE" >/dev/null
-  echo "Started ${NAME} on :1433 (persistent volume ${VOLUME}, pinned image)."
+  echo "Started ${NAME} on :${PORT} (persistent volume ${VOLUME}, pinned image)."
 else
-  echo "SQL Server (${NAME}) already running on :1433."
+  echo "SQL Server (${NAME}) already running on :${PORT}."
 fi
 
 # Wait for SQL Server to actually accept connections before returning, so a sequenced migrate (db: up -> db:

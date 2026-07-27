@@ -1,5 +1,15 @@
 {
   "name": "dotnet-react",
+  "engine": {
+    "comment": "DB2: the database engine is a PROJECT choice, and this is the one place it is declared. A project switching engines edits this block first; README.md's instantiation manifest enumerates the rest of the swap set. The declaration is guarded in both directions rather than trusted: docs-lint puts `image` into DEP-1's cross-surface agreement check, so it cannot drift from the ledger, CI, db-up.sh or the Testcontainers fixture, and EngineChoiceTests boots the PRODUCTION composition and asserts the provider the host actually registers is this one. A declaration nothing checks is the defect this kernel keeps finding, so this one is checked against running code and not against another document.",
+    "name": "sqlserver",
+    "provider": "Microsoft.EntityFrameworkCore.SqlServer",
+    "image": "mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04@sha256:c1aa8afe9b06eab64c9774a4802dcd032205d1be785b1fd51e1c0151e7586b74",
+    "container": "kernel-mssql",
+    "volume": "kernel-mssql-data",
+    "port": 1433,
+    "connectionStringKey": "ConnectionStrings:Kernel"
+  },
   "dependencySurfaces": [
     { "path": "server/Directory.Packages.props", "kind": "msbuild-packages" },
     { "path": "server/.config/dotnet-tools.json", "kind": "dotnet-tools" },

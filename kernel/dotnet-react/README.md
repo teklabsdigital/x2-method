@@ -186,10 +186,26 @@ the methodology metric: human turns per shipped slice.
 ### A named adoption delta: the database engine
 
 SQL Server is this edition's ruled default, not a claim: no file in the claims catalog names an engine, and the
-catalog's re-rule mechanism (record the decision at adoption, swap the enforcement) applies. Swapping to
-PostgreSQL or MySQL is a supported delta with a fixed checklist: the EF provider package and Testcontainers
-module (new DEP-1 ledger rows), the image tag@digest in `VERSIONS.md` and the db scripts, and re-verifying the
-two engine-sensitive seams the tiers already pin: `DateTimeOffset` ordering under the keyset cursor
+catalog's re-rule mechanism (record the decision at adoption, swap the enforcement) applies. The engine is a
+project choice and it is **declared in `edition.json`**, which is the one place it lives.
+
+Swapping to PostgreSQL or MySQL is a supported delta, and this is the whole swap set:
+
+| # | change | what checks it |
+|---|--------|----------------|
+| 1 | the `engine` block in `edition.json`: name, provider, image, container, volume, port | `EngineChoiceTests` reads it; docs-lint puts the image in the cross-surface agreement check |
+| 2 | the EF provider package in `server/Directory.Packages.props`, plus a dated `VERSIONS.md` row | docs-lint's DEP-1 ledger check; `The_declared_provider_package_is_referenced_by_the_build` |
+| 3 | `UseSqlServer(...)` in `Kernel.Api/Program.cs` and `KernelDbContextFactory` | `The_host_registers_the_engine_the_edition_declares`, which reads `Database.ProviderName` off the PRODUCTION composition |
+| 4 | the Testcontainers module in `SqlServerFixture`, and the image row in `VERSIONS.md` | the agreement check, then the integration tier itself |
+| 5 | the `services:` image in `.github/workflows/ci.yml` | the agreement check (a workflow `services:` image cannot be computed, so it stays a literal and is compared instead) |
+| 6 | regenerate the migrations: they carry provider-specific model annotations | the integration tier |
+
+`scripts/db-up.sh` is deliberately absent from that list: it reads the declaration, so it needs no edit. That is
+the difference DB2 made. The image was named on five surfaces that agreed only by hand (E-64); it is now named on
+four that are compared to each other plus one declaration they are all compared against, and the script that used
+to be the fifth copy is a reader.
+
+Re-verify the two engine-sensitive seams the tiers already pin: `DateTimeOffset` ordering under the keyset cursor
 (`KeysetPagingTests`) and composite-key behavior (`TenantPersistenceTests`). The integration tier going green on
 the new engine is the proof the swap holds. SQLite as the production engine is a larger re-rule, not a delta:
 TEST-1's tier shape presumes a client-server engine in containers, and the SQLite `DateTimeOffset` converter

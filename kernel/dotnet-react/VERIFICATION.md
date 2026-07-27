@@ -1606,3 +1606,49 @@ shared tool depending on git in a tree that may not have it.
 
 Both docs-lints ok, both conformance records ok at 69 rows, both self-tests 28 caught / 22 ignored, compose 78
 files / 2 editions, architecture 200, unit 58.
+
+## 2026-07-27, DB2: one home for the engine choice, checked against running code
+
+Part 2 of the owner's accepted database recommendation landed on 2026-07-27 (the engine tier skips rather than
+fails, E-49). This is part 1. Baseline: **97cf790**, architecture 200, unit 58.
+
+The engine was named on five surfaces that agreed only by hand: the DEP-1 ledger row, `scripts/db-up.sh`, the CI
+workflow, the Testcontainers fixture and the runbook (E-64). Section D's agreement check already made the IMAGE
+unable to drift between them. What had no home at all was the ENGINE CHOICE, which is more than an image: the EF
+provider package, the composition root's `UseSqlServer`, the container and volume names, the port.
+
+`edition.json` gains an `engine` block, and it is guarded in both directions rather than trusted.
+
+| guard | what it reads |
+|-------|---------------|
+| docs-lint | the declared image joins DEP-1's cross-surface agreement set, so the declaration cannot drift from the tree it describes |
+| `The_host_registers_the_engine_the_edition_declares` | `Database.ProviderName` off the PRODUCTION composition |
+| `The_declared_provider_package_is_referenced_by_the_build` | `Directory.Packages.props` |
+| `The_edition_declares_a_complete_engine_choice` | every field the swap set depends on |
+
+The second is the one that matters. A linter can only compare a declaration against other text; it cannot answer
+whether the engine the project SAYS it uses is the engine the host actually registers, and those can disagree
+with every text-matching gate green. So the test builds the real composition, resolves the context EF would
+resolve, and asks it. Deliberately not a scan for `UseSqlServer` in `Program.cs`, which would be a second lexical
+idea of what the host does, and deliberately not `KernelApiFactory`, whose entire job is to REPLACE the provider
+with SQLite: asking that host which provider is registered answers a question about the test harness. Nothing
+connects, because EF resolves a provider at registration and opens a connection at first query.
+
+| plant | outcome |
+|-------|---------|
+| the declared image drifts by one tag | red-correct, naming the four surfaces holding one value and the declaration holding the other |
+| the declaration names `Npgsql.EntityFrameworkCore.PostgreSQL` | red-correct, naming both the declared and the registered provider |
+
+`scripts/db-up.sh` now READS the declaration for image, container, volume and port, so the fifth copy is gone and
+the port literal with it. The plant output is the evidence: `db-up.sh` no longer appears among the surfaces
+holding a value, because it no longer holds one.
+
+The README's adoption-delta section is rewritten as the actual swap set, six numbered changes each paired with
+what checks it, and `db-up.sh` is explicitly absent from it. That section previously said the swap touches "the
+image tag@digest in `VERSIONS.md` and the db scripts", which is now wrong in a way worth naming: a manifest that
+lists a step the mechanism has removed sends the next reader to edit a file that reads its value.
+
+### Gates
+
+Architecture 200 to 203, unit 58, integration 4 skipped, both docs-lints ok, both conformance records ok at 69
+rows, both self-tests 28 caught / 22 ignored, compose 78 files / 2 editions.

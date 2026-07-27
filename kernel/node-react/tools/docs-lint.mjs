@@ -783,6 +783,16 @@ for (const line of versions.split('\n')) {
   }
 }
 
+// DB2: an edition may declare its database engine in `edition.json`, and if it does, the declared image is a
+// surface naming an image like any other. Optional by design, because an edition with no database has no engine
+// to declare and a shared tool must not presume one. Putting it in the agreement set is what stops the
+// declaration from drifting away from the tree it claims to describe, which is the failure mode of every "one
+// place the choice lives" that is not read by anything.
+const declaredImage = edition?.engine?.image;
+if (typeof declaredImage === 'string' && declaredImage.length > 0) {
+  imageSightings.push({ rel: 'edition.json', ref: declaredImage });
+}
+
 for (const message of imageAgreementFindings(imageSightings)) {
   fail(message);
 }
