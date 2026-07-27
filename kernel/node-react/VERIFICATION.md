@@ -1468,3 +1468,57 @@ under long-context sessions, so a project seeded from here has nothing mechanica
 
 Both editions: docs-lint ok and 37 caught / 40 ignored, conformance ok at 69 rows. compose ok at 39 shared files,
 loop-check ok, node server 283, node e2e green, shared client 65, dash scan 0 with a live control.
+
+## 2026-07-28, reachability: resolution is not invocation, and the scan found itself first
+
+Measured at e6eda6a. TEST-3's first obligation carried a trigger for `proven` that named reachability computed
+from the roots the jobs actually execute. Half of it is built.
+
+### The scan
+
+`server/src/architecture/reachability.ts`. The roots are DERIVED, not listed, which is the whole reason this is a
+mechanism rather than a second register to keep in step: they come from `package.json`'s own scripts, because
+those are what CI runs, plus every test file, because that is what `vitest run` collects. A script added there
+adds its root here without this file changing.
+
+**On its first run, before its test existed, it reported itself**: `src/architecture/reachability.ts` is not
+reachable from anything this tier executes. That is the state it exists to detect, arriving in the file that
+detects it.
+
+Both vacuity directions are refused explicitly rather than left to a reviewer, because this scan reports what it
+did NOT find and so reads as total coverage when it reaches nothing: a tier with no modules is a violation, and a
+tier with no roots is a violation instead of a report that every module is dead.
+
+| plant, against the shipped tree | outcome |
+|---|---|
+| an orphan module under `src/platform/` | red-correct, reported by name |
+| every script naming `src/main.ts` removed | red-correct, the entrypoint reported |
+| only ONE of the two scripts naming it removed | **green, and correctly so** (E-112) |
+
+The third row is the finding. The property had two causes and the plant removed one, so the scan was right to
+stay green; what went red was the non-vacuity test's assertion about WHICH script supplies the root. Without that
+assertion the run would have read as a clean green and this scan would have been recorded as proven against a
+plant it never saw.
+
+Nine tests besides: a module reached transitively, reached only by a test file, reached only through a dynamic
+import, and reached only through the extensionless and directory specifier forms, each permitted because each is
+a real way to be reached. Server tier 283 to 292.
+
+### What it cannot see, measured rather than asserted
+
+Reachability here is at MODULE granularity, so an unused EXPORT inside a reached module is invisible. Four live
+instances in this tier: `assertImportGraph`, `assertStatementSurface`, `assertConfigurationSurface` and
+`assertReachability` are exported, read as the enforcement path, and are called by nothing (E-113). The scans
+they wrap all bind, because each test asserts the scan directly, and no conformance row names any of the four,
+which was checked rather than assumed.
+
+`assertReachability` was written in the same commit as the scan that exists to catch this class, and is invisible
+to it by construction.
+
+The obligation stays `patterned`. trigger for `proven`: export-level reachability, plus the same instrument
+pointed at the client tiers, which have their own package, runner and roots.
+
+### Gates
+
+Server 292, client-web 65, e2e green, docs-lint ok at 37/40, conformance ok at 69 rows, compose ok, loop-check
+ok, dash scan 0 with a live control.

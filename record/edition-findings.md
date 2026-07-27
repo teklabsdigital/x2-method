@@ -5067,6 +5067,63 @@ verified by running twice: the first run reported the rewrite, the second said n
 self-audit reporting all four `NotesRepo` methods driven through the real transport, and the UI-5 composed-
 entrypoint smoke passing against the same server.
 
+### E-112. A plant against a redundantly satisfied property changes nothing, and the silence reads as a clean tree
+
+**Claim:** TEST-3, and the planting protocol itself. **Found:** 2026-07-28, planting against the new reachability
+scan. **Measured at e6eda6a.**
+
+The scan derives its roots from `package.json`'s scripts. The obvious plant is to remove one: delete
+`"start": "node src/main.ts"` and `src/main.ts` should be reported as reachable from nothing.
+
+**It was not reported. The scan stayed green and a different test went red.**
+
+`"dev": "node --watch src/main.ts"` names the same file. The property "main.ts is an executed root" had TWO
+causes and the plant removed one, so the property still held and the scan was right to say so. What went red was
+the non-vacuity test, on its assertion that the root's recorded reason is `script 'start'`, which had become
+`script 'dev'`. Removing both scripts reports `src/main.ts` immediately.
+
+E-101 is the neighbouring lesson and this is its inverse. There, a plant that changes two things is caught by the
+wrong one. Here, **a plant that changes one of two redundant causes is caught by nothing**, and the output is
+indistinguishable from a correct tree. The third outcome the protocol scores, red-but-a-different-test, was the
+only signal that the plant had not landed; without that assertion the run would have read as a clean green and
+the scan would have been recorded as proven against a plant it never saw.
+
+So the protocol gains a question: **before believing a green plant, ask how many causes the property has.** The
+answer is not visible in the plant, only in the mechanism, and here the redundancy is correct behaviour rather
+than a defect: a derivation over all scripts should survive one script being renamed.
+
+### E-113. The module built to find unreached code shipped an unreached export in the same commit
+
+**Claim:** TEST-3. **Found:** 2026-07-28, minutes after E-112. **Measured at e6eda6a.** **Recorded, not repaired.**
+
+Module-level reachability cannot see an unused EXPORT inside a reached module, and the residual was written into
+TEST-3's row as a limit. Then it was measured, because a residual with no instance is a worry rather than a
+finding. There are four:
+
+    assertImportGraph          exported, no callers
+    assertStatementSurface     exported, no callers
+    assertConfigurationSurface exported, no callers
+    assertReachability         exported, no callers, written this session
+
+Each is a `throw if the scan finds anything` wrapper, which is what the enforcement path looks like. Only
+`assertEndpointSpine` has a caller, and `compose.ts` is it.
+
+**Nothing is presently unguarded**, which was checked rather than assumed twice over: every scan binds because
+its own test asserts it directly over the shipped tree, and no conformance row in this edition names any of the
+four, so the record is not claiming a mechanism that nothing runs. What is wrong is thinner and still real: four
+exported functions read as the way these scans are enforced, and a reader who found `assertStatementSurface`
+would believe something calls it.
+
+**The timing is the entry.** `assertReachability` was written in the same commit as the scan that exists to catch
+exactly this class, and it is invisible to that scan by construction, because the module around it is reached.
+E-105 is the same shape at one hour; this is the same shape at twenty minutes, in the file that is supposed to be
+the answer.
+
+Recorded rather than repaired, because the choice between deleting the four and building export-level
+reachability is a real one: deleting them is right today and leaves the next four unguarded, and export-level
+reachability needs symbol resolution rather than the specifier walk this scan is. trigger: whichever is chosen,
+and TEST-3's first obligation carries it.
+
 ### E-109. A test asserted against the placeholder the manifest tells you to change, so it failed when the rename was done right
 
 **Claim:** CFG-1, and through it the manifest. **Found:** 2026-07-27, executing node-react's acceptance test.
