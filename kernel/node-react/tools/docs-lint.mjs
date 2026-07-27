@@ -487,7 +487,52 @@ export function windowFindings(rel, text, declared) {
 // away, exactly as SecretConfigShapeTests records the cost of token matching. Each is an `owed` obligation with a
 // named trigger in conformance.json, so closing it breaks this test and has to be argued, not discovered.
 const SELF_TEST_DIGEST = `@sha256:${'a'.repeat(64)}`;
+// The conformance record's `mechanism` field names files, and this asks whether they are there.
+//
+// Two defects, one check. The first is E-26's shape: a comment named a file that was not in the tree, and the
+// finding closes with the observation that this is "plausibly why the gap survived" for a whole round. A row is
+// worse than a comment, because a row is the machine-readable ledger somebody seeds a project from, and a
+// mechanism naming a file nobody can open is a row that cannot be checked by reading.
+//
+// The second is a scope rule this tool can enforce and nothing else was: **the mechanism field describes what
+// the EDITION ships**, so it resolves inside the edition or it is wrong. The rule was broken within an hour of
+// the loop check landing, by referring to `kernel.yml` and `kernel/tools/loop-check.mjs` in three rows (E-105).
+// Both files are real and neither exists in a seeded project, which is the tree this record travels to. Where
+// this repository happens to check an edition is an observation and belongs in `note`.
+//
+// A backticked token is treated as a file reference only when it has a known source extension and no space or
+// glob character. That deliberately lets prose through: mechanism strings also name code (`process.env`,
+// `Date.now`, `sqliteNoteStore.list`) and framework vocabulary, and a check that guessed at those would report
+// the record's own English.
+const MECHANISM_FILE_EXTENSIONS = new Set([
+  '.ts', '.tsx', '.mjs', '.cjs', '.js', '.jsx', '.cs', '.json', '.sql', '.yml', '.yaml', '.md', '.csproj', '.sh',
+]);
+
+export function mechanismReferenceFindings(claims, editionFiles) {
+  const out = [];
+  for (const [id, row] of Object.entries(claims ?? {})) {
+    for (const match of String(row?.mechanism ?? '').matchAll(/`([^`]+)`/g)) {
+      const token = match[1];
+      const dot = token.lastIndexOf('.');
+      const extension = dot < 0 ? '' : token.slice(dot);
+      if (token.includes(' ') || token.includes('*') || !MECHANISM_FILE_EXTENSIONS.has(extension)) {
+        continue;
+      }
+      if (!editionFiles.some((rel) => rel === token || rel.endsWith(`/${token}`))) {
+        out.push(
+          `conformance.json: ${id}'s mechanism names \`${token}\`, and no file in this edition matches it. Either the file moved and the row now points at nothing, or the reference is outside the edition, which a seeded project would not have: the mechanism field says what the edition SHIPS, and where this repository happens to check it belongs in the note (E-26, E-105).`,
+        );
+      }
+    }
+  }
+  return out;
+}
+
 const CATCH = [
+  ['a mechanism naming a file that is not in the edition',
+    () => mechanismReferenceFindings({ 'SEC-1': { mechanism: '`platform/gone.ts` scans the table' } }, ['platform/authorization.ts'])],
+  ['a mechanism naming a real file that lives outside the edition, which a seeded project would not have',
+    () => mechanismReferenceFindings({ 'TEST-3': { mechanism: 'a `kernel.yml` job runs it' } }, ['.github/workflows/ci.yml'])],
   ['a kind that does not match its folder', () => docLifecycleFindings('docs/claims/notes-scratch.md', '---\nkind: notes\nstatus: working\n---\n')],
   ['a claim kind inside docs/decisions/', () => docLifecycleFindings('docs/decisions/ai-trust-tiers.md', '---\nkind: claim\nstatus: authoritative\nprovenance: x\n---\n')],
   ['markdown outside docs/ and not an allowed root file', () => docLifecycleFindings('server/handover.md', '# Handover\n')],
@@ -566,6 +611,18 @@ const CATCH = [
     () => runtimeRangeFindings('client-web/package.json', '{"engines":{"node":"^24.13.1"}}')],
 ];
 const IGNORE = [
+  // The reference resolves by suffix, because a mechanism names a file the way a reader would say it rather than
+  // from the edition root every time.
+  ['a mechanism naming a file that exists deeper in the tree',
+    () => mechanismReferenceFindings({ 'TEN-2': { mechanism: '`sqliteNoteStore.ts` names the tenant' } }, ['server/src/persistence/notes/sqliteNoteStore.ts'])],
+  // Mechanism strings are prose and name code as well as files. A check that judged these would report the
+  // record's own English, which is E-5's pattern: documenting a mechanism should not break it.
+  ['a mechanism naming code rather than a file',
+    () => mechanismReferenceFindings({ 'CFG-1': { mechanism: 'confines `process.env` and bans `Date.now`, and `sqliteNoteStore.list` pages by keyset' } }, [])],
+  ['a mechanism naming a directory glob',
+    () => mechanismReferenceFindings({ 'DEC-1': { mechanism: '`docs/decisions/*.md` carry the record' } }, [])],
+  ['a row with no mechanism at all, which a different check owns',
+    () => mechanismReferenceFindings({ 'RT-1': { status: 'owed' } }, [])],
   // DEP-1 / E-92. The agreement check must stay silent when the tree agrees, including across the three
   // different file shapes the version is written in, because a check that fires on agreement gets deleted.
   ['every surface pinning the same runtime version',
@@ -1138,6 +1195,9 @@ if (conformance.record && conformance.errors.length === 0) {
   // they are looking at, and stops a green run from being read as coverage it does not have.
   if (catalogErrors === null) {
     notes.push('catalog not present, so per-claim completeness was NOT checked (expected in a seeded project)');
+  }
+  for (const message of mechanismReferenceFindings(conformance.record.claims, allFiles.map(({ rel }) => rel))) {
+    fail(message);
   }
   const table = checkTable(editionRoot, conformance.record);
   for (const error of table.errors) {

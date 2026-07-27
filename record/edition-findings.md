@@ -4831,6 +4831,42 @@ exception it justifies, in `loop-check.mjs`, written so the reason names this fi
 past. **Trigger: the next pass in that edition with a container runtime available, which owes either one
 procedure called from both places or a written argument for why two is correct.**
 
+### E-105. The mechanism field describes the edition, and I broke that within the hour of writing the check that found it
+
+**Claim:** TEST-3, DOC-1. **Found:** 2026-07-27, one commit after causing it. **Measured at f151902.**
+**Repaired here, and mechanised.**
+
+A conformance row's `mechanism` field says what the edition SHIPS. It travels with the edition: a seeded project
+gets a copy of `conformance.json` and starts editing it, and its row's mechanism has to name files that project
+has. Nothing enforced that, and it turns out nothing had needed to until the loop check landed.
+
+The loop check is a repository-level tool. Recording it, I wrote `kernel/tools/loop-check.mjs` and `kernel.yml`
+into three rows' mechanism fields across both editions, and one more into node's TEST-2. Five references. All
+five name real files. **None of the five exists in a seeded project**, which is the only tree that record is ever
+read in outside this repository.
+
+The repair is a distinction, not a deletion: where THIS repository happens to check an edition is an observation
+about the current measurement, and observations live in `note`. What the edition ships lives in `mechanism`. The
+five references moved.
+
+**What makes this worth an entry is the timing.** The check that catches it was written in the same hour, for a
+different reason: I was probing whether every file the rows NAME still exists, expecting to find a stale
+reference from an old rename. Every one of the sixty-odd references resolved. The only failures were the five I
+had just written, and I found them only because I ran the resolver edition-relative rather than repo-relative,
+which I did as an afterthought about seeded projects.
+
+So the finding is not "somebody was careless". It is that **a scope rule with no mechanism gets broken by the
+person who most recently thought about scope**, and the interval was under an hour. E-26 is the same shape at
+lower stakes, a comment naming a file that was not in the tree, and it closes by observing that the stale
+reference is plausibly why a gap survived a whole round.
+
+Mechanised in `docs-lint.mjs`, so it composes into both editions and runs wherever the record does. A backticked
+token counts as a file reference only when it carries a known source extension and no space or glob character,
+which deliberately lets the record's prose through: mechanism strings also name code (`process.env`, `Date.now`,
+`sqliteNoteStore.list`) and framework vocabulary, and a check that guessed at those would report the record's own
+English, which is E-5's pattern. Two controls catch, four ignore, and the self-test moved from 33 caught / 32
+ignored to 35 / 36.
+
 ## Acceptance test, first execution (2026-07-27)
 
 The instantiation acceptance test had never been executed. It ran for the dotnet-react edition, into a scratch

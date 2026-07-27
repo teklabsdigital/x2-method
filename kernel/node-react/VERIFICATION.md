@@ -1346,3 +1346,55 @@ filesystem, so that a mechanism a row NAMES and nothing invokes is the failing c
 
 loop-check ok (9 of 16 run by both registers, 7 excused), self-test 7 caught 3 ignored; gate-check self-test 6/7
 in both editions; conformance ok at 69 rows in both; docs-lint ok in both.
+
+## 2026-07-27, the mechanism field, and a scope rule broken within the hour of the check that catches it
+
+Measured at `f151902`. Repo-level again, recorded in both editions.
+
+TEST-3's residual named a trigger: an enumeration keyed on this record's own `mechanism` field rather than on the
+filesystem, so a mechanism a row NAMES and nothing invokes is the failing case. Half of it is now closed.
+
+### What the probe expected to find, and what it found
+
+The probe looked for a stale reference from an old rename, of the kind E-26 records in a comment. Every one of
+the sixty-odd file references in both editions resolved. **The only failures were five references written an hour
+earlier, by me, in the commit that added the loop check**: `kernel/tools/loop-check.mjs` and `kernel.yml` in three
+TEST-3 mechanisms and one TEST-2 mechanism.
+
+All five name real files. None of them exists in a seeded project, which is the only tree this record is read in
+outside this repository. The `mechanism` field says what the edition SHIPS; where THIS repository happens to
+check an edition is an observation, and observations belong in `note`. The five moved.
+
+They surfaced only because the resolver was run edition-relative rather than repo-relative, and that was an
+afterthought about seeded projects rather than the point of the probe. **A scope rule with no mechanism gets
+broken by the person who most recently thought about scope**, and the interval here was under an hour (E-105).
+
+### The check
+
+`mechanismReferenceFindings` in the shared `docs-lint.mjs`, so it composes to both editions and runs wherever the
+record does. A backticked token counts as a file reference only when it carries a known source extension and no
+space or glob character, which deliberately lets the record's prose through: mechanism strings also name code
+(`process.env`, `Date.now`, `sqliteNoteStore.list`) and framework vocabulary, and a check that guessed at those
+would report the record's own English, which is E-5's pattern.
+
+| plant | outcome |
+|---|---|
+| `statementSurface.ts` renamed in DATA-2's row and not in the tree | red-correct, naming the row and the token |
+| a mechanism naming `kernel.yml`, which no edition has | caught by control |
+| a mechanism naming code rather than a file | ignored by control |
+
+Self-test moved from 33 caught / 32 ignored to **35 / 36**.
+
+### What is still owed, and it is the harder half
+
+Resolution is not invocation. A module that exists, is named in a row, and that no test imports is exactly the
+state E-80 recorded of the e2e harness, and this check would pass it. Measured by hand for node-react today: 57
+shipped modules, 56 reached from the roots the jobs actually execute, and the 57th was a probe artifact (a test
+under `client-web/tools/` that the vitest include does cover). So the edition is clean and nothing proves it.
+**trigger for `proven`: reachability computed from the executed roots**, which is buildable for the node edition
+from the import-graph machinery already here and needs a different instrument for the sibling's C#.
+
+### Gates
+
+docs-lint ok and 35/36 in both editions, conformance ok at 69 rows in both, loop-check ok, compose ok at 39
+shared files, node server 283, e2e green.
