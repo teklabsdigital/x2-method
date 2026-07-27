@@ -676,17 +676,17 @@
       "title": "Documentation lifecycle",
       "status": "owed",
       "mechanism": "`docs-lint.mjs`: front matter, placement, work slice ids, the narrow design/ governance, the MET-08 dash check (exclusions declared above)",
-      "note": "planted 2026-07-27, eleven plants, five red naming DOC-1 and six green. The stateless halves the previous note admitted were never built while the row read `proven`; they are per-obligation now (E-33). The tree walk skips any directory named bin, obj, dist or node_modules at any depth, inside docs/ included (E-32). The tool is fixture-free and the documented shared-tier edit path disables it with every gate green (E-28). The tool gained `--self-test` on 2026-07-27, so a narrowing of these predicates now fails a control instead of passing silently (E-28 repaired).",
+      "note": "planted 2026-07-27, eleven plants, five red naming DOC-1 and six green. The stateless halves the previous note admitted were never built while the row read `proven`; they are per-obligation now (E-33). The tree walk once skipped any directory named bin, obj, dist or node_modules at any depth, docs/ included; it now skips build output only where something builds (E-32 repaired). The tool is fixture-free and the documented shared-tier edit path disables it with every gate green (E-28). The tool gained `--self-test` on 2026-07-27, so a narrowing of these predicates now fails a control instead of passing silently (E-28 repaired).",
       "obligations": [
         {
           "name": "every markdown declares a kind, and the kind matches the single legal root it lives in",
-          "status": "patterned",
-          "text": "red-correct on a wrong kind in docs/claims/ and in docs/decisions/. Enumeration is not total: markdown under any bin/obj/dist/node_modules directory is never walked (E-32)."
+          "status": "proven",
+          "text": "red-correct on a wrong kind in docs/claims/ and in docs/decisions/. The walk reaches every markdown in the tree. `bin`, `obj` and `dist` are skipped only where a project manifest sits beside them, so they are build OUTPUT rather than a name (E-32 repaired): authored markdown under a `docs/bin/` is now caught, and the identical file under a real project's `bin/` is still ignored. Both directions are controls. `proven` rather than `patterned` since 2026-07-27: E-32 was this obligation's only recorded residue, and the walk is now total over authored files. `node_modules` and `.git` stay unconditional because neither is ever authored."
         },
         {
           "name": "no markdown outside the legal roots, closure over the edition tree",
-          "status": "patterned",
-          "text": "red-correct for server/handover.md. Same walk, same basename hole (E-32)."
+          "status": "proven",
+          "text": "red-correct for server/handover.md. The walk reaches every markdown in the tree. `bin`, `obj` and `dist` are skipped only where a project manifest sits beside them, so they are build OUTPUT rather than a name (E-32 repaired): authored markdown under a `docs/bin/` is now caught, and the identical file under a real project's `bin/` is still ignored. Both directions are controls. `proven` rather than `patterned` since 2026-07-27: E-32 was this obligation's only recorded residue, and the walk is now total over authored files. `node_modules` and `.git` stay unconditional because neither is ever authored."
         },
         {
           "name": "working documents carry a slice id",

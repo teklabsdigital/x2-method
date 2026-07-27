@@ -30,7 +30,6 @@ const fail = (message) => errors.push(message);
 const ROOT_MARKDOWN = new Set(['README.md', 'CLAUDE.md', 'BUILD-BRIEF.md', 'VERIFICATION.md', 'VERSIONS.md']);
 const FOLDER_KIND = { claims: 'claim', decisions: 'decision', contracts: 'contract', runbooks: 'runbook', work: 'work' };
 const STATUSES = new Set(['authoritative', 'working', 'archived']);
-const SKIP_DIRS = new Set(['node_modules', 'bin', 'obj', 'dist', '.git']);
 
 // Vendored submodules are third-party by definition (INV-08): any path registered in .gitmodules is skipped
 // wholesale. The edition ships none; the first project that vendors one is this mechanism's first real run.
@@ -65,9 +64,44 @@ function isExempt(rel) {
   return false;
 }
 
+/// Build output is only build output if something builds there.
+///
+/// This used to be a flat basename set: any directory called `bin`, `obj`, `dist` or `node_modules`, at any
+/// depth, anywhere, was skipped. That is E-32, and it is the same defect the lockfile exemption two hundred lines
+/// down was already repaired for, in the same direction: a name is not a fact about what a file IS. `docs/bin/`
+/// holding an authored runbook, or a `design/dist/` holding a handed-over specification, was never walked, so
+/// every DOC-1 check treated it as absent. The closure obligation says the enumeration must reach every markdown
+/// in the tree, and it silently did not.
+///
+/// `node_modules` and `.git` stay unconditional: neither is ever authored, and no project puts documentation in
+/// them. `bin`, `obj` and `dist` are skipped only when a project manifest sits beside them, which is what makes
+/// them output rather than a name. The check is one `existsSync` per candidate directory, and it runs at most
+/// once per directory in the tree.
+const ALWAYS_SKIP = new Set(['node_modules', '.git']);
+const OUTPUT_DIRS = new Set(['bin', 'obj', 'dist']);
+const BUILDS_HERE = ['package.json', 'Directory.Packages.props', 'Cargo.toml', 'pyproject.toml', 'go.mod'];
+
+/// Split from the filesystem read below so the controls can drive it, which is the shape E-79 argues for: a
+/// predicate that reads the tree it lives in can only be asserted against that tree, and this one has to hold
+/// for editions whose build systems this file has never seen.
+export function isBuildOutput(entry, parentBuilds) {
+  return OUTPUT_DIRS.has(entry) && parentBuilds;
+}
+
+function buildsHere(parent) {
+  if (BUILDS_HERE.some((manifest) => existsSync(join(parent, manifest)))) {
+    return true;
+  }
+  // A .NET project directory is named by its own project file rather than by a fixed name, so it is matched by
+  // extension rather than listed above.
+  return readdirSync(parent).some((sibling) => /\.(cs|fs|vb)proj$/.test(sibling));
+}
+
 function walk(dir) {
+  const builds = readdirSync(dir).some((entry) => OUTPUT_DIRS.has(entry)) ? buildsHere(dir) : false;
+
   return readdirSync(dir).flatMap((entry) => {
-    if (SKIP_DIRS.has(entry)) {
+    if (ALWAYS_SKIP.has(entry) || isBuildOutput(entry, builds)) {
       return [];
     }
     const full = join(dir, entry);
@@ -456,6 +490,14 @@ const IGNORE = [
     () => bypassLedgerFindings('| Path | Sole-reader test | Justification |\n|--|--|--|\n| /billing | BillingSweepIsSoleReader | invoicing |\n', () => true)],
   ['an alignment separator, which is not a bypass row',
     () => bypassLedgerFindings('| Path | Justification | Test |\n|:-----|:-------------:|----:|\n', () => true)],
+  // E-32, closed. `bin`, `obj` and `dist` were skipped by NAME at any depth, so authored markdown under a
+  // `docs/bin/` was never walked and every DOC-1 check read it as absent. Both directions are controls, because
+  // the repair's whole risk is the other one: walking real build output would bury the run in generated files.
+  ['a bin directory beside a project manifest IS build output', () => (isBuildOutput('bin', true) ? [] : ['not skipped'])],
+  ['an obj directory beside a project manifest IS build output', () => (isBuildOutput('obj', true) ? [] : ['not skipped'])],
+  ['a dist directory beside a project manifest IS build output', () => (isBuildOutput('dist', true) ? [] : ['not skipped'])],
+  ['a bin directory that builds NOTHING is walked, not skipped (E-32)', () => (isBuildOutput('bin', false) ? ['skipped'] : [])],
+  ['a docs directory is never build output whatever sits beside it', () => (isBuildOutput('docs', true) ? ['skipped'] : [])],
   ['a live document citing a live one', () => citationFindings('README.md', 'see [the runbook](docs/runbooks/x.md)', () => 'authoritative')],
   ['an ARCHIVED document citing an archived one, because history refers to history',
     () => citationFindings('docs/work/s0.md', '---\nkind: work\nstatus: archived\nslice: S0\n---\nsee [it](../runbooks/x.md)', () => 'archived')],

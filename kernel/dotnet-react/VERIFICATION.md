@@ -1700,3 +1700,42 @@ where the engine and the server are.
 ### Gates
 
 Architecture 203, unit 58, integration 4 skipped, both conformance records ok at 69 rows, both docs-lints ok.
+
+## 2026-07-27, K2: build output is only build output if something builds there (E-32 repaired)
+
+`docs-lint`'s tree walk skipped any directory named `bin`, `obj`, `dist` or `node_modules`, at any depth,
+anywhere. That is E-32. Authored markdown under a `docs/bin/` was never walked, so every DOC-1 check read it as
+absent while DOC-1's closure obligation says the enumeration reaches every markdown in the edition tree.
+
+It is the same defect the lockfile exemption two hundred lines further down had already been repaired for, in the
+same direction, after failing twice in opposite ways: **a name is not a fact about what a file IS.** A lockfile is
+only a lockfile if it locks something; a `bin/` is only build output if something builds there.
+
+`node_modules` and `.git` stay unconditional, because neither is ever authored. `bin`, `obj` and `dist` are
+skipped only where a project manifest sits beside them, matched by the five manifest names plus any `*.csproj`,
+`*.fsproj` or `*.vbproj`, since a .NET project directory is named by its own project file rather than by a fixed
+name.
+
+| case | outcome |
+|------|---------|
+| authored markdown under `docs/bin/`, which builds nothing | **caught**, naming DOC-1 |
+| the identical file under `server/src/Kernel.Api/bin/`, beside a csproj | ignored, correctly |
+| the same pair in node-react, using `docs/dist/` | caught, then ignored |
+
+The second row is the one the repair could have broken, and it is why both directions are controls rather than
+one. Walking real build output would bury a run in generated files, and a guard that noisy gets switched off.
+
+**The predicate was split so the controls can drive it.** `isBuildOutput(entry, parentBuilds)` is pure and takes
+the answer; `buildsHere(parent)` does the filesystem read. That is E-79's lesson applied the same week it was
+learned: a predicate that reads the tree it lives in can only be asserted against that tree, and this one has to
+hold for editions whose build systems this file has never seen. Five new controls, in both directions.
+
+**Two obligations promoted to `proven` in both editions.** E-32 was the only recorded residue on "every markdown
+declares a kind, and the kind matches the single legal root it lives in" and on "no markdown outside the legal
+roots". Leaving them `patterned` after closing the only reason they were `patterned` would be the understating
+direction of a dishonest row, which this week has spent a lot of time finding elsewhere.
+
+### Gates
+
+docs-lint self-test 28 caught / 27 ignored in both editions (from 28 / 22), both docs-lints ok, both conformance
+records ok at 69 rows, compose 78 files / 2 editions.
