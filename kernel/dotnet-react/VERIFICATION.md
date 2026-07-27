@@ -1652,3 +1652,51 @@ lists a step the mechanism has removed sends the next reader to edit a file that
 
 Architecture 200 to 203, unit 58, integration 4 skipped, both docs-lints ok, both conformance records ok at 69
 rows, both self-tests 28 caught / 22 ignored, compose 78 files / 2 editions.
+
+## 2026-07-27, J1: the .NET guards enter a continuous loop (E-39 repaired)
+
+E-39 recorded that this repository's own CI ran no dotnet at all, and named it as the reason a neutered guard
+survives: E-29 and E-30 were both guards narrowed to reach nothing, both required editing a file, and no
+continuous process anywhere would have reported either edit. Every guard this edition ships has been protected
+only by whoever remembered to run it.
+
+`kernel.yml` gains a `dotnet-server` job. Every command in it was executed locally in the exact sequence the
+workflow runs them, rather than written and hoped for:
+
+    dotnet restore --locked-mode                              ok
+    dotnet build -warnaserror --no-restore                    ok
+    dotnet test tests/Kernel.Tests.Architecture --no-build    203 passed
+    dotnet test tests/Kernel.Tests.Unit --no-build             58 passed
+
+**261 tests were ungated and are now gated.**
+
+### The exclusion was argued, and the argument expired without saying so
+
+This is the part worth keeping. `kernel.yml`'s header did not omit the .NET tiers, it justified omitting them:
+"The .NET tiers stay in the edition template: they need an engine container and they gate a seeded project, not
+the catalog." That was true when written. Half of it stopped being true afterwards, in this repository, by work
+recorded in this file: E-49 made the engine tier SKIP with a named reason when no container runtime responds, and
+the architecture and unit tiers never needed an engine at all.
+
+So the argument went on excluding 261 tests on the strength of the 4 it described, and nothing re-examined it.
+
+The recurring defect this repository finds is a document describing a mechanism that is not there. This is one
+level up: a **decision resting on a premise that is no longer true**. A document that describes a missing
+mechanism can be caught by looking at the mechanism. A decision that was correct when made does not announce the
+day its premise expires, and nothing in the method currently re-reads a settled decision when the fact under it
+moves. Recorded against E-39 rather than as a new finding, because it is that finding's real cause.
+
+The integration tier stays in the template, and that half of the original argument still holds: it needs a real
+engine, `ci.yml` supplies one as a service container, and the catalog does not need an engine to check itself.
+The job names its two tiers rather than running `dotnet test` over the solution, which would pick up the third
+and either pull an engine image or skip it silently depending on what the runner happens to have.
+
+### Rows corrected
+
+`TEST-1`, `TEST-2` and `DATA-2` each cited E-39 as a live reason. All three now say what is true: two of the three
+tiers run continuously against this edition's code here, and the tiers that need an engine or a booted server stay
+where the engine and the server are.
+
+### Gates
+
+Architecture 203, unit 58, integration 4 skipped, both conformance records ok at 69 rows, both docs-lints ok.

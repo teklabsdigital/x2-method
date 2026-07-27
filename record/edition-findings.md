@@ -2807,6 +2807,29 @@ executed until this week.
 This is not an argument that the guards are wrong. It is the reason a neutered guard survives: E-29 and E-30
 both required editing a file, and no continuous process anywhere would have reported either edit.
 
+**Repaired 2026-07-27, and the interesting part is why it stayed open.** `kernel.yml` gains a `dotnet-server` job
+running `dotnet restore --locked-mode`, `dotnet build -warnaserror`, then the architecture and unit tiers by name.
+Every command was executed locally in the exact sequence the workflow runs it: **203 architecture tests and 58
+unit tests**, all passing, all previously ungated.
+
+The exclusion was not an oversight. `kernel.yml`'s own header argued it: *"The .NET tiers stay in the edition
+template: they need an engine container and they gate a seeded project, not the catalog."* That was true when it
+was written and half of it stopped being true afterwards. E-49 made the engine tier SKIP with a named reason when
+no container runtime responds, and the architecture and unit tiers never needed an engine at all: 261 of the 265
+.NET tests run against SQLite in memory or against no store. The argument went on excluding 261 tests on the
+strength of the 4 it actually described, and nothing re-examined it, because a decision that was correct when
+made does not announce the day its premise expires.
+
+That is the class this repository keeps finding, one level up from the usual: not a document describing a
+mechanism that is not there, but a **decision resting on a premise that is no longer true**. The recurring
+defects have been documents outliving their mechanisms; this is a decision outliving its reason, and nothing in
+the method currently re-reads a settled decision when the fact under it moves.
+
+The integration tier stays in the edition template, and that half of the original argument still holds: it needs
+a real engine, the template's `ci.yml` supplies one as a service container, and the catalog does not need an
+engine to check itself. The job names its two tiers rather than running `dotnet test` over the solution, which
+would pick up the third and either pull an engine image or skip it silently depending on what the runner has.
+
 ### E-40. DATA-1's endpoint ban stops at one namespace, and the host's other namespace is unguarded
 
 **Claim:** DATA-1. **Found:** 2026-07-27. **Measured at 1e52bfa.**

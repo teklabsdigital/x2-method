@@ -6,8 +6,24 @@
 # when someone remembered. TEST-3 names that state exactly: a mechanism that runs only when a developer
 # remembers is aspirational, not enforced. This closes it for the repository that makes the claim.
 #
-# Scope is deliberately the repo-level gates plus the shared client tier. The .NET tiers stay in the edition
-# template: they need an engine container and they gate a seeded project, not the catalog.
+# Scope is the repo-level gates, the shared client tier, and both editions' engine-free server tiers.
+#
+# It used to exclude the .NET tiers, and the exclusion was argued rather than an oversight: "they need an engine
+# container and they gate a seeded project, not the catalog." The first half of that stopped being true and
+# nothing re-examined it. E-49 made the engine tier SKIP with a named reason when no container runtime responds,
+# and the architecture and unit tiers never needed one: 261 of the 265 .NET tests run against SQLite in memory or
+# against no store at all. So the argument now excludes 261 tests on the strength of the 4 it describes.
+#
+# That mattered more than the count. E-39 recorded that no continuous process ran the .NET architecture suite, and
+# named it as the reason E-29 and E-30 survived: both were guards narrowed to reach nothing, both required editing
+# a file, and no loop would have reported either edit. Every guard this repository has built for the .NET edition
+# has been protected only by whoever remembered to run it.
+#
+# The integration tier stays in the edition template deliberately, and that half of the original argument still
+# holds: it needs a real engine, the template's `ci.yml` provides one as a service container, and the catalog does
+# not need an engine to check itself. So the job below names its two tiers instead of running `dotnet test` over
+# the solution, which would pick up the third and either start pulling an engine image or skip it silently
+# depending on what the runner happens to have.
 name: kernel
 
 on:
@@ -72,6 +88,29 @@ jobs:
       # tsc, vitest, eslint. The route-recorder completeness proofs and the framework import ban both run here,
       # which is what keeps the enumeration every future claim scan stands on from quietly becoming partial.
       - run: npm run verify
+
+  dotnet-server:
+    name: dotnet-react server tier (engine-free)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kernel/dotnet-react/server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          cache: true
+          cache-dependency-path: kernel/dotnet-react/server/**/packages.lock.json
+      # DEP-1: locked mode, so a lockfile that disagrees with the manifest fails here rather than resolving.
+      - run: dotnet restore --locked-mode
+      - run: dotnet build -warnaserror --no-restore
+      # Named tiers, not the solution. The architecture tier is where every claim guard this repository has built
+      # for this edition actually lives, and it is the one E-39 said nothing was running.
+      - name: Architecture tier (the claim guards)
+        run: dotnet test tests/Kernel.Tests.Architecture --no-build
+      - name: Unit tier
+        run: dotnet test tests/Kernel.Tests.Unit --no-build
 
   client:
     name: shared client tier

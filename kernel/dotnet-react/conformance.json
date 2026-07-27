@@ -381,7 +381,7 @@
         {
           "name": "list reads are paginated by keyset, not offset",
           "status": "patterned",
-          "text": "`Paging_by_cursor_visits_every_row_exactly_once` pages the whole table and asserts no row is dropped or repeated, which distinguishes keyset from offset without a concurrent writer, and runs on SQLite with no Docker daemon. Removing the cursor filter turns it red. The same-timestamp collision page stays with `KeysetPagingTests`, which needs Docker and per E-39 runs in no CI (E-49). trigger: a provider whose id ordering differs from the one under test owes the collision page on that engine."
+          "text": "`Paging_by_cursor_visits_every_row_exactly_once` pages the whole table and asserts no row is dropped or repeated, which distinguishes keyset from offset without a concurrent writer, and runs on SQLite with no Docker daemon. Removing the cursor filter turns it red. The same-timestamp collision page stays with `KeysetPagingTests`, which needs a real engine and stays in the edition template's CI rather than this repository's, by the deliberate scope decision `kernel.yml` now states (E-49, E-39 repaired). trigger: a provider whose id ordering differs from the one under test owes the collision page on that engine."
         }
       ]
     },
@@ -862,7 +862,7 @@
       "title": "Tier strategy",
       "status": "owed",
       "mechanism": "SQLite unit/arch tier, Testcontainers integration tier with a unique database and the real migration, e2e through the client service layer; EF InMemory banned by `NamingPlacementTests`; the edition's `ci.yml` runs all three",
-      "note": "the ban binds and the integration fixture is correctly shaped by reading; it has never run here, and the engine pin is duplicated four times (E-64, E-49)",
+      "note": "the ban binds and the integration fixture is correctly shaped by reading; it has never run here, and the engine pin is duplicated four times (E-64, E-49) 2026-07-27: E-39 is repaired. `kernel.yml` gained a `dotnet-server` job running `restore --locked-mode`, `build -warnaserror` and the architecture and unit tiers by name, so the 203 guards this edition ships are now protected by a continuous process rather than by whoever remembers. That was the reason a neutered guard survived twice (E-29, E-30).",
       "obligations": [
         {
           "name": "no fake in-memory database provider in any test project",
@@ -882,7 +882,7 @@
         {
           "name": "all three tiers run in the CI loop",
           "status": "latent",
-          "text": "The edition's `.github/workflows/ci.yml` restores locked, builds with `-warnaserror` and runs all three tiers. It is a template that becomes real CI only at instantiation, and instantiation ships no arming mechanism (E-24), so it has never run. This repository's own CI runs no dotnet at all (E-39), which is a fact about the repository rather than about the edition. trigger: E-24."
+          "text": "The edition's `.github/workflows/ci.yml` restores locked, builds with `-warnaserror` and runs all three tiers. It is a template that becomes real CI only at instantiation, and instantiation ships no arming mechanism (E-24), so it has never run. This repository's own CI now runs the two engine-free tiers, 203 architecture and 58 unit, on every push and pull request (E-39 repaired); the engine tier stays in the edition template where the engine is. So the obligation is split by fact rather than by wish: two of the three tiers are continuously run against this edition's code, and the third runs only where an engine exists. trigger: E-24, for the tier that needs the instantiated loop."
         }
       ]
     },
@@ -905,7 +905,7 @@
         {
           "name": "the deterministic tier runs in CI",
           "status": "latent",
-          "text": "The edition's `ci.yml` carries the `e2e-wire` job which starts the API and runs the harness. It has never executed: the workflow is a template until instantiation (E-24) and this repository's own CI runs no dotnet (E-39). Locally it needs the stack up, which needs a container runtime. trigger: the first instantiation, or a local run with the engine available."
+          "text": "The edition's `ci.yml` carries the `e2e-wire` job which starts the API and runs the harness. It has never executed: the workflow is a template until instantiation (E-24). This repository's own CI now runs the edition's engine-free tiers (E-39 repaired) and deliberately does not run `e2e-wire`, which needs a live engine and a booted server. Locally it needs the stack up, which needs a container runtime. trigger: the first instantiation, or a local run with the engine available."
         },
         {
           "name": "harness output redacts secrets",
