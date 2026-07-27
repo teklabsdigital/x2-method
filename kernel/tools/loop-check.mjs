@@ -44,8 +44,17 @@ const EDITIONS = ['dotnet-react', 'node-react'];
 const EXECUTABLE_DIRECTORIES = ['tools', 'scripts'];
 const EXECUTABLE_EXTENSIONS = ['.mjs', '.ts', '.sh', '.js'];
 
+const ALL_REGISTERS = Object.freeze(['ci.yml', 'kernel.yml']);
+
 // Not every shipped file is a thing a loop can run, and the exceptions are named with their reasons rather than
 // filtered by a pattern, so that a new one costs an argument.
+//
+// An entry may name the `registers` it excuses, and defaults to all of them. That distinction was added 2026-07-28
+// and it is the one this list needed: an exemption is a claim, and "no loop can run this" is a much larger claim
+// than "the edition template meets this requirement a different way". `scripts/db-up.sh` is the case that forced
+// it, because THIS repository's loop does now run it while the template still brings its engine as a service
+// container. Excusing it from both registers would have been false in one of them, and a false exemption reads
+// like an argument somebody made.
 const NOT_A_RUNNABLE_CHECK = Object.freeze([
   Object.freeze({
     file: 'tools/conformance.mjs',
@@ -57,7 +66,8 @@ const NOT_A_RUNNABLE_CHECK = Object.freeze([
   }),
   Object.freeze({
     file: 'scripts/db-up.sh',
-    why: 'a developer command that starts a local engine container. CI brings its engine as a service container instead, which is the same requirement met a different way rather than the same script skipped.',
+    registers: ['ci.yml'],
+    why: 'the edition template brings its engine as a service container, which is the same requirement met a different way rather than the same script skipped, and a container declared in `services:` is resolved at workflow parse time so it cannot be started by a script. Excused from that register only: this repository`s own loop runs this script, in the dotnet-e2e job, which is also what keeps the pinned engine image from being copied into a fifth place (E-64) since the script reads it from edition.json.',
   }),
   Object.freeze({
     file: 'scripts/db-down.sh',
@@ -67,11 +77,12 @@ const NOT_A_RUNNABLE_CHECK = Object.freeze([
     file: 'scripts/db-migrate.sh',
     why: 'a developer command wrapping `dotnet ef database update`. The e2e-wire job applies the schema with the same tool against its service container, so the STEP is in the loop even though this wrapper is not.',
   }),
-  Object.freeze({
-    file: 'scripts/e2e.sh',
-    why: 'a developer command, and the one exception here that is a finding rather than a category. The sibling`s `e2e-wire` job does not run this script: it re-implements the whole orchestration inline, so the edition carries two procedures for one job and nothing keeps them equal. E-104 records that with its trigger. The exception is written this way deliberately, because a permanently red gate gets disabled rather than fixed (E-84), and the honest home for an unresolved defect is the register and the conformance row, not a check nobody can make pass.',
-  }),
 ]);
+// `scripts/e2e.sh` was the sixth entry, and the only one here that was a finding rather than a category: the
+// sibling`s `e2e-wire` job re-implemented the whole orchestration inline, so the edition carried two procedures
+// for one job and nothing kept them equal (E-104). Deleted 2026-07-28 with the repair. It is worth keeping in
+// view that the exemption was written to be deletable: it named the finding rather than waving the file past,
+// which is what made removing it a one-line consequence of fixing the thing instead of an argument.
 
 export function loopFindings(shipped, invocations, exceptionsAreLive = false) {
   const findings = [];
@@ -87,7 +98,7 @@ export function loopFindings(shipped, invocations, exceptionsAreLive = false) {
   // real question, so an entry whose file is gone silences a question about nothing while reading as an argument
   // somebody made.
   for (const exception of NOT_A_RUNNABLE_CHECK) {
-    if (!shipped.some((item) => item.excepted === exception.file) && exceptionsAreLive) {
+    if (!shipped.some((item) => (item.exceptedBy ?? item.excepted) === exception.file) && exceptionsAreLive) {
       findings.push(
         `${exception.file} is excused from needing a run and no edition ships it. An exemption nobody needs is one nobody reviews; delete it (TEST-3).`,
       );
@@ -278,8 +289,19 @@ function shippedExecutables(root, editions) {
           continue;
         }
         const path = `${directory}/${entry}`;
-        const excepted = NOT_A_RUNNABLE_CHECK.find((exception) => exception.file === path)?.file;
-        shipped.push({ edition, path, excepted, registers: ['ci.yml', 'kernel.yml'] });
+        // An exception excuses the registers it names, all of them by default. What is left is what this file
+        // still owes a run, and `excepted` stays undefined unless nothing is left: a partially excused file is a
+        // checked file, or the narrowing would silence the register it did not claim.
+        const exception = NOT_A_RUNNABLE_CHECK.find((candidate) => candidate.file === path);
+        const excused = exception === undefined ? [] : (exception.registers ?? ALL_REGISTERS);
+        const registers = ALL_REGISTERS.filter((register) => !excused.includes(register));
+        shipped.push({
+          edition,
+          path,
+          excepted: exception !== undefined && registers.length === 0 ? exception.file : undefined,
+          exceptedBy: exception?.file,
+          registers,
+        });
       }
     }
   }
@@ -333,6 +355,11 @@ const CONTROLS = [
       call('ci.yml', 'ed', 'kernel/ed', 'node tools/docs-lint.mjs'),
       call('kernel.yml', 'ed', 'kernel/ed', 'node tools/docs-lint.mjs'),
     ], true)],
+  // The register-scoped exemption, from the side that must still fail. Narrowing an exception to one register is
+  // a way of claiming less, and a narrowing that silenced the register it did not claim would be a way of
+  // claiming more while reading as less.
+  ['an executable excused from one register and run by neither', () =>
+    loopFindings([{ edition: 'ed', path: 'scripts/db-up.sh', registers: ['kernel.yml'] }], [])],
 ];
 
 const IGNORED = [
@@ -362,6 +389,11 @@ const IGNORED = [
         call('kernel.yml', 'a', 'kernel/a', 'node tools/x.mjs'),
         call('kernel.yml', 'b', 'kernel/b', 'node tools/x.mjs'),
       ],
+    )],
+  ['an executable excused from one register and run by the other, which is db-up.sh exactly', () =>
+    loopFindings(
+      [{ edition: 'ed', path: 'scripts/db-up.sh', registers: ['kernel.yml'] }],
+      [call('kernel.yml', 'ed', '.', 'kernel/ed/scripts/db-up.sh')],
     )],
 ];
 
@@ -407,7 +439,7 @@ function check() {
   }
   const checked = shipped.filter((item) => item.excepted === undefined);
   process.stdout.write(
-    `loop-check: ok (${checked.length} of ${shipped.length} shipped executable(s) across ${EDITIONS.length} edition(s) run by both registers; ${shipped.length - checked.length} excused with a written reason)\n`,
+    `loop-check: ok (${checked.length} of ${shipped.length} shipped executable(s) across ${EDITIONS.length} edition(s) run by every register that owes them; ${shipped.length - checked.length} excused with a written reason)\n`,
   );
 }
 

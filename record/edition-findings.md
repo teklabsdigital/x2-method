@@ -4868,6 +4868,42 @@ for precisely that case. Caught by reading the job while changing the script, wh
 not a mechanism. Both copies now carry the build. The finding stands unrepaired and its trigger is unchanged: the
 sibling e2e script needs to supply its own dependencies before CI can call it rather than copy it.
 
+### E-104 repaired, 2026-07-28. One procedure, and the exemption deleted with it
+
+**Measured at 059616a.** The trigger was "the next pass in that edition with a container runtime available", and
+the finding named what the repair had to be: make the script supply its own dependencies rather than depend on a
+developer's machine. It has two such dependencies and each is now resolved to ONE value, taken from the
+environment when a caller supplies it and provisioned locally when nobody does.
+
+    the database     ConnectionStrings__Kernel, else db-up.sh plus the connection string from user-secrets
+    the signing key  Jwt__Key, else the Jwt:Key user-secret
+
+Everything after that block is identical for both callers, which is the half that had drifted. The connection
+string is now computed once and handed to BOTH the migration and the host, which closes E-111's shape one layer
+out: a migration applied to one database while the host reads another is a green migrate and a server that
+answers nothing.
+
+Verified by running it, three ways, all at 059616a:
+
+| shape | result |
+|---|---|
+| the developer path, nothing in the environment | green, harness plus smoke |
+| the runner path, both values from the environment | green, and the env key deliberately DIFFERED from the user-secret, so a host reading the wrong store would have 401'd every scenario |
+| the runner path with an unreachable database | red at the migrate step, having started no local engine, which is the branch under test |
+
+The third shape is the one that earned its keep: it went red correctly and said nothing while doing it, which is
+E-115.
+
+**The consequences are larger than the repair.** `e2e-wire` loses about forty lines and gains a per-run signing
+key, because two copies of a procedure each needed the value spelled out somewhere and the cheapest place was a
+committed literal; one procedure reading one environment variable retires the `secret-scan.allow.json` entry that
+described itself as the weakest in its list. `loop-check.mjs` loses this file's exemption, which had been written
+to name the finding rather than wave the file past, and that is what made deleting it a consequence of the fix
+instead of an argument. Removing it then showed the OTHER half of the same hole, which had been hidden behind it:
+nothing in this repository had ever run the sibling's e2e either, since that edition's `ci.yml` is a template
+that never executes here. Every green it has ever had came from a person choosing to run it. `kernel.yml` gains a
+dotnet-e2e job, whose own first live run is unobserved and is recorded as such in E-116.
+
 ### E-105. The mechanism field describes the edition, and I broke that within the hour of writing the check that found it
 
 **Claim:** TEST-3, DOC-1. **Found:** 2026-07-27, one commit after causing it. **Measured at f151902.**
@@ -5185,6 +5221,74 @@ this, and the compiler cannot disprove a promise. The class returns only by expo
 and that is now a visible diff rather than a silent widening. E-113's own two corrections, first the wrong reason
 (symbol resolution) and then the wrong remedy (a new scan), are the shape of the finding: the gap was in what the
 code claimed about itself, not in what the toolchain could see.
+
+### E-114. The two copies of one procedure had diverged in what they EXERCISE, not in how they are spelled
+
+**Claim:** TEST-2, TEST-3. **Found:** 2026-07-28, repairing E-104. **Measured at 059616a**, by reading both
+files and `Program.cs`; not by running the job, which cannot run here. **Repaired in the same pass.**
+
+E-104 predicted where two copies of one procedure would drift: "the ORDER, the readiness condition, what is torn
+down on failure, what the tokens carry". All four of those are cosmetic next to what had actually happened.
+
+    scripts/e2e.sh   ASPNETCORE_ENVIRONMENT=Development   Harness__Enabled=true
+    the e2e-wire job ASPNETCORE_ENVIRONMENT=Production     no flag at all
+
+The harness profile is the gated test seam a product's provider-port re-bindings compose under (TEST-2 / INV-10),
+and the host REFUSES to boot with it on outside Development or Testing, naming itself when it does. So the two
+copies were not two spellings of one run. **A developer ran the tier the harness is built for, and CI ran a
+different system with the seam off.** Both were green, and both were entitled to be, because the kernel ships no
+re-bindings for the profile to carry. Every project seeded from that template would have inherited a CI job that
+silently did not exercise the bindings the tier exists to drive.
+
+This is why "two procedures for one job" is worth a finding even when both are green. The divergence a reviewer
+looks for is a missing step; the divergence that costs something is a shared step run against a different system.
+The repair is E-104's: one procedure, whose environment defaults to Development, with the seam following the
+environment rather than being forced, because forcing it would turn a caller's choice into a crash.
+
+### E-115. A tidied step deletes the reason its own failure gives
+
+**Claim:** TEST-2, and any claim whose mechanism is a script. **Found:** 2026-07-28, by planting an unreachable
+database against the repaired `scripts/e2e.sh`. **Measured at 059616a** (working tree). **Repaired here.**
+
+The plant was meant to prove the environment-supplied branch skips the local engine. It did. It also produced
+this, which is the whole run:
+
+    Applying the schema...
+
+Nothing else. No error, no stack, no exit message. `dotnet ef` and MSBuild write their failures to STDOUT, so
+`>/dev/null` on the happy path deletes the unhappy one, and `set -e` then stops the script with the last visible
+line belonging to the step BEFORE the one that failed. In CI that is a red job whose log ends mid-sentence.
+
+Three of the four suppressions were mine, written minutes earlier, for tidiness. **The fourth was already there:**
+`dotnet build "$API_PROJECT" -clp:NoSummary >/dev/null` has been in this script since it was written, so a compile
+error has always left "Building the API..." as the last thing anyone saw. Nobody hit it because the build was
+green every time, which is exactly how a silent failure path survives.
+
+E-11's family, inverted. E-11 is a green that says nothing because the check reached nothing; this is a RED that
+says nothing because the reason was discarded on the way past. Both are a scan whose output does not distinguish
+the state it is in, and the second is easier to write, because suppressing output feels like polish.
+
+Repaired by unsilencing all four. A locked-mode violation is exactly the failure DEP-1 wants loud, and CI log
+noise costs nothing next to a red job with no message in it.
+
+### E-116. The reason this repository skips the .NET integration tier was half true, and this pass falsified the other half
+
+**Claim:** TEST-3. **Found:** 2026-07-28, adding the dotnet-e2e job to `kernel.yml`. **Measured at 059616a**, by
+reading the workflow's own header against the job being added. **Recorded, not repaired.**
+
+`kernel.yml` argues, in its header, that the integration tier stays in the edition template because "it needs a
+real engine, the template's `ci.yml` provides one as a service container, and the catalog does not need an engine
+to check itself". Two reasons. **This pass gave this workflow an engine**, because the dotnet-e2e job starts the
+edition's own container in order to run the e2e tier, so the first reason is now false of the file that makes it.
+What remains is that the template covers the tier, which was the weaker half when there were two.
+
+Not repaired, and the reason is E-84 rather than the argument. The dotnet-e2e job's first live run has never been
+observed: it was verified by running the script it calls, in both of the shapes it now supports, on a developer
+machine. Adding a second untested tier to an untested job compounds a risk instead of closing a gap.
+
+The header no longer states the falsified half. **Trigger: the first observed green run of dotnet-e2e, which owes
+either the integration tier added to it or a written argument for why an engine-backed job should skip the
+engine-backed tier.**
 
 ### E-109. A test asserted against the placeholder the manifest tells you to change, so it failed when the rename was done right
 

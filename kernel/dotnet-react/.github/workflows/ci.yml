@@ -91,8 +91,10 @@ jobs:
           --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Ci_Harness_Pass123! -C -Q 'SELECT 1'"
           --health-interval 10s --health-timeout 5s --health-retries 20
     env:
-      HARN_JWT_KEY: 'ci-harness-signing-key-0123456789-abcdefghij'
-      CS: 'Server=localhost,1433;Database=Kernel;User Id=sa;Password=Ci_Harness_Pass123!;TrustServerCertificate=True'
+      # The connection string for the service container above. Its password is a committed fixture for the reason
+      # secret-scan.allow.json gives: a service container's env is resolved at workflow parse time and cannot read
+      # a value a step produced. The signing key was never under that constraint, and is minted per run below.
+      ConnectionStrings__Kernel: 'Server=localhost,1433;Database=Kernel;User Id=sa;Password=Ci_Harness_Pass123!;TrustServerCertificate=True'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -105,57 +107,27 @@ jobs:
           node-version: '24.18.0'
           cache: npm
           cache-dependency-path: client-web/package-lock.json
-      - name: Build server
-        working-directory: server
-        run: |
-          dotnet restore --locked-mode
-          dotnet build -warnaserror --no-restore
-      - name: Apply schema
-        working-directory: server
-        run: |
-          dotnet tool restore
-          dotnet ef database update --no-build --connection "$CS" -p src/Kernel.Persistence -s src/Kernel.Api
+      # The runner's half of the division `scripts/e2e.sh` declares: this job decides how the client tier got its
+      # node_modules, the script builds and drives it. The sibling edition's e2e job draws the line in the same place.
       - name: Install client
         working-directory: client-web
         run: npm ci
-      # CFG-1: the JWT identity is committed configuration, so this reads it instead of restating it. It was
-      # restated here four times (job env twice, step env twice), and the harness mints tokens with the same
-      # values the server validates them against, so a change to appsettings.json would have left CI green while
-      # every other caller broke. That is the drift the claim was minted from, in the file that decides whether
-      # the build is green (E-75).
-      - name: Read the committed JWT identity
-        run: |
-          APPSETTINGS=server/src/Kernel.Api/appsettings.json
-          READ="process.stdout.write(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).Jwt[process.argv[2]])"
-          {
-            echo "JWT_ISSUER=$(node -e "$READ" "$APPSETTINGS" Issuer)"
-            echo "JWT_AUDIENCE=$(node -e "$READ" "$APPSETTINGS" Audience)"
-          } >> "$GITHUB_ENV"
-      - name: Start server, run the harness, run the composed-entrypoint smoke
-        env:
-          ASPNETCORE_ENVIRONMENT: Production
-          HARN_JWT_ISSUER: ${{ env.JWT_ISSUER }}
-          HARN_JWT_AUDIENCE: ${{ env.JWT_AUDIENCE }}
-          Jwt__Key: ${{ env.HARN_JWT_KEY }}
-          ConnectionStrings__Kernel: ${{ env.CS }}
-        run: |
-          dotnet run --no-build --project server/src/Kernel.Api --urls http://localhost:5080 --no-launch-profile &
-          API_PID=$!
-          for i in $(seq 1 30); do curl -sf http://localhost:5080/health && break || sleep 2; done
-          cd client-web
-          TA=$(node tools/harness/mintToken.mjs 11111111-1111-1111-1111-111111111111 notes.read,notes.write)
-          TB=$(node tools/harness/mintToken.mjs 22222222-2222-2222-2222-222222222222 notes.read,notes.write)
-          set +e
-          HARN_BASE_URL=http://localhost:5080 HARN_TOKEN="$TA" HARN_TOKEN_B="$TB" node tools/harness/main.ts
-          HARN=$?
-          # UI-5: the smoke loads the BUILT entrypoint against the same live server, so the build runs here with
-          # the SAME values (E-107). Added 2026-07-28, in a second place, because this job re-implements
-          # scripts/e2e.sh inline rather than calling it: the script gained its build step in the same change and
-          # this copy would have run the smoke against no dist/ at all. That is E-104's predicted cost arriving on
-          # the first change after the finding, which is worth more than the finding was.
-          VITE_API_BASE_URL=http://localhost:5080 VITE_API_TOKEN="$TA" npm run build
-          BUILD=$?
-          VITE_API_BASE_URL=http://localhost:5080 VITE_API_TOKEN="$TA" npm run smoke
-          SMOKE=$?
-          kill $API_PID || true
-          exit $((HARN + BUILD + SMOKE))
+      # Minted per run, which is a consequence of the repair rather than a separate improvement: two copies of one
+      # procedure each needed the value spelled out somewhere, and the cheapest place was a committed literal. One
+      # procedure reading one environment variable makes a generated key the easy option, and it retires the entry
+      # `secret-scan.allow.json` itself described as the weakest in its list (SEC-5).
+      - name: Mint a per-run signing key
+        run: echo "Jwt__Key=$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")" >> "$GITHUB_ENV"
+      # E-104's repair. This step used to be the whole of `scripts/e2e.sh` written out a second time: its own
+      # readiness loop, its own mint calls, its own build, smoke and exit arithmetic. The finding named the cost
+      # before it arrived, and then it arrived: E-107 added a build step to the script, this copy did not get it,
+      # and a person reading the job is what caught it. The script now takes its database and its signing key from
+      # the environment instead of from a developer's machine, so there is one procedure and this job runs it.
+      #
+      # The environment is the script's default, Development, and that is a change: this job used to boot
+      # Production with the harness seam off. The seam is what a product's provider-port re-bindings compose under
+      # (TEST-2 / INV-10), so a run with it off drives a different system than the tier is about. That was
+      # invisible here only because the kernel ships no re-bindings, and every project seeded from this template
+      # would have inherited it (E-114).
+      - name: End to end (TEST-2 + the UI-5 smoke)
+        run: scripts/e2e.sh

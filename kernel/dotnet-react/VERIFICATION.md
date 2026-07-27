@@ -1940,3 +1940,82 @@ endpoints ship and not one is a probe.
 
 Architecture 208, unit 58, integration 4, e2e green. Both editions: docs-lint ok at 37/40, conformance ok at 69
 rows, compose ok at 39 shared files, loop-check ok, node server 283, node e2e green, dash scan 0 with a control.
+
+## 2026-07-28, E-104 repaired: one procedure, and what deleting its exemption exposed
+
+Measured at 059616a, on macOS with Colima up. E-104's trigger was "the next pass in that edition with a container
+runtime available", and the finding had already named the repair: the script depended on a developer's machine,
+so CI copied it instead of calling it, and that is what had to change.
+
+**Two dependencies, each resolved to one value.** `ConnectionStrings__Kernel` from the environment, else the local
+engine plus the user-secret; `Jwt__Key` from the environment, else the user-secret. Everything after that block is
+identical for both callers, which is the half that had drifted. The connection string is now computed once and
+handed to BOTH the migration and the host, which closes E-111's shape one layer out: a migration applied to one
+database while the host reads another is a green migrate and a server that answers nothing.
+
+### Three shapes, all run
+
+| shape | result |
+|---|---|
+| developer, nothing in the environment | green, 7 of 7 harness scenarios plus the smoke |
+| runner, both values from the environment | green, and the environment key deliberately DIFFERED from the user-secret, so a host reading the wrong store would have 401'd every scenario |
+| runner, with an unreachable database | red at the migrate step, having started no local engine, which is the branch under test |
+
+The third shape is the one that earned its keep. It went red correctly and said NOTHING while doing it: the whole
+output was `Applying the schema...` and then a stopped script, because `dotnet ef` and MSBuild write failures to
+stdout and three fresh `>/dev/null` redirections had swallowed them. The fourth was not fresh. `dotnet build
+... >/dev/null` had been in this script since it was written, so a compile error has always left "Building the
+API..." as the last thing anyone saw. All four unsilenced (E-115).
+
+### Two findings the repair produced rather than fixed
+
+**E-114.** The two copies had diverged in what they EXERCISE, not in how they are spelled. The script booted
+Development with `Harness__Enabled=true`; the job booted Production with no flag at all. The harness profile is
+the seam a product's provider-port re-bindings compose under, and the host refuses to boot with it on outside
+Development or Testing. A developer ran the tier the harness is built for and CI ran a different system, both
+green, both entitled to be, because this kernel ships no re-bindings for the profile to carry. Every seeded
+project would have inherited it.
+
+**E-116.** `kernel.yml` argued that the .NET integration tier stays in the template because "it needs a real
+engine" and this workflow has none. This pass gave this workflow an engine. The header no longer states the
+falsified half, and the tier is not added: the new job has never had an observed run, and adding an untested tier
+to an untested job compounds a risk instead of closing a gap.
+
+### What the exemption was hiding
+
+Deleting `scripts/e2e.sh` from `loop-check.mjs` was meant to be bookkeeping. It turned the check red twice, and
+the second one was the interesting one: **nothing in this repository had ever run this edition's e2e either.**
+That edition's `ci.yml` is a template that never executes here, so every green this tier has ever had came from a
+person choosing to run it, which is precisely the state E-39, E-95 and E-103 were each found in. `kernel.yml`
+gains a dotnet-e2e job.
+
+That job starts the engine with this edition's own `db-up.sh`, which reads the pinned tag@digest from
+`edition.json`, rather than declaring a service container that would have been a fifth copy of that value and the
+only one no tool compares. It also means both of its secrets are generated per run: a `services:` block is
+resolved at workflow parse time and cannot read what a step produced, which is exactly why the template's copy
+has to be committed, and a script reads its environment at step time. `e2e-wire` loses about forty lines and its
+committed signing key, retiring the `secret-scan.allow.json` entry that described itself as the weakest in its
+list. The loop check's exemptions gained a `registers` field in the same pass, because `db-up.sh` is now run by
+one register and correctly excused from the other, and excusing it from both would have been false in one of them.
+
+### What moved, and what did not
+
+**TEST-2's CI obligation stays `latent`, and two of its three reasons are gone.** The job calls the script and
+this repository runs it, but the template executes nowhere until instantiation and the new job has no observed
+run. The loop is wired and unwitnessed rather than absent, and `latent` says the same thing about both. trigger:
+the first observed green run of dotnet-e2e, or the first instantiation.
+
+**TEST-3 stays `latent` on the gate readback, which a token still gates.** Its note carried E-104 as an open
+finding and no longer does.
+
+**No status moved in either edition.** This pass repaired a finding and rewrote the reasons that finding had
+falsified, which is E-106's discipline applied on purpose rather than after the fact.
+
+### Gates
+
+Architecture 208, unit 58, e2e green (7 scenarios plus the smoke), all at 059616a after the change. CFG-1's
+workflow scan re-proven by plant: a committed appsettings value restated in the edited `ci.yml` turns
+`No_shipped_script_duplicates_a_committed_configuration_value` red by name, restored from a copy to exactly 208
+of 208. loop-check 8 caught / 4 ignored, live 11 of 16 with 5 excused. Both editions: docs-lint ok at 37/40,
+conformance ok at 69 rows, compose ok at 40 shared files, secret-scan ok (4 exceptions here, down from 5), dash
+scan 0 with a live control.

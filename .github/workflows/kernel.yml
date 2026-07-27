@@ -6,7 +6,7 @@
 # when someone remembered. TEST-3 names that state exactly: a mechanism that runs only when a developer
 # remembers is aspirational, not enforced. This closes it for the repository that makes the claim.
 #
-# Scope is the repo-level gates, the shared client tier, and both editions' engine-free server tiers.
+# Scope is the repo-level gates, the shared client tier, both editions' server tiers, and both editions' e2e tiers.
 #
 # It used to exclude the .NET tiers, and the exclusion was argued rather than an oversight: "they need an engine
 # container and they gate a seeded project, not the catalog." The first half of that stopped being true and
@@ -19,11 +19,14 @@
 # a file, and no loop would have reported either edit. Every guard this repository has built for the .NET edition
 # has been protected only by whoever remembered to run it.
 #
-# The integration tier stays in the edition template deliberately, and that half of the original argument still
-# holds: it needs a real engine, the template's `ci.yml` provides one as a service container, and the catalog does
-# not need an engine to check itself. So the job below names its two tiers instead of running `dotnet test` over
-# the solution, which would pick up the third and either start pulling an engine image or skip it silently
-# depending on what the runner happens to have.
+# The integration tier stays in the edition template, and the `dotnet-server` job below still names its two tiers
+# rather than running `dotnet test` over the solution, which would pick up the third and either start pulling an
+# engine image or skip it silently depending on what the runner happens to have.
+#
+# What has changed is the argument for that, and it is recorded rather than quietly kept. The reason used to be
+# "this workflow has no engine"; as of 2026-07-28 it has one, because the dotnet-e2e job below starts the edition's
+# own engine container in order to run the e2e tier. The remaining reason is only that the template covers the
+# integration tier, which is the weaker half of what was originally two reasons. E-116 holds that with its trigger.
 name: kernel
 
 on:
@@ -163,6 +166,50 @@ jobs:
         run: dotnet test tests/Kernel.Tests.Architecture --no-build
       - name: Unit tier
         run: dotnet test tests/Kernel.Tests.Unit --no-build
+
+  dotnet-e2e:
+    name: dotnet-react e2e tier (TEST-2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          cache: true
+          cache-dependency-path: kernel/dotnet-react/server/**/packages.lock.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          cache: npm
+          cache-dependency-path: kernel/dotnet-react/client-web/package-lock.json
+      - run: npm ci
+        working-directory: kernel/dotnet-react/client-web
+      # Nothing secret-shaped is committed anywhere in this job, and that is a property of starting the engine
+      # with the edition's own script rather than declaring a service container. A `services:` block is resolved
+      # at workflow parse time and cannot read a value a step produced, which is precisely why the template's copy
+      # of this password has to be committed and allowlisted (SEC-5). A script reads its environment at step time,
+      # so both values here are generated per run and neither is in the tree.
+      - name: Generate this run's engine password and signing key
+        run: |
+          RANDOM_HEX="process.stdout.write(require('crypto').randomBytes(24).toString('hex'))"
+          {
+            echo "MSSQL_SA_PASSWORD=Kernel-ci-$(node -e "$RANDOM_HEX")"
+            echo "Jwt__Key=$(node -e "$RANDOM_HEX")"
+          } >> "$GITHUB_ENV"
+      # Started by the edition's own script, which reads the pinned tag@digest from its edition.json rather than
+      # restating it. A `services:` block here would have been a fifth independent copy of that value and the only
+      # one no tool compares, since docs-lint is edition-scoped and cannot see this file (E-64, E-105).
+      - name: Start the engine
+        run: kernel/dotnet-react/scripts/db-up.sh
+      # E-104's other half, and the one that is about THIS repository. That edition's `ci.yml` is a template which
+      # never executes here, so until this job existed nothing in this repository had ever run the sibling's e2e:
+      # every green it has ever had came from a person choosing to run it. That is the state E-39, E-95 and E-103
+      # were each found in. It fits in one line because the script now takes its database and its signing key from
+      # the environment instead of from a developer's machine.
+      - name: End to end (TEST-2 + the UI-5 smoke)
+        env:
+          ConnectionStrings__Kernel: 'Server=localhost,1433;Database=Kernel;User Id=sa;Password=${{ env.MSSQL_SA_PASSWORD }};TrustServerCertificate=True'
+        run: kernel/dotnet-react/scripts/e2e.sh
 
   secret-scan:
     name: no committed secrets in either edition (SEC-5)
