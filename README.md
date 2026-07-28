@@ -196,6 +196,31 @@ accept. And the claims have already been checked against the control regimes aud
 use (the ASD Essential Eight, SOC 2), so when the evidence question comes, the answer is a
 mapping, not a scramble.
 
+### Greenfield first, and why
+
+X2 works best on a new product. The reasons are mechanical, not a matter of taste.
+
+- **A check armed before the first line cannot be broken.** New projects start green with every
+  check running. Turn the same check on over old code and it reports how much already breaks it,
+  and someone has to fix that or record it as owed.
+- **Some claims are shape, not a check.** Tenancy in the key structure, which layer may depend on
+  which, one deployable unit. New code gets these free. Old code pays in migrations and refactors.
+- **The design is decided once and cannot be retrofitted.** New products design the whole thing up
+  front and derive their tests from it. Adoption locks the screens you already have, because
+  migrating is not redesigning, so whatever was wrong with them is now the contract.
+- **Decisions are almost free when you make them.** New projects write each one down as it happens.
+  Old ones have to dig them out of code written by people who have moved on.
+- **The builder copies what it sees.** Poor practice in the tree teaches the agent to write more of
+  it. A seeded edition teaches it the claims instead.
+
+Underneath all five: X2 treats code as disposable because a decision sits above it. Old code has
+nothing above it. It is the decision, never written down, so there is nothing to regenerate from.
+
+That is not a reason to leave an old system alone. `x2:adopt` runs on a branch behind three gates,
+maps the enforcement you already have rather than rebuilding it, and ends with an honest record of
+where every claim stands. Most teams cannot state that at all. Just expect a migration, not a head
+start: the code, the old docs and the design will disagree, and sorting that out is half the job.
+
 ## Where the evidence stands
 
 The invariants come from 2 production systems. The method itself has now run end to end on 2
@@ -269,7 +294,7 @@ Invoke a skill:
   Each skill declares when it applies, and Claude selects the right one.
 
 Ask for `/x2:help` at any time to see what to run next. Migrating an existing project? Use
-`/x2:adopt` instead of the flow below.
+`/x2:adopt` instead of the flow below, and read "Greenfield first, and why" above first.
 
 To work on the method itself, clone the repo and symlink `skills/*` into Claude Code's personal
 skills folder instead; installed that way the skills appear unscoped (`/stories`, `/seed`, and so
