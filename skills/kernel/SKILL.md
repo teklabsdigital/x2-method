@@ -9,8 +9,37 @@ Maintain the three artifacts the method is built from, and keep them honest abou
 Run this whenever the answer to "what must be true", "what exists to be measured", or "what do we
 actually enforce" is about to change.
 
-Start by showing the verb table below and asking which one the request is. Most requests name a
-verb without knowing it; route them rather than making them choose from a menu.
+## First, decide whether you were given direction
+
+**Invoked with no direction, this skill EXPLAINS ITSELF AND STOPS.** Print the orientation below, then
+end the turn and wait. Do not read the tree, do not run a check, do not pick a verb that looks likely,
+and do not ask a narrowing question that presumes one. Every verb here changes something a person is
+accountable for, or reports a state that is only worth reporting when someone asked; guessing which
+one is meant is how a maintenance tool edits a catalog nobody asked it to touch.
+
+**Invoked WITH direction, route it and get on with it.** Most requests name a verb without knowing it:
+"this claim looks wrong" is `rule`, "does the record still hold" is `verify`, "add a stack" is
+`edition`. Read the intent and act. Do not make someone who has already said what they want choose
+from a menu, and do not re-explain the skill to them.
+
+### The orientation, printed verbatim when there was no direction
+
+> This skill maintains the kernel: the claims catalog, the editions built against it, and the
+> conformance record between them. Six things it can do:
+>
+> | verb | what it does | say something like |
+> |---|---|---|
+> | `status` | reports where everything stands, every number derived from the tree | "where do things stand" |
+> | `verify` | runs every gate and re-derives every stated fact. Changes nothing | "is the kernel still coherent" |
+> | `claim` | adds, amends or retires a claim, or cuts a catalog pass | "add a claim about X" |
+> | `edition` | adds, retires or recomposes an edition | "start an edition for stack Y" |
+> | `measure` | plants against a claim and records what is honestly enforced | "prove what this edition enforces" |
+> | `rule` | walks open decisions one at a time and records each with its argument | "clear the open decisions" |
+>
+> `status` and `verify` change nothing and are the safe place to start. `claim` and `rule` are owner
+> decisions and will ask before acting. Tell me which, or just describe what you want to change.
+
+Then stop. The next turn is the user's.
 
 ## The model, and it is small
 
@@ -345,6 +374,9 @@ Every verb produces them. A finding is not a backlog item, it is evidence.
 - No edit to an edition's composed copy of a shared file.
 - No count, tally or scope statement written into prose without deciding which bucket it is in.
 - No green report from a check that could not reach what it checks.
+- No work of any kind when the skill was invoked without direction. The orientation, then the turn
+  ends. A maintenance tool that guesses which artifact to touch is the failure this whole file exists
+  to prevent.
 
 ## Next
 
