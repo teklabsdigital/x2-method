@@ -170,7 +170,7 @@ human attention, so none can show it is getting cheaper, and none has a mechanis
 from its own record.
 
 The honest converse: BMAD and the spec-driven tools are broader today. They run on many stacks
-and many agents, and their communities are large. X2 ships one edition, has run end to end on 2
+and many agents, and their communities are large. X2 ships two editions, has run end to end on 2
 projects, and says so.
 
 One test cuts through the whole comparison: swap the AI for a better one and see what survives.
@@ -225,15 +225,31 @@ Treat those numbers the way the method itself demands:
 - The central regeneration claim has not yet run: no module has been regenerated from its
   decisions.
 
-The kernel, the skills, the acceptance test, an invariants review and the first extraction pass
-have all landed; the open experiments are listed in [`X2.md`](X2.md) under "What remains open".
+The kernel, the skills, the acceptance test, an invariants review, the first extraction pass and a
+second edition on a different stack have all landed; the open experiments are listed in
+[`X2.md`](X2.md) under "What remains open".
 
 ## Get started
 
-You need:
+You need [Claude Code](https://claude.com/claude-code), because the skills are written for it, plus
+the toolchain of whichever edition you build on. Two editions ship, measured against the same
+claims catalog, each publishing its own conformance record:
 
-- [Claude Code](https://claude.com/claude-code): the skills are written for it
-- the .NET 9 SDK, Node 24 and Docker, to use the shipped edition.
+| edition | the stack | you need |
+|---|---|---|
+| [`kernel/node-react/`](kernel/node-react/) | Fastify 5 on Node 24, TypeScript end to end, React 19 client, `node:sqlite` as the store | Node 24 |
+| [`kernel/dotnet-react/`](kernel/dotnet-react/) | ASP.NET Core on .NET 9, EF Core, React 19 client, SQL Server as the store | .NET 9 SDK, Node 24, Docker |
+
+The React client is the same in both, composed from [`kernel/shared/`](kernel/shared/), which is
+the home for everything that is not specific to a stack. The Node edition needs nothing beyond the
+runtime, because its database engine ships inside Node itself and there is no container to start.
+The .NET edition runs its engine in Docker and its client on Node.
+
+They are not equally measured, and the records say so rather than averaging it away. The .NET
+edition is the older one and has been through more verification rounds; the Node edition is the
+second witness, built later to test whether the claims are portable at all, and more of its rows
+are still owed. Each edition's conformance table states its own status row by row, and neither is
+reconciled against the other.
 
 Install the plugin once, from inside Claude Code:
 
@@ -267,7 +283,8 @@ question; the agent does the rest.
 
 1. **x2:stories** turns your idea into epic-level stories, one line each. *You approve them
    (gate 1).*
-2. **x2:seed** creates your project repo from the edition and arms the CI gate.
+2. **x2:seed** creates your project repo from an edition and arms the CI gate. Name the edition
+   you want when you run it; it instantiates that edition's manifest.
 3. **x2:decompose** records how the system divides up, the schema and the first slice.
 4. **x2:design** produces the whole-product design prototype. *You approve it (gate 2a).*
 5. **x2:lock** copies the prototype into your repo as the contract to build to. *You approve the
@@ -278,24 +295,32 @@ question; the agent does the rest.
 8. **x2:slice-exit** produces the audited report that declares the slice done. *You accept it
    (gate 3).*
 
-Then run it: the edition's [`README`](kernel/dotnet-react/README.md) has a "Running it" section
-that starts the app locally. Deployment is per project: the CI loop gates every merge, and you
-attach your own release step to it.
+Then run it: each edition's README has a "Running it" section that starts the app locally, for
+[Node](kernel/node-react/README.md#running-it) and for
+[.NET](kernel/dotnet-react/README.md#running-it). Deployment is per project: the CI loop gates
+every merge, and you attach your own release step to it.
 
 Repeat steps 5 to 8 for each next slice. At project close, **x2:extract** runs the extraction
 loop described above, so what the ledger recorded feeds the method.
 
 ### Bring your own stack
 
-The shipped [.NET 9 and React edition](kernel/dotnet-react/) is the reference: a working
-demonstration, not a limit.
+The two shipped editions are working demonstrations, not a limit.
 
-The claims are written to be technology-neutral. One edition exists so far, so neutrality is a
-design goal until a second edition tests it.
+The claims are written to be technology-neutral, and the second edition is what tested that rather
+than asserting it. Its early claims were built from the claim text alone, each mechanism designed,
+written down and dated before the .NET realisation of the same claim was opened, so a claim that
+merely described one stack's mechanism had nowhere to hide. Several did not survive. Claims naming
+a runtime's own artifact instead of a class of mechanism were repaired, and the rules that came
+out of it now bind the catalog: a mechanism class states a surface, a predicate and a completeness
+obligation, and any mechanism that matches a name against a list states what its comparison
+resolves. The register is published in
+[`record/edition-findings.md`](record/edition-findings.md), refuted predictions included.
 
-To build on another stack, create a new edition that realises the same claims. Each claim file
-names the harm, the mechanism and its limits; your edition supplies that mechanism for your stack.
-Start from [`kernel/claims/`](kernel/claims/) and the shipped edition's conformance table.
+To build on a third stack, create an edition that realises the same claims. Each claim file names
+the harm, the mechanism class and its limits; your edition supplies the mechanism. Start from
+[`kernel/claims/`](kernel/claims/), and read either edition's conformance record for what a
+complete answer looks like.
 
 If you build one, please contribute it back as a pull request.
 
@@ -304,11 +329,16 @@ If you build one, please contribute it back as a pull request.
 - [`X2.md`](X2.md): the full method, and the reasoning behind each part of it.
 - [`GLOSSARY.md`](GLOSSARY.md): the record codes (X-8, MET-07, INV-10) the skills and claims cite,
   each defined in one line.
-- [`kernel/claims/`](kernel/claims/): the 69 technology-neutral invariants. One file per claim:
-  the harm it prevents, the mechanism that enforces it, and that mechanism's honest limits.
+- [`kernel/claims/`](kernel/claims/): the 69 claims, the technology-neutral invariants. One file
+  per claim: the harm it prevents, the mechanism that enforces it, and that mechanism's honest
+  limits.
 - [`kernel/dotnet-react/`](kernel/dotnet-react/): a working .NET 9 and React edition that
   enforces the claims, with the steps to start a new project on it.
-- [`skills/`](skills/): the 12 agent skills that run the method, from working out the problem
+- [`kernel/node-react/`](kernel/node-react/): the Node 24, TypeScript and React edition, built
+  second to test whether the claims are portable, with its own conformance record.
+- [`kernel/shared/`](kernel/shared/): what is not stack-specific, composed into both editions. A
+  hand-edited copy fails the build rather than drifting quietly.
+- [`skills/`](skills/): the 13 skills that run the method, from working out the problem
   through to a slice that is done and the extraction that follows the project.
 - [`record/`](record/): the published extraction record: the metric history, candidate rules,
   confirmations, and the negative-space register with its cross-project churn table.
@@ -323,7 +353,8 @@ X2 is a sample of two and says so. The feedback worth the most:
   extended.
 - **Take an open experiment.** The baseline run, the first regeneration and the specification gap
   are listed in [`X2.md`](X2.md).
-- **Build an edition.** A second stack is what turns "technology-neutral" from intent into fact.
+- **Build a third edition.** Two stacks have realised the claims. A third, on a runtime neither of
+  these resembles, is the next real test of "technology-neutral".
 
 Issues and pull requests are welcome.
 
@@ -333,4 +364,8 @@ X2 is free to use, commercially or otherwise. Credit is the one condition.
 
 - The method and its documentation: [CC BY 4.0](LICENSE-DOCS). Share and adapt freely; credit
   "X2 method, Teklabs Digital Pty Ltd, Trevor Attema" with a link to this repository.
-- The source code under [`kernel/dotnet-react/`](kernel/dotnet-react/): [MIT](LICENSE-CODE).
+- The source code, meaning the editions and the shared tier composed into them, which is what a
+  seeded project receives: [MIT](LICENSE-CODE).
+
+[`LICENSE`](LICENSE) names the exact directories on each side and is the only place that boundary
+is written, so the three files cannot drift apart.

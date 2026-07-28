@@ -1,10 +1,21 @@
-X2 is dual licensed.
+X2 is dual licensed, and this file is the authoritative statement of which
+licence covers what. LICENSE-CODE and LICENSE-DOCS carry the licence texts and
+point here for their scope, so the boundary is written once and cannot drift
+between three copies of itself.
 
-- The method and its documentation (everything in this repository except the
-  kernel/dotnet-react/ directory) are licensed under the Creative Commons
-  Attribution 4.0 International licence (CC BY 4.0). See LICENSE-DOCS.
+- The source code is licensed under the MIT licence (see LICENSE-CODE). It is
+  everything under these directories:
 
-- The source code (everything under kernel/dotnet-react/) is licensed under
-  the MIT licence. See LICENSE-CODE.
+    kernel/dotnet-react/
+    kernel/node-react/
+    kernel/shared/
+
+  These are the kernel's editions and the shared tier composed into them: the
+  code a project receives when it is seeded.
+
+- The method and its documentation are licensed under the Creative Commons
+  Attribution 4.0 International licence, CC BY 4.0 (see LICENSE-DOCS). It is
+  everything else in this repository, including the claims catalog under
+  kernel/claims/, which is the method rather than an implementation of it.
 
 Copyright (c) 2026 Teklabs Digital Pty Ltd, Trevor Attema

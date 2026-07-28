@@ -5619,6 +5619,94 @@ that reads those values. `configurationSurface.ts` also names `https://kernel.in
 and does NOT break, because the fixture it exempts is self-contained; the difference between the two is invisible
 by reading and was found only by performing the rename.
 
+### S-16. Both editions' READMEs restated the tally their own generated table already held, and nothing compared them
+
+**Claim:** none directly; the derived-facts discipline, and DOC-1 structurally. **Found:** 2026-07-28, while
+updating the root README to cover the second edition, by deriving the tallies rather than quoting them.
+**Measured at 08be1a8**, repair in the working tree above it. **Repaired here, with both instances kept as
+controls.**
+
+Both editions carry a generated conformance table, and both were CORRECT. What was wrong was the prose above
+them. `kernel/dotnet-react/README.md` opened by declaring the record "37 realized (25 `proven`, 6 `patterned`,
+2 `latent`) and 32 `owed`" while the record read 7, 8, 3 and 51: the rulings of 2026-07-26 and the planting
+rounds after them had moved almost every row underneath a sentence nobody re-read. Two paragraphs later it said
+"Five verification rounds have run" against a `VERIFICATION.md` holding eight numbered rounds and roughly twenty
+more dated ones, and it listed the next-build-pass trigger subset as ten items when the record's triggers name
+eleven. `kernel/node-react/README.md` opened by declaring 65 of 69 claims `owed` when 57 were, and called TEN-1
+"deliberately still `owed`" when TEN-1 had been lifted to `patterned` the day before. That file's own Conformance
+section, two hundred lines below, already argued against its intro: it records that the `owed`-means-pass-order
+framing "was false twice over" and that the owner closed the delta protocol on 2026-07-27. **The intro was
+arguing with the body of the same file, and the file passed every gate.**
+
+This is S-13 one level down. S-13 was the catalog's README stating a status tally for a catalog that carries no
+statuses; this is the editions' READMEs stating a tally for a record that generates its own. The reason both
+happened is the same and it is worth stating as a rule rather than as two incidents: **a status is a claim about
+a mechanism and has a guard; a number in prose is a claim about the tree and had none.** `checkTable` compares
+the generated block against the record and cannot see a word outside it, and the catalog's stated-count check
+reads the repository's live documents and the skills, not an edition's README. Both gates were green and both
+were answering a different question.
+
+Repaired in the fourth bucket rather than by a second comparison. The tally is deleted from both intros, which
+now cite the generated table, and `tallyRestatementFindings` in the shared `conformance.mjs` fails any restated
+tally outside the markers. It bans the SHAPE, not the value: a second copy that agrees today is still a second
+copy, and it drifts on the next pass that moves a row. The shape is a number adjacent to a status word,
+optionally bridged by the noun, which is what a tally looks like and what the vocabulary definitions, the
+sentences about which claims are owed, and the narrative sentences about past states are not. Nine controls ship
+with it, four that must fire and five that must stay silent, all five drawn from sentences shipped in these two
+READMEs rather than invented.
+
+Red-green, both instances, at the composed copies: each original sentence planted back, `docs-lint` red naming
+the file, the line and the offending text, in both editions. **The pre-repair control was run and it is the part
+worth keeping:** with the predicate disabled and both plants still in the tree, `docs-lint`, `catalog-check`,
+`loop-check`, `secret-scan` and `compose --check` were all green, which is precisely the state the two READMEs
+had been shipping in. Mechanism restored, red again; plants reverted from copies taken before the plant, byte
+identical, green again.
+
+**One thing this pass tried and backed out, recorded because a declined repair reads as an omission later.** The
+obvious second move was to widen `catalog-check`'s stated-count check to the editions' READMEs, which would
+cover the other number a catalog pass moves: the claim total. It was implemented, and it immediately reported
+four defects that were not defects, among them "Four claims name the same surface in the same words" and "two
+skills downstream of the seed". The predicate reads any "N claims" as the catalog's size. That premise holds in
+the method's own documents and does not hold in an edition README, where counting a SUBSET of claims is simply
+how a sentence gets written. Making it green would have meant rewriting correct prose to fit a check that cannot
+tell a subset from a total, which is S-15's failure with the roles reversed: there, a predicate could not tell a
+listing from a sentence. The widening is reverted, the reason is a comment at the site so the next reader does
+not re-derive it, and the residual number was removed instead: this edition's README no longer states the
+catalog total at all, it cites the catalog. **What is left unguarded is a claim total restated in an edition
+README, and the trigger is a check that can tell a subset count from a total.**
+
+The general shape, and it now has three instances (S-13, S-14, this): **where a document restates something a
+generator already owns, the restatement is the defect and deleting it is the repair.** Syncing the copy resets
+the clock and changes nothing.
+
+### S-17. The licence boundary named one edition, so the second edition's source shipped as documentation
+
+**Claim:** none; repository governance. **Found:** 2026-07-28, checking whether the root README's licence
+section was still true after the second edition landed. **Measured at 08be1a8** by reading all three licence
+files. **Ruled by the owner the same day and applied here.**
+
+`LICENSE`, `LICENSE-CODE` and `LICENSE-DOCS` each defined the split as "code is everything under
+`kernel/dotnet-react/`, documentation is everything else". They were written when there was one edition and
+nothing revisited them when there were two. By the letter, `kernel/node-react/` and `kernel/shared/` were
+licensed CC BY 4.0: **a project seeding from the Node edition inherited an attribution licence over its own
+source code**, which is not what either licence was chosen to do. The boundary was stated three times and had
+drifted from the tree in all three copies at once, which is S-16's shape in a place no lint will ever reach.
+
+**The ruling: one MIT licence covering the three code homes** (`kernel/dotnet-react/`, `kernel/node-react/`,
+`kernel/shared/`), with `kernel/claims/` staying CC BY because the catalog is the method rather than an
+implementation of it. The owner's words were "less is more", and the argument for that shape is that the three
+homes are exactly what a seeded project receives, so the licence boundary and the instantiation boundary are the
+same line rather than two lines that have to be kept in agreement.
+
+Applied by giving the boundary ONE home. `LICENSE` names the directories; `LICENSE-CODE` and `LICENSE-DOCS`
+carry their licence texts and point at it for scope; the README cites it rather than restating it. Three copies
+of a sentence became one, which is the remedy S-16 named, applied to the defect that motivated it.
+
+**Not covered by the ruling, and left as it stands:** `kernel/tools/` is repository-level tooling, it is code,
+and it sits outside all three homes, so it remains under CC BY. It is not copied into a seeded project, which is
+why it was out of scope for a ruling about what a seeded project receives; if that reasoning stops holding, this
+is the trigger.
+
 ## Acceptance test, node-react, first execution (2026-07-27)
 
 Executed at 7b70f2d into a scratch directory outside this repository, product name Ledgerly, the same name the

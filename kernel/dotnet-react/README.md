@@ -5,20 +5,21 @@ enforced mechanisms: architecture tests that fail the build when an invariant is
 composite, a deny-by-default HTTP host, a bounded-read data layer, a token-locked client, an out-of-process e2e
 harness, and a CI loop that runs all of it on every push. The product placeholder name is `Kernel`.
 
-The claims catalog holds 69 claims and this edition declares a status for every one of them in
-[`conformance.json`](conformance.json), the single machine-readable record the table below is generated from:
-37 realized (25 `proven`, 6 `patterned`, 2 `latent`) and 32 `owed`, each owed claim carrying the named trigger
-that promotes it. The next edition build pass picks up the subset whose trigger is that pass (RES-6, DATA-9,
-SEC-11, PERF-1, PERF-4, DATA-6, SRV-1, TEST-4, the DATA-11 and PERF-6 lint halves, and the TIME-1 and TEN-4
-extensions); the rest wait on their named triggers (first external dependency, first broker, first deployed
-host, first cache, first published contract, first identity slice).
+This edition declares a status for every claim in the catalog in [`conformance.json`](conformance.json), the
+single machine-readable record the conformance table below is generated from, and every `owed` row carries the
+named trigger that promotes it. Which claims the next edition build pass picks up is therefore a property of
+those triggers, read from the record, and not a list kept here.
+
+**The tally lives in the generated table and nowhere else, including here.** This paragraph used to restate it,
+and it went on asserting a realized-versus-owed split that the rulings of 2026-07-26 and the planting rounds
+after them had moved almost every row out of, with every gate green throughout. A status is a claim about a
+mechanism and has a guard; a number in prose is a claim about the tree and had none. Since 2026-07-28 it has
+one: `docs-lint` fails a tally restated outside the generated block.
 
 Every guard in this edition carries a red-green proof: the violation it exists to catch was deliberately
-planted, the guard confirmed red, the violation reverted. Five verification rounds have run (the first build, an
-adversarial review that closed real evasion paths, a full code review that closed runtime and guard-binding
-defects the guard mutations could not reach, the invariants pass, and the versioning pass that landed the
-kernel-provenance check), and each round's mechanisms were proven as they landed, not in a batch at the end. The
-dated history and the proof tables are in [`VERIFICATION.md`](VERIFICATION.md).
+planted, the guard confirmed red, the violation reverted, and each round's mechanisms were proven as they landed
+rather than in a batch at the end. The dated round history and the proof tables are in
+[`VERIFICATION.md`](VERIFICATION.md), which is where the rounds are counted as well as described.
 
 ## What is here
 

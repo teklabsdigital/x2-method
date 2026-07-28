@@ -1,23 +1,26 @@
 # kernel/node-react
 
 The Node and TypeScript edition of the X2 kernel, and the catalog's second witness. It exists to answer a
-question the first edition could not: whether the 69 claims in `../claims/` are portable invariants, or a
+question the first edition could not: whether the claims in `../claims/` are portable invariants, or a
 description of one stack's mechanisms wearing portable language. `BUILD-BRIEF.md` states that purpose and the
-delta protocol the build follows.
+delta protocol the early build followed, which the owner closed on 2026-07-27.
 
-**This edition is under construction, and `conformance.json` declares 65 of 69 claims `owed`.** What exists is
-the platform seam every route-scanning claim stands on, proven red-green; the endpoint spine realizing SEC-1,
-SEC-2 and SEC-3 over it; and the edition records the shared gates need. TEN-1 is deliberately still `owed`
-despite three of its four surfaces being guarded and proven, for the reason S-8 in the findings register gives.
+**This edition is younger than its sibling, and more of its rows are still `owed`.** What exists is the platform
+seam every route-scanning claim stands on, proven red-green; the endpoint spine over it; the credential
+verification half of the tenancy claims; and the edition records the shared gates need. Which claims those are,
+and what each has actually proven, is the generated conformance table below. **No status and no tally is
+restated here**, because a status is a claim about a mechanism and has a guard, while a number in prose is a
+claim about the tree and had none: this paragraph carried a row count and a deliberately owed TEN-1 for several
+passes after both had stopped being true, with every gate green throughout. Since 2026-07-28 it has a guard:
+`docs-lint` fails a tally restated outside the generated block.
 
-To be precise about what that record means, because an audit was right to press on it: `owed` here is a
-statement about **pass order**, not a claim that no mechanism in this tree does anything. Several composed
-mechanisms plainly run and plainly bind, and DOC-1, DEP-1 and HUM-1 in particular go red under injection against
-this tree. They stay `owed` because the delta protocol in `BUILD-BRIEF.md` requires each claim's Node mechanism
-to be designed from the claim text before the sibling edition's realization is opened, and a status written
-ahead of that pass would be a status copied rather than earned. Every row is promoted by its own pass and by
-nothing else. Reading a green build here as conformance would be the failure of aspirational enforcement that
-the catalog was extracted to prevent.
+One thing the reader has to be told, because the word was misused here for a while. `owed` means what the
+catalog says it means, **not built, with a named trigger**. It does not mean "this claim has not had its delta
+pass". The delta protocol was a research procedure this edition ran to make portability findings falsifiable,
+the owner closed it on 2026-07-27 (`record/delta-log.md`), and it never had the standing to gate a status.
+Several mechanisms in this tree plainly run and plainly bind, and the Conformance section below says which of
+those the record still understates, why correcting one is planting work rather than a bulk flip, and what a row
+has to survive to move.
 
 ## What the scaffold settled, and why it is structural
 

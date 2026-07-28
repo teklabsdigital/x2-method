@@ -116,7 +116,9 @@ baseline decisions:
    lens.
 2. **The schema decision**: how schema is governed today, stated honestly (migrations, or its
    absence recorded as owed with a named trigger). Every future migration is a human turn.
-3. **`deltas.md`** started: where this project deviates from the kernel edition and why.
+3. **`deltas.md`** started: where this project deviates from the edition nearest its stack, and why.
+   Name that edition explicitly, because an adopted project is measured against the claims and compared
+   against one edition's mechanisms, and a comparison whose baseline is unnamed cannot be re-run.
 4. **`VERSIONS.md`** consolidated: every dependency surface in one ledger (packages, submodule
    pins, container images by digest), exact pins, cooling-off policy stated once.
 5. **The conformance record** (`conformance.json`, the edition's machine-readable home for per-claim

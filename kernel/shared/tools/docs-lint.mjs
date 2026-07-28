@@ -1,7 +1,14 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { checkAgainstCatalog, checkTable, load } from './conformance.mjs';
+import {
+  BEGIN as CONFORMANCE_BEGIN,
+  END as CONFORMANCE_END,
+  checkAgainstCatalog,
+  checkTable,
+  load,
+  tallyRestatementFindings,
+} from './conformance.mjs';
 
 // DOC-1 documentation lifecycle gate, plus the TEN-5 ledger coupling, the DEP-1 ledger-completeness check,
 // the DEP-1 container-image pin check (INV-05), the DEP-1 kernel-provenance pin check, the DEC-1
@@ -684,8 +691,30 @@ const CATCH = [
     () => runtimeRangeFindings('server/package.json', '{"engines":{"node":">=24"}}')],
   ['a caret range, which is a range wearing a version',
     () => runtimeRangeFindings('client-web/package.json', '{"engines":{"node":"^24.13.1"}}')],
+  // The two instances this check was minted from, verbatim. Both sat in a README whose generated table, a few
+  // sections below, was correct at the same moment.
+  ['a multi-status tally restated in the intro prose',
+    () => tallyRestatementFindings('# e\n\n37 realized (25 `proven`, 6 `patterned`, 2 `latent`) and 32 `owed`.\n')],
+  ['a single-status row count restated in the intro prose',
+    () => tallyRestatementFindings('# e\n\n`conformance.json` declares 65 of 69 claims `owed`.\n')],
+  ['a tally written without the backticks, which is the same assertion',
+    () => tallyRestatementFindings('# e\n\nThe record holds 7 proven rows today.\n')],
+  ['a tally below the generated block, where the markers no longer protect it',
+    () => tallyRestatementFindings(`# e\n\n${CONFORMANCE_BEGIN}\n69 claims at catalog pass 2026-07-26: 7 \`proven\`.\n${CONFORMANCE_END}\n\nSo 7 \`proven\` today.\n`)],
 ];
 const IGNORE = [
+  // The tally check bans a shape, so what it must NOT reach is every other way these four words are used, and
+  // each of the four below is a real sentence from a shipped README rather than an invented one.
+  ['the generated tally itself, which is the one home the rule points at',
+    () => tallyRestatementFindings(`# e\n\n${CONFORMANCE_BEGIN}\n69 claims at catalog pass 2026-07-26: 7 \`proven\`, 8 \`patterned\`, 3 \`latent\`, 51 \`owed\`.\n${CONFORMANCE_END}\n`)],
+  ['the vocabulary being defined, where the status word leads and the number is elsewhere',
+    () => tallyRestatementFindings('# e\n\n`proven` (1 scan covers the whole surface), `owed` (not built, with a named trigger).\n')],
+  ['a sentence about which claims are owed, carrying no count of them',
+    () => tallyRestatementFindings('# e\n\nSEC-4 and TEN-6 are owed in both editions, so this server mints no credential.\n')],
+  ['a narrative sentence about a past state, which is history and not an assertion about the tree',
+    () => tallyRestatementFindings('# e\n\nIt was false as arithmetic: four rows already read `proven` when it was written.\n')],
+  ['a tally inside a fenced block, where it is sample output rather than a statement',
+    () => tallyRestatementFindings('# e\n\n```\n$ node tools/conformance.mjs\n7 `proven`, 51 `owed`\n```\n')],
   // The set matches the tree, which is the state both editions are supposed to be in.
   ['a file set that names every tracked root entry',
     () => manifestFileSetFindings('**A. The file set** (copy in): `server/`, `docs/`, `.gitignore`.\n\nProse.\n', ['server', 'docs', '.gitignore', 'README.md'])],
@@ -1305,7 +1334,14 @@ const readmePath = join(editionRoot, 'README.md');
 const ignorePath = join(editionRoot, '.gitignore');
 if (!existsSync(readmePath)) {
   notes.push('no README.md, so the instantiation manifest file set was NOT checked');
+  notes.push('no README.md, so the tally-restatement check had nothing to read');
 } else {
+  // The tally has one home and this is the gate that keeps it that way. Independent of the record, because the
+  // defect it catches is prose asserting a number, and prose is wrong in exactly the same way whether or not
+  // conformance.json parses.
+  for (const message of tallyRestatementFindings(readFileSync(readmePath, 'utf8'))) {
+    fail(message);
+  }
   const rootEntries = existsSync(ignorePath)
     ? trackedRootEntries(readdirSync(editionRoot), readFileSync(ignorePath, 'utf8'))
     : readdirSync(editionRoot).filter((entry) => entry !== '.git');

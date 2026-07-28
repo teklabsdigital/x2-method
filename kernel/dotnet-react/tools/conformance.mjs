@@ -34,8 +34,8 @@ import { fileURLToPath } from 'node:url';
 // list. Stated here rather than in a second constant, because two orders that must agree are one order that
 // will eventually disagree.
 export const STATUSES = ['proven', 'patterned', 'latent', 'owed'];
-const BEGIN = '<!-- conformance:begin -->';
-const END = '<!-- conformance:end -->';
+export const BEGIN = '<!-- conformance:begin -->';
+export const END = '<!-- conformance:end -->';
 
 // A row may carry an `obligations` array: one entry per separable duty the claim's statement names and this
 // edition answers separately, each with its own status and its own sentence. Adjudication ruling 3 of
@@ -349,6 +349,58 @@ export function checkTable(editionRoot, record, { write = false } = {}) {
     };
   }
   return { errors: [], skipped: null };
+}
+
+// The tally has ONE home, the generated table, and this is what makes that true rather than intended.
+//
+// Measured 2026-07-28, in both editions at once and by reading rather than by any gate. Each README's intro
+// restated the record's tally in prose. One had gone on asserting a realized-versus-owed split that the rulings
+// of 2026-07-26 and the planting rounds after them had moved almost every row out of; the other stated a row
+// count that was wrong by eight and named a status for a claim that had been lifted the day before. Both files
+// carried a CURRENT generated table a few sections below the stale sentence, and every gate was green the whole
+// time: `checkTable` compares the generated block against the record and cannot see prose, and the catalog's
+// stated-count check reads the repository's live documents and the skills, not an edition's README. A status is
+// a claim about a mechanism and has a guard. A number in prose is a claim about the tree and had none.
+//
+// So the remedy is the fourth bucket rather than a second comparison: the tally is not restated here at all,
+// and this bans the SHAPE rather than checking the value, because a second copy that agrees today is still a
+// second copy and it drifts on the next pass that moves a row. The shape is a number adjacent to a status word,
+// optionally bridged by the noun: "32 `owed`", "65 of 69 claims `owed`". A vocabulary definition does not have
+// it ("`owed` (not built, with a named trigger)"), and neither does an ordinary sentence about a claim ("SEC-4
+// and TEN-6 are owed in both editions"), which is what keeps this from banning prose about the record.
+//
+// Scope is the file that holds the generated table, outside the markers and outside fenced code blocks. Dated
+// records (VERIFICATION.md, BUILD-BRIEF.md, everything in the record layer) are measurements taken at a date
+// and are never retouched, so a tally inside one is history and is deliberately left alone.
+const TALLY_NUMBER = '(?<![\\w-])(?:\\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)(?![\\w-])';
+const TALLY_BRIDGE = '(?:\\s+(?:of\\s+\\d{1,3}\\s+)?(?:catalog\\s+)?(?:claims?|rows?))?';
+const TALLY = new RegExp(`${TALLY_NUMBER}${TALLY_BRIDGE}\\s+\`?(?:${STATUSES.join('|')})\`?`, 'gi');
+
+export function tallyRestatementFindings(readme, where = 'README.md') {
+  const lines = readme.split('\n');
+  const begin = lines.findIndex((line) => line.trim() === BEGIN);
+  const end = lines.findIndex((line) => line.trim() === END);
+  const generated = begin !== -1 && end > begin;
+  const findings = [];
+  let fenced = false;
+  lines.forEach((line, index) => {
+    if (generated && index >= begin && index <= end) {
+      return;
+    }
+    if (line.trimStart().startsWith('```')) {
+      fenced = !fenced;
+      return;
+    }
+    if (fenced) {
+      return;
+    }
+    for (const match of line.matchAll(TALLY)) {
+      findings.push(
+        `${where}:${index + 1} restates the conformance tally in prose ("${match[0].trim()}"). The tally has one home, the generated table, and a second copy drifts the next time a row moves: cite the table instead of repeating it.`,
+      );
+    }
+  });
+  return findings;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

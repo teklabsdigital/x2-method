@@ -2064,6 +2064,28 @@ The sibling edition's two rows name no blocker at all and are correct for that r
 adding an explanation written from an assumption about what the tool needed instead of from running it. E-106 is
 a reason that expired; this is a reason that was never true. Both rows repaired.
 
+## Round: the tally that lived in two places (2026-07-28, S-16)
+
+**Measured at 08be1a8**, repair in the working tree above it. Found by reading, not by a gate: this README's
+intro restated the conformance tally in prose while the generated table a few sections below held the correct
+one. Every gate was green, because `checkTable` compares the generated block against the record and cannot see
+prose, and the catalog's stated-count check reads the repository's live documents and the skills rather than an
+edition's README.
+
+Repaired in the fourth bucket: the tally is deleted from the intro rather than re-synced, and
+`tallyRestatementFindings` in the composed `tools/conformance.mjs` now fails a tally restated outside the
+markers. It bans the shape rather than the value, because a second copy that agrees today still drifts on the
+next pass that moves a row.
+
+| what was done | result |
+|---|---|
+| the original sentence planted back into this README | `docs-lint` RED, naming the file, the line and the offending text |
+| the same, in the sibling edition | RED, the same way, from the same composed predicate |
+| **pre-repair control**: predicate disabled, both plants left in the tree | `docs-lint`, `catalog-check`, `loop-check`, `secret-scan` and `compose --check` ALL GREEN, which is the state both READMEs had been shipping in |
+| mechanism restored, plants still in place | RED again in both editions |
+| plants reverted from copies taken before the plant | byte identical, `docs-lint` green in both editions |
+| predicate controls | 4 that must fire and 5 that must stay silent, in the self-test; the five are sentences shipped in these two READMEs, not invented ones |
+
 ### What is deliberately not built
 
 TEST-3 stays `latent` rather than being driven to `proven`, which would need export-level reachability for the

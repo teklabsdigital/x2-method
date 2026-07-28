@@ -479,6 +479,14 @@ function run() {
     ['.claude/CLAUDE.md', join(repoRoot, '.claude', 'CLAUDE.md')],
     ['.claude-plugin/marketplace.json', join(repoRoot, '.claude-plugin', 'marketplace.json')],
     ...skills.map((s) => [`skills/${s.dir}/SKILL.md`, join(skillsDir, s.dir, 'SKILL.md')]),
+    // The editions' READMEs are deliberately NOT here, and the reason is worth keeping because it was tried.
+    // Adding them on 2026-07-28 immediately reported four defects that were not defects: "Four claims name the
+    // same surface", "two skills downstream of the seed". This predicate reads any "N claims" as the catalog's
+    // size, which holds in the method's own documents and does not hold in an edition README, where counting a
+    // SUBSET of claims is the ordinary way to write a sentence. Silencing those would have meant rewriting
+    // correct prose to fit a check that cannot tell a subset from a total, which is the S-15 failure with the
+    // roles reversed. The remedy is the fourth bucket instead: an edition README states no catalog total, and
+    // the one that did was rewritten to cite the catalog rather than count it.
   ].filter(([, p]) => existsSync(p)).map(([where, p]) => [where, readFileSync(p, 'utf8')]);
 
   const claimTexts = claims.map((c) => [`${c.id}`, readFileSync(join(claimsDir, c.file), 'utf8')]);

@@ -18,7 +18,7 @@ turns per shipped slice, kept in a ledger file in the repo.
 | Skill | One line | Gate it requests |
 |-------|----------|------------------|
 | stories | Problem discovery to epic-level stories, one line each | Gate 1: stories approved |
-| seed | Create the repo from the edition, arm the CI gate, write CLAUDE.md constraints, start the ledger | none (setup) |
+| seed | Settle which edition, create the repo from it, arm the CI gate, write CLAUDE.md constraints, start the ledger | none (setup) |
 | decompose | D-000 five-lens decomposition, persistent schema, slice one, deltas file | none (stays-ahead turns) |
 | design | Whole-product prototype and design system, in its own context | Gate 2a: prototype approved |
 | lock | Copy the prototype and full design system into the repo, verify, stamp provenance | Gate 2b: the lock |
@@ -40,7 +40,7 @@ or check the whole kernel is still coherent), and this skill.
 | Turn ledger (append-only, one row per human turn) | `docs/work/` |
 | D-000 decomposition, story set, schema decisions | `docs/decisions/D-000-decomposition.md` |
 | D-0xx decisions from record-gaps | `docs/decisions/` |
-| Deltas from the kernel edition | `deltas.md` |
+| Deltas from the edition the project was seeded from | `deltas.md` |
 | Behaviour spec (if the product has one) | `design/` |
 | Prototype, design system, provenance README | `design/prototype/` |
 | Per-slice fidelity ledgers | `design/ledger/` |

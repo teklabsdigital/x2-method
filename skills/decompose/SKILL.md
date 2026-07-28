@@ -48,8 +48,9 @@ decision so reality can trip it later.
 
 ## The deltas file
 
-Start `deltas.md`: how this project differs from the kernel edition. It grows as the build
-surfaces differences; it never restates what the edition already says.
+Start `deltas.md`: how this project differs from the edition it was seeded from, which the
+kernel-provenance row names. It grows as the build surfaces differences; it never restates what
+that edition already says.
 
 ## Human-turn contract
 
