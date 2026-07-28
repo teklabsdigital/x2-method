@@ -253,6 +253,21 @@ export function checkProvenanceDates(claims, indexText) {
 // ---------------------------------------------------------------------------------------------------------
 // Skills. A standing constraint with no check is a rule addressed to whoever remembers.
 
+// Whether a document LISTS a skill, which is not the same question as whether the document contains its name,
+// and the difference is a defect this tool shipped with for one commit. Several skills are named after ordinary
+// words that these documents use as prose: `kernel`, `design`, `lock`, `extract`, `implement`, `seed`. Planted
+// by deleting the kernel skill from the help index, the word-boundary version stayed GREEN, because the same
+// document says "the kernel enforces the invariants" three lines earlier. That is E-99 exactly: a name-shaped
+// predicate only knows how something is spelled.
+//
+// So membership is asked of the LISTING CONSTRUCTS these documents actually use, and nothing else counts: the
+// namespaced command form, bold emphasis, or a leading table cell. Prose mentioning the word is not a listing
+// and must not satisfy this.
+export function isListed(text, name) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(x2:${escaped}\\b)|(\\*\\*(x2:)?${escaped}\\*\\*)|(^\\|\\s*${escaped}\\s*\\|)`, 'm').test(text);
+}
+
 export function checkSkills(skills, indexes) {
   const errors = [];
   let compared = 0;
@@ -345,7 +360,17 @@ const CONTROLS = [
     checkIndexMatchesClaims(GENERATED, [...CLAIMS, { id: 'ZZ-1', file: 'ZZ-1-z.md', family: 'omega', locus: 'centralized', provenance: '', title: 'Z' }])],
   ['a marker naming a family no claim declares, which is a table about nothing', () =>
     checkIndexMatchesClaims(GENERATED.replace(begin('alpha'), begin('alpha,ghost')).replace(end('alpha'), end('alpha,ghost')), CLAIMS)],
+  // The plant that caught this tool. A skill named after an ordinary word, deleted from the index, with the
+  // word still present in the surrounding prose: the first version of `isListed` stayed green on exactly this.
+  ['a skill dropped from an index whose name still appears in that document as prose', () =>
+    checkSkills([{ dir: 'kernel', hasFile: true, name: 'kernel', description: 'd', violations: [] }],
+      [['an index', new Set(skills0(['the kernel enforces the invariants in the build']))]])],
 ];
+
+// Helper for the control above: which skills a document lists, under the real predicate.
+function skills0(lines) {
+  return ['kernel'].filter((n) => isListed(lines.join('\n'), n));
+}
 
 const IGNORED = [
   ['a catalog that agrees with its claim files', () => checkIndexMatchesClaims(GENERATED, CLAIMS)],
@@ -440,7 +465,7 @@ function run() {
   ].map(([where, path]) => {
     const text = existsSync(path) ? readFileSync(path, 'utf8') : '';
     // `help` names itself as "this skill" rather than by name, which is correct and not an omission.
-    const listed = new Set(skills.filter((s) => new RegExp(`\\b${s.dir}\\b`).test(text) || path.endsWith(`${s.dir}/SKILL.md`)).map((s) => s.dir));
+    const listed = new Set(skills.filter((s) => isListed(text, s.dir) || path.endsWith(`${s.dir}/SKILL.md`)).map((s) => s.dir));
     return [where, listed];
   });
 

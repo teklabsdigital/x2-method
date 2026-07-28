@@ -2491,6 +2491,36 @@ predicates, a zero cannot be made an error, because a repository legitimately st
 **Recorded as the one place in this tool where non-vacuity cannot be asserted**, which is worth knowing before
 its silence is read as coverage.
 
+### S-15. The check for a skill missing from an index passed on the prose around the hole
+
+**Claim:** none directly; the standing constraint that the skill indexes list every skill. **Found:** 2026-07-28,
+one commit after shipping the check, by a question asking whether the new skill had reached the help index.
+**Measured at 7e5a0c4.** **Repaired here, with the plant that found it kept as a control.**
+
+The answer to the question was yes, verified by reading the file. The interesting part was the second question:
+does the check that is supposed to guarantee it actually bind?
+
+`catalog-check.mjs` asked whether a document lists a skill by testing `\bNAME\b` against the document. **Several
+skills are named after ordinary words**, and these documents use those words as prose: `kernel`, `design`,
+`lock`, `extract`, `implement`, `seed`. The help index says "the kernel enforces the invariants in the build"
+three lines above where it lists the skills, and names `kernel/claims/README.md` twice more below.
+
+**Planted by deleting the kernel skill from the help index. The check stayed GREEN**, reporting thirteen skills
+compared, because three prose mentions of the word remained. Every count it printed was honest and the answer was
+still wrong: it compared thirteen skills against a predicate that could not tell a listing from a sentence.
+
+That is E-99 at the tool level, and worth stating in its general form: **a comparison count proves the scan had a
+subject, not that it asked the right question.** S-14's correction made vacuity visible, which is necessary and
+is not sufficient. A predicate can reach every item and still be blind.
+
+Repaired by asking the question the documents actually answer. Membership is now tested against the LISTING
+CONSTRUCTS in use, the namespaced command form, bold emphasis, or a leading table cell, and prose mentioning the
+word does not count. Re-planted with the identical edit: red, naming the file and the skill. Restored from a copy
+and confirmed byte for byte against the baseline, with the live check back to ok.
+
+The plant is kept as the fourteenth control, worded so its subject is a skill whose name appears in the
+surrounding prose, because that is the only shape under which the old predicate passed.
+
 ### E-21. The build brief still describes the mechanisms four rounds of repairs replaced
 
 **Claim:** SEC-1, SEC-2, SEC-3, TEN-1, TIME-1, structurally all of them. **Found:** the raise pass of 2026-07-27,
