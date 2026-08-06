@@ -1,5 +1,9 @@
 # X2
 
+An agentic software engineering method: AI agents do the building, the build enforces the rules
+that must always hold, a person decides only at the gates, and the method measures its own cost
+in human turns.
+
 ## The code is no longer the treasure
 
 Something strange happened to software in the last few years, and almost nobody outside the
@@ -28,9 +32,9 @@ The decisions. The things no AI can invent for you:
 A banking app can be rebuilt in an afternoon. The decision that no customer's balance may ever
 silently change cannot be rebuilt by anyone but the people responsible for it.
 
-X2 is a method for building software that takes this reversal seriously. It was created for teams
-who let AI do the building, and it answers one uncomfortable question: how do you stay in control
-of a builder that works faster than you can watch?
+X2 takes this reversal seriously. It was created for teams who let AI do the building, and it
+answers one uncomfortable question: how do you stay in control of a builder that works faster
+than you can watch?
 
 ![The X2 engineering loop: engineers decide, agents build, the log improves both](assets/x2-method-engineering-loop.png)
 
@@ -79,25 +83,99 @@ Nobody grades their own homework. The failure this guards against even has a nam
 method: **green-but-wrong**, a build where every light is green while the product is quietly not
 what was decided.
 
-## Why this matters beyond software
-
-For decades, software teams have run on trust in people: their memory, their habits, their
-honesty. That worked because people were doing the building.
-
-The builders are no longer people. X2's wager is that the trust which must never slip should move
-into machinery that cannot forget and cannot fudge, while everything requiring real judgment
-stays with humans.
-
-If AI ends up building most of the world's software, and it is heading that way, then the
-interesting question is no longer who writes the code. It is who makes the decisions, and how
-those decisions are protected from a workforce that never remembers yesterday. X2 is one answer.
-
 ## What it has built
+
+**Vemos** is a real-time whiteboard for running facilitated sessions. Editors set a board up and
+hold its scaffold still; participants join from a personal link and contribute freely, and
+everything they touch is governed by rules the product enforces rather than merely records. X2
+built it end to end, and the whole record ships with it in
+[teklabsdigital/x2-examples](https://github.com/teklabsdigital/x2-examples): the stories, the
+locked design, every decision, and the numbered ledger of every human turn it took.
+
+![The editor's screen while the room works: one person drags a card, another rewrites theirs, a line is drawn between two cards, text lands, a highlight sweeps across a note, and a shape appears.](assets/vemos-collaboration-acts.gif)
+
+One canvas with ten people on it, live: cards dragged and rewritten, lines drawn between them,
+text, highlights and shapes landing, every cursor named, every note signed by the person who
+wrote it.
 
 [learn.reqwiseconsulting.com](https://learn.reqwiseconsulting.com) is a free seven-lesson prompt
 course with an AI trainer that marks your work. X2 built it in 2 days, six slices, idea to
 production. Every moment a person had to step in was logged as it happened and published in
 [`record/metrics.md`](record/metrics.md), which is the part most methods cannot show you.
+
+## Get started
+
+You need [Claude Code](https://claude.com/claude-code), because the skills are written for it, plus
+the toolchain of whichever edition you build on. Two editions ship, measured against the same
+claims catalog, each publishing its own conformance record:
+
+| edition | the stack | you need |
+|---|---|---|
+| [`kernel/node-react/`](kernel/node-react/) | Fastify 5 on Node 24, TypeScript end to end, React 19 client, `node:sqlite` as the store | Node 24 |
+| [`kernel/dotnet-react/`](kernel/dotnet-react/) | ASP.NET Core on .NET 9, EF Core, React 19 client, SQL Server as the store | .NET 9 SDK, Node 24, Docker |
+
+The React client is the same in both, composed from [`kernel/shared/`](kernel/shared/), which is
+the home for everything that is not specific to a stack. The Node edition needs nothing beyond the
+runtime, because its database engine ships inside Node itself and there is no container to start.
+The .NET edition runs its engine in Docker and its client on Node.
+
+They are not equally measured, and the records say so rather than averaging it away. The .NET
+edition is the older one and has been through more verification rounds; the Node edition is the
+second witness, built later to test whether the claims are portable at all, and more of its rows
+are still owed. Each edition's conformance table states its own status row by row, and neither is
+reconciled against the other.
+
+Install the plugin once, from inside Claude Code:
+
+```
+/plugin marketplace add teklabsdigital/x2-method
+/plugin install x2@x2
+```
+
+The first command registers this repo as a plugin marketplace; the second installs the skills,
+namespaced under `x2:`, so they are available in every project, including the new repo the method
+creates for you. Type `/x2:` in Claude Code to see them listed.
+
+Invoke a skill:
+
+- **By name.** Type the slash command, such as `/x2:stories`.
+- **By intent.** Say what you want ("I have a product idea", "the app misbehaves at runtime").
+  Each skill declares when it applies, and Claude selects the right one.
+
+Ask for `/x2:help` at any time to see what to run next. Migrating an existing project? Read
+"Greenfield first, and why" further down, then use `/x2:adopt` instead of the flow below.
+
+To work on the method itself, clone the repo and symlink `skills/*` into Claude Code's personal
+skills folder instead; installed that way the skills appear unscoped (`/stories`, `/seed`, and so
+on) rather than under `x2:`.
+
+### From a user story to a running app
+
+X2 works in slices: thin pieces of the product that each work end to end. Start Claude Code and
+describe your product idea. Then follow the flow. You approve at 3 gates and answer the odd
+question; the agent does the rest.
+
+1. **x2:stories** turns your idea into epic-level stories, one line each. *You approve them
+   (gate 1).*
+2. **x2:seed** creates your project repo from an edition and arms the CI gate. Name the edition
+   you want when you run it; it instantiates that edition's manifest.
+3. **x2:decompose** records how the system divides up, the schema and the first slice.
+4. **x2:design** produces the whole-product design prototype. *You approve it (gate 2a).*
+5. **x2:lock** copies the prototype into your repo as the contract to build to. *You approve the
+   lock (gate 2b).*
+6. **x2:derive-tests** derives the acceptance tests from the locked design.
+7. **x2:implement** builds the slice until every check passes. It asks you only when it hits a
+   decision no record answers.
+8. **x2:slice-exit** produces the audited report that declares the slice done. *You accept it
+   (gate 3).*
+
+Then run it: each edition's README has a "Running it" section that starts the app locally, for
+[Node](kernel/node-react/README.md#running-it) and for
+[.NET](kernel/dotnet-react/README.md#running-it). Deployment is per project: the CI loop gates
+every merge, and you attach your own release step to it.
+
+Repeat steps 5 to 8 for each next slice. At project close, **x2:extract** runs the extraction
+loop described in the next section, so what the ledger recorded feeds the method.
 
 ## The method keeps score of itself
 
@@ -112,13 +190,51 @@ change the method only through a human ruling; the sanitized results are publish
 [`record/`](record/), and the next project starts by reading them. Each project is meant to make
 the next one cheaper, and the record shows whether it did.
 
+## Where the evidence stands
+
+The invariants come from 2 production systems. The method itself has now run on three projects,
+every human turn logged, classified and audited. The second is public and running at
+[learn.reqwiseconsulting.com](https://learn.reqwiseconsulting.com); the third, Vemos, is
+published whole, ledger included, in
+[teklabsdigital/x2-examples](https://github.com/teklabsdigital/x2-examples).
+
+Its first headline figure (25 human turns for the pilot's first slice) is retired, by the
+method's own extraction ruling: it mixed counting rules and scopes. The metric history lives in
+[`record/metrics.md`](record/metrics.md) under one counting rule. What travels across projects:
+
+- **Defect share of counted turns fell from about a third on the pilot to about a tenth** on the
+  second project, and held at about a tenth on the third.
+- **The marginal slice is where the method pays out.** After its first slice, the second
+  project's slices cost 1 to 7 counted turns mid-build, one of them zero. The third project's
+  seven slices ran 1 to 18: once fidelity checking against the locked design became
+  deterministic mid-project, the next three slices cost 1 to 2 turns each, and the cost that
+  remained sat where no automated tier can drive a pointer on a direct-manipulation canvas.
+- The pilot's watch classes (bootstrap loss, green-but-not-running, completeness
+  interrogations) went to near zero in the second project.
+
+Treat those numbers the way the method itself demands:
+
+- A sample of three, with no baseline. Nobody has yet built the same product without the method
+  and counted.
+- The third project's extraction is a milestone pass, not a close: workstreams are still open,
+  exit reports are owed, and its numbers can still move.
+- The 2 days is wall clock on one project, self run, and it is not the method's metric. It says
+  nothing about a team that did not write the method. The per-slice turn counts are what the
+  record actually supports.
+- Whole-project totals do not compare across projects; per-slice cost and defect share do,
+  which is why they are the published numbers.
+- The central regeneration claim has not yet run: no module has been regenerated from its
+  decisions.
+
+The kernel, the skills, the acceptance test, an invariants review, the extraction passes and a
+second edition on a different stack have all landed; the open experiments are listed in
+[`X2.md`](X2.md) under "What remains open".
+
 ## How X2 compares
 
-In the industry's terms, X2 is an agentic software engineering method: AI agents do the building,
-the build enforces the rules that must always hold, a person decides only at the gates, and the
-method measures its own cost in human turns. Beneath the vocabulary it is a control system more
-than a coding technique: the point is not to write code better, it is to keep people in charge of
-software produced faster than they can read it.
+Beneath its own vocabulary X2 is a control system more than a coding technique: the point is not
+to write code better, it is to keep people in charge of software produced faster than they can
+read it.
 
 **To Agile.** X2 keeps Agile's engine: thin working slices, requirements that stay open, change
 kept cheap. But every Agile guarantee is carried by human discipline: memory, habit, self-report.
@@ -170,7 +286,7 @@ human attention, so none can show it is getting cheaper, and none has a mechanis
 from its own record.
 
 The honest converse: BMAD and the spec-driven tools are broader today. They run on many stacks
-and many agents, and their communities are large. X2 ships two editions, has run end to end on 2
+and many agents, and their communities are large. X2 ships two editions, has run on three
 projects, and says so.
 
 One test cuts through the whole comparison: swap the AI for a better one and see what survives.
@@ -221,133 +337,18 @@ maps the enforcement you already have rather than rebuilding it, and ends with a
 where every claim stands. Most teams cannot state that at all. Just expect a migration, not a head
 start: the code, the old docs and the design will disagree, and sorting that out is half the job.
 
-## Where the evidence stands
+## Why this matters beyond software
 
-The invariants come from 2 production systems. The method itself has now run end to end on 2
-projects, every human turn logged, classified and audited. The second is public and running at
-[learn.reqwiseconsulting.com](https://learn.reqwiseconsulting.com).
+For decades, software teams have run on trust in people: their memory, their habits, their
+honesty. That worked because people were doing the building.
 
-Its first headline figure (25 human turns for the pilot's first slice) is retired, by the
-method's own extraction ruling: it mixed counting rules and scopes. The metric history lives in
-[`record/metrics.md`](record/metrics.md) under one counting rule. What travels across projects:
+The builders are no longer people. X2's wager is that the trust which must never slip should move
+into machinery that cannot forget and cannot fudge, while everything requiring real judgment
+stays with humans.
 
-- **Defect share of counted turns fell from about a third to about a tenth** between the first
-  project and the second.
-- **After the first slice, a slice costs 1 to 7 counted turns mid-build**; one slice shipped
-  with zero.
-- The first project's watch classes (bootstrap loss, green-but-not-running, completeness
-  interrogations) went to near zero in the second.
-
-Treat those numbers the way the method itself demands:
-
-- A sample of two, with no baseline. Nobody has yet built the same product without the method
-  and counted.
-- The 2 days is wall clock on one project, self run, and it is not the method's metric. It says
-  nothing about a team that did not write the method. The per-slice turn counts are what the
-  record actually supports.
-- Whole-project totals do not compare across projects; per-slice cost and defect share do,
-  which is why they are the published numbers.
-- The central regeneration claim has not yet run: no module has been regenerated from its
-  decisions.
-
-The kernel, the skills, the acceptance test, an invariants review, the first extraction pass and a
-second edition on a different stack have all landed; the open experiments are listed in
-[`X2.md`](X2.md) under "What remains open".
-
-## Get started
-
-You need [Claude Code](https://claude.com/claude-code), because the skills are written for it, plus
-the toolchain of whichever edition you build on. Two editions ship, measured against the same
-claims catalog, each publishing its own conformance record:
-
-| edition | the stack | you need |
-|---|---|---|
-| [`kernel/node-react/`](kernel/node-react/) | Fastify 5 on Node 24, TypeScript end to end, React 19 client, `node:sqlite` as the store | Node 24 |
-| [`kernel/dotnet-react/`](kernel/dotnet-react/) | ASP.NET Core on .NET 9, EF Core, React 19 client, SQL Server as the store | .NET 9 SDK, Node 24, Docker |
-
-The React client is the same in both, composed from [`kernel/shared/`](kernel/shared/), which is
-the home for everything that is not specific to a stack. The Node edition needs nothing beyond the
-runtime, because its database engine ships inside Node itself and there is no container to start.
-The .NET edition runs its engine in Docker and its client on Node.
-
-They are not equally measured, and the records say so rather than averaging it away. The .NET
-edition is the older one and has been through more verification rounds; the Node edition is the
-second witness, built later to test whether the claims are portable at all, and more of its rows
-are still owed. Each edition's conformance table states its own status row by row, and neither is
-reconciled against the other.
-
-Install the plugin once, from inside Claude Code:
-
-```
-/plugin marketplace add teklabsdigital/x2-method
-/plugin install x2@x2
-```
-
-The first command registers this repo as a plugin marketplace; the second installs the skills,
-namespaced under `x2:`, so they are available in every project, including the new repo the method
-creates for you. Type `/x2:` in Claude Code to see them listed.
-
-Invoke a skill:
-
-- **By name.** Type the slash command, such as `/x2:stories`.
-- **By intent.** Say what you want ("I have a product idea", "the app misbehaves at runtime").
-  Each skill declares when it applies, and Claude selects the right one.
-
-Ask for `/x2:help` at any time to see what to run next. Migrating an existing project? Use
-`/x2:adopt` instead of the flow below, and read "Greenfield first, and why" above first.
-
-To work on the method itself, clone the repo and symlink `skills/*` into Claude Code's personal
-skills folder instead; installed that way the skills appear unscoped (`/stories`, `/seed`, and so
-on) rather than under `x2:`.
-
-### From a user story to a running app
-
-X2 works in slices: thin pieces of the product that each work end to end. Start Claude Code and
-describe your product idea. Then follow the flow. You approve at 3 gates and answer the odd
-question; the agent does the rest.
-
-1. **x2:stories** turns your idea into epic-level stories, one line each. *You approve them
-   (gate 1).*
-2. **x2:seed** creates your project repo from an edition and arms the CI gate. Name the edition
-   you want when you run it; it instantiates that edition's manifest.
-3. **x2:decompose** records how the system divides up, the schema and the first slice.
-4. **x2:design** produces the whole-product design prototype. *You approve it (gate 2a).*
-5. **x2:lock** copies the prototype into your repo as the contract to build to. *You approve the
-   lock (gate 2b).*
-6. **x2:derive-tests** derives the acceptance tests from the locked design.
-7. **x2:implement** builds the slice until every check passes. It asks you only when it hits a
-   decision no record answers.
-8. **x2:slice-exit** produces the audited report that declares the slice done. *You accept it
-   (gate 3).*
-
-Then run it: each edition's README has a "Running it" section that starts the app locally, for
-[Node](kernel/node-react/README.md#running-it) and for
-[.NET](kernel/dotnet-react/README.md#running-it). Deployment is per project: the CI loop gates
-every merge, and you attach your own release step to it.
-
-Repeat steps 5 to 8 for each next slice. At project close, **x2:extract** runs the extraction
-loop described above, so what the ledger recorded feeds the method.
-
-### Bring your own stack
-
-The two shipped editions are working demonstrations, not a limit.
-
-The claims are written to be technology-neutral, and the second edition is what tested that rather
-than asserting it. Its early claims were built from the claim text alone, each mechanism designed,
-written down and dated before the .NET realisation of the same claim was opened, so a claim that
-merely described one stack's mechanism had nowhere to hide. Several did not survive. Claims naming
-a runtime's own artifact instead of a class of mechanism were repaired, and the rules that came
-out of it now bind the catalog: a mechanism class states a surface, a predicate and a completeness
-obligation, and any mechanism that matches a name against a list states what its comparison
-resolves. The register is published in
-[`record/edition-findings.md`](record/edition-findings.md), refuted predictions included.
-
-To build on a third stack, create an edition that realises the same claims. Each claim file names
-the harm, the mechanism class and its limits; your edition supplies the mechanism. Start from
-[`kernel/claims/`](kernel/claims/), and read either edition's conformance record for what a
-complete answer looks like.
-
-If you build one, please contribute it back as a pull request.
+If AI ends up building most of the world's software, and it is heading that way, then the
+interesting question is no longer who writes the code. It is who makes the decisions, and how
+those decisions are protected from a workforce that never remembers yesterday. X2 is one answer.
 
 ## What is in this repository
 
@@ -368,9 +369,13 @@ If you build one, please contribute it back as a pull request.
 - [`record/`](record/): the published extraction record: the metric history, candidate rules,
   confirmations, and the negative-space register with its cross-project churn table.
 
+Worked examples live in their own repository,
+[teklabsdigital/x2-examples](https://github.com/teklabsdigital/x2-examples), each published with
+its full record.
+
 ## Help improve it
 
-X2 is a sample of two and says so. The feedback worth the most:
+X2 is a sample of three and says so. The feedback worth the most:
 
 - **Run it and publish your ledger.** Open an issue with your turn counts and buckets. That is
   the method's native evidence.
