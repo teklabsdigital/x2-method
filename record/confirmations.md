@@ -33,3 +33,25 @@ From P2 (ruled 2026-07-21):
   released the standing turn without loss of control.
 - **CF-10 The append-only ledger** survived 157 turns and multiple compactions with recording
   current when audited mid-flight.
+
+From P3 (ruled 2026-08-06):
+
+- **CF-11 The extension seam, proven by measurement.** A standing decomposition constraint (a new
+  object kind joins by declaration; selection, locking, sync, undo, permissions and storage
+  untouched) was measured, not asserted: the server took zero changes for an entire new-kind
+  round. Caveat on the same record: the seam went unexercised for eight slices first; a seam is
+  proven when measured.
+- **CF-12 The pre-flight registers pay.** NS-2 and NS-3, mechanized after P2, pre-decided the
+  public surface, serving identity and identifier shape at decompose, and the lock's exposure
+  review caught what transcription would have shipped. The churn class P2 paid for did not
+  arrive in P3.
+- Re-confirmed under new load: CF-1 (every gate explicit, including three gate-1 re-approvals),
+  CF-9 (every schema migration an unconditional human turn, held every time), CF-10 (the
+  append-only discipline survived 269 turns and many compactions; its one weakness, turn
+  numbering under parallel contexts, is repaired in seed's per-author ledger rule).
+- **CF-2 annotated (P3):** green is the report held in form and strained in timing: one report
+  landed two slices late, self-declared as the violation it was, and four were owed at
+  extraction. The exit-debt line now in slice-exit is the repair; the confirmation stands.
+- **CF-3 annotated (P3):** the verbatim import and re-lock pipeline held again; the hand-derived
+  fidelity half failed by design and is replaced by mechanical derivation (derive-tests, PC-30).
+  The confirmation narrows to the import and re-lock discipline it actually evidenced.

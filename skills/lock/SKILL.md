@@ -20,6 +20,14 @@ home, INV-01):
 - the **complete** design-system export under `_ds/` (the token css, component css, fonts),
 - the supporting scripts.
 
+The sanctioned route is the on-disk export: the owner places the design project's complete export
+in the repo (a handoff folder under `design/`), the lock copies out what it needs and deletes the
+handoff. A context-carried import (the design MCP) is the fallback for small artifact sets; it
+cannot carry binaries, and the third project moved to the on-disk route after channel limits bit.
+Either way, verify the copied tree against its source: the file inventory matches and no copy
+artifacts exist (a duplicated or nested directory survived the third project's import verification
+and was caught only by the owner's eye).
+
 Never derive tokens from values readable inline in the prototype source. The pilot did, and
 silently produced a partial, light-only, placeholder token set with the coverage floor skipped.
 The client's token source derives from the export on disk, nothing else.
@@ -50,6 +58,8 @@ The client's token source derives from the export on disk, nothing else.
 - Requests **gate 2b: the lock** (MET-07): the copied-down artifact is approved, explicitly, now.
   This is UI-4's chargeable turn. A portion is not locked because work moved on; it is locked
   because approval is on record. Request it at this moment, not retroactively.
+- The request is put in plain language, the owner's own words; method vocabulary rides alongside,
+  never instead (P3).
 - A re-lock after a spine revision is the same turn again for the affected portions.
 
 ## Questions this skill used to carry, now ruled (invariants pass, 2026-07-11)

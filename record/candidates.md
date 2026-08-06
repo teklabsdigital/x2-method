@@ -76,6 +76,66 @@ reads at mint time. The next edition build is the event that settles all three.
   it:** a second claim whose enforcement rests on another claim being realized, which the next build pass will
   either produce or fail to.
 
+## Queued at the P3 extraction, 2026-08-06 (ruled by the owner; claim-shaped, deliberately not minted)
+
+- **PC-25 Origin-real smoke.** Applies when the product is a browser client against a served API.
+  No tier saw a cross-origin failure and a slice shipped green but unusable the moment a real
+  browser touched it; the follow-on prediction (the realtime channel negotiating credentialed
+  against a deliberately credential-free policy) then fired verbatim; and the origin-blind
+  composed smoke sat outside the verify gate and rotted. The candidate: an origin-capable smoke
+  inside the gate, and the edition ships the origin-policy machinery (committed named origins,
+  fail-fast on empty, policy ordered ahead of authentication, never a wildcard, never
+  authorization) so the class is automatic rather than each project's discovery. Owner's ruling:
+  should be automatic.
+- **PC-26 A tier that drives a pointer.** Applies when the product is direct manipulation
+  (canvas, drag, draw). "A person can move an object" is a different claim from "the geometry
+  maths is correct", and nearly all of P3's late defect batches were in classes no existing tier
+  could see. Includes: layout claims verified in a real layout engine (DOM emulation cannot see
+  layout), and honestly-uncoverable classes (pointer capture) recorded as uncoverable rather
+  than left silent.
+- **PC-27 Rename hardening.** Universal (an edition mechanism). The seeded-name rename is an
+  enumeration of surfaces carrying shipped values, not a sweep of identifiers; and any
+  product-name literal inside a test predicate is itself a rename target, because one rename
+  silently vacated a non-vacuity guard and every test stayed green.
+- **PC-28 Build stamp.** Universal. The running product displays which build it is, so a person
+  reporting a defect can say which code they are holding; paired with dev-loop single-instance
+  hygiene, it closes the stale-server class (three instances in P3).
+- **PC-29 The public shell.** Applies when any public web surface exists. A landing page, terms,
+  privacy, a not-found page, and a general page template outside the sign-in wall are the
+  standing minimum (NS-2's sharpened form); the edition ships them as scaffold so a project
+  styles them rather than invents them.
+- **PC-30 Fidelity single-source (UI-4 graduation).** Universal where a prototype is locked. The
+  prototype-to-record exporter is mandatory, the fidelity half of the ledger is generated, the
+  ledger file keeps only acceptance scenarios and rulings, and UI-4's contract becomes the
+  artifact itself. Proven in P3: two slices exited with drifted screens under the hand-derived
+  ledger, the mechanical route was built mid-project, and drift stopped. The methodology half is
+  already applied (derive-tests); this item is the claim edit and the kernel-shipped exporter.
+- **PC-31 Zero-infrastructure dev data seat.** Edition item, extends PC-18. Development defaults
+  to a file-backed engine seat needing no container, with the served engine for production, one
+  schema source, per-seat declaration checks and a drift test. P3 fought the container seat from
+  seeding to its final week (port mapping defect, a readiness probe that never worked on the
+  host platform, a greenfield ruling, then the switch), and the switch's shape is the candidate.
+- **PC-32 Container script hygiene.** Edition item. The engine's fixed internal port is mapped
+  explicitly from the declared host port (a declared non-default port bound nothing, because the
+  mapping assumed declaration equals internal); and container-absolute paths never pass through
+  a path-rewriting shell without the boundary stated. Both shipped, both found at seeding.
+
+- **PC-33 The tenant provisioning service.** Applies when the product is multi-tenant. The
+  edition ships the seam through which a tenant comes to exist: one provisioning service,
+  surfaced as an onboarding UI or as a CLI command at the owner's choice (seed asks; both
+  surfaces ride the same service). It carries the tenancy invariant's one sanctioned carve-out,
+  a tenant name arriving in a request before any credential can exist, with its justification
+  named in the scan and a sole-proof test, so no project re-derives the exception by hand.
+  Extensible by design: the same service grows to provision tenant-specific details over time,
+  including plan and payment confirmation before provisioning, quotas, and defaults. Composes
+  with PC-8 (provisioning feedback: created versus updated, never silent). Evidence: P3's signup
+  collided with the tenancy invariant mid-slice and carved the exception by hand; the collision
+  is structural for any self-service multi-tenant product, and the discovery cost lands as a
+  mid-slice defect turn each time it is re-learned.
+
+PC-11's scope extends to finding registers: P3 ran two findings registers that collided on the
+same identifier, which is the same failure the scenario-id rule already names.
+
 ## Still queued (methodology and edition items, not claim-shaped)
 
 - **PC-8 Provisioning feedback.** Applies when a CLI provisions accounts or credentials. An

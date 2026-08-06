@@ -56,6 +56,9 @@ that edition already says.
 
 - Human turns here: the shape choice, schema approval, slice-scope ruling. These are stays-ahead
   decisions and are not counted in the per-slice metric.
+- Anything presented for a ruling is put in plain language, the owner's own words; method
+  vocabulary rides alongside, never instead. A ruling made on a summary the owner cannot parse on
+  first read is no ruling at all (P3).
 - No MET-07 gate of its own; gate 2 belongs to the design step that follows.
 
 ## What this skill must NOT produce

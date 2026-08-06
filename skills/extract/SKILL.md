@@ -17,8 +17,9 @@ subject and does not grade its own record.
 
 ## 1. Intake
 
-- Reconcile the ledger. Classify every human turn; intake's bucketing governs over the builder's
-  provisional bucket (MET-05). Buckets: decision or green-but-wrong (sanctioned); edition-defect,
+- Reconcile the ledgers (one per author under `docs/work/`; merge them into one timeline first).
+  Classify every human turn; intake's bucketing governs over the builder's provisional bucket
+  (MET-05). Buckets: decision or green-but-wrong (sanctioned); edition-defect,
   invariant-gap, methodology-defect (defects); ideation, admin (uncounted).
 - Compute the figure: counted turns per shipped slice, where shipped means the exit report exists.
   Counted excludes admin, ideation, and the stays-ahead investment. Report per-slice mid-build
@@ -64,7 +65,9 @@ present only the doubtful crossings side by side.
 ## 4. Rulings pass (human gate)
 
 Present: the figure, the churn table with nominations called out, the distillate, and the
-un-sanitizable flags. Put the open dispositions as options; do not pick for the human. Nothing
+un-sanitizable flags. Put the open dispositions as options; do not pick for the human. Present it
+all in plain language, the owner's own words; method vocabulary rides alongside, never instead
+(P3: the demand for plain English fired against the extraction itself). Nothing
 crosses into the method without a ruling. Rejected items are recorded as ruled so they never
 resurface; accepted confirmations close their claims to reopening.
 

@@ -24,13 +24,16 @@ graduate to a mechanized rule (a skill step, a claim, a checklist a gate runs) a
   that loop settles; re-approval of a revised set is a normal gate turn, not a breach. Evidence:
   P2's story set was its highest-churn decision (14 post-approval revisits before settling
   through the prototype). Mechanized in: x2:stories.
-- **NS-2 The launch phase.** Class: pre-decidable, named structure (ruled, P2). Applies when the
-  product ships to a public audience. Chrome, discoverability, social presence, legal pages,
-  analytics, and edge hardening arrive as ad-hoc owner directives at the end unless ruled in or
-  out early. Includes the estate question: a greenfield app can land inside an existing brand
-  estate (styles, domains, policies) that is not greenfield. Evidence: P2 spent its largest
-  zero-defect churn cluster here. Mechanized in: x2:decompose (the launch and exposure
-  pre-flight).
+- **NS-2 The launch phase.** Class: pre-decidable, named structure (ruled, P2; sharpened, P3).
+  Applies when the product ships to a public audience. Chrome, discoverability, social presence,
+  legal pages, analytics, and edge hardening arrive as ad-hoc owner directives at the end unless
+  ruled in or out early. Includes the estate question: a greenfield app can land inside an
+  existing brand estate (styles, domains, policies) that is not greenfield. Evidence: P2 spent
+  its largest zero-defect churn cluster here; P3 pre-decided the set at decompose and the churn
+  never arrived. P3's ruling names the standing minimum: a landing page, terms, privacy, a
+  not-found page, and a general page template outside the sign-in wall, in by default, out by
+  exception (the edition scaffold is queued as PC-29). Mechanized in: x2:decompose (the launch
+  and exposure pre-flight).
 - **NS-3 Exposure values and the lock-time exposure review.** Class: pre-decidable, named
   structure (ruled, P2). Applies when any surface is externally visible. Externally-visible
   values (serving domains, sender addresses, public identifiers, entry points) are ruled before
@@ -74,3 +77,21 @@ relative rank (the cross-project normalizer).
 | Micro-rulings (single values riding alone) | 3 | low | NS-5, gate ergonomic |
 | Public entry-point placement | 2 | low | NS-3, pre-decidable |
 | Serving-domain identity | 1, wide blast | low | NS-3, pre-decidable |
+
+P3 (extracted 2026-08-06; a direct-manipulation product; ledger ends mid-build):
+
+| Decision type | P3 revisits | Rank | Ruling |
+|---|---|---|---|
+| Fidelity derivation practice | fired as defect, then ~8 repair turns | top | loud half; mechanical derivation now required (derive-tests, PC-30) |
+| Admission model and public front door | one full story+design+lock loop mid-build | top | project-local, ruled P3; does not resurface |
+| Direct-manipulation feel (handles, cursors, drag, wrap) | ~7, zero method defects | top | project-local, ruled P3: UI optimisation from live use; does not resurface |
+| Dev data engine seat | ~5, spread over the whole project | high | pre-decidable; edition candidate queued (PC-31, extends PC-18) |
+| Endings and removals (lifecycle vocabulary) | ~5 incl. one re-lock, four clusters | high | project-local, ruled P3: fluid requirements not yet locked down, not a method gap; does not resurface |
+| Plain-language reporting | 5 turns, then minted as a house rule | high | pre-decidable, accepted P3: mandated in every ruling-requesting skill and the seeded CLAUDE.md |
+| Stale server, which-build-am-I-holding | 3 instances | mid | pre-decidable; build stamp queued (PC-28) |
+| Story set (gate 1) | re-approved 3 times, epic count grew | mid | NS-1, inherent, named loop; held again |
+| Wording and diction passes | ~3 | low | NS-6 adjacent, sanctioned owner voice |
+| Decomposition record | revised by design through its research phase | low | NS-7, expected churn |
+
+The content configuration boundary P2 said to watch did not churn in P3 (the product carries no
+content pipeline; the applies-when condition simply never triggered).

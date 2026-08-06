@@ -10,12 +10,26 @@ prototype is the acceptance contract, and the tests are projections of it.
 
 ## What derives from the lock
 
-- **The per-slice fidelity ledger** (`design/ledger/slice-NNN.md`): the locked portion's visual
-  atoms, enumerated. The kernel tests it in both directions: every ledger atom renders
-  (exhaustiveness) and nothing renders beyond the ledger (de-fabrication). Until the
-  prototype-to-ledger exporter exists (owed on the claim), the hand-derived ledger is a known
-  second-source risk: derive it at lock time only, from the artifact on disk, never maintain it by
-  hand alongside a moving prototype.
+- **The per-slice fidelity record**, derived mechanically: a deterministic exporter reads the
+  locked artifact on disk into a computed record, and the built screens are compared against that
+  record computationally, in both directions (everything in the record renders; nothing renders
+  beyond it). Never hand-derive fidelity: a hand-typed summary standing in for the artifact
+  produces drift as its designed output, because the artifact is never read again after the lock.
+  The third project exited two slices with drifted screens that way, then built the mechanical
+  route mid-project and drift stopped (record: PC-30). The ledger file
+  (`design/ledger/slice-NNN.md`) keeps only what cannot be computed: acceptance scenarios and
+  owner rulings, including licensed divergences.
+- **The portion is declared, never assumed.** A locked portion smaller than a whole screen is
+  declared as excluded subtrees, each citing its ruling, held in the same extent guard as the
+  comparison. And coverage is per drawn state, not per screen: a built state that ships
+  never-compared is the gap an extent guard that only sees screens cannot see.
+- **Chrome is contract; sample content is illustration.** The locked artifact says which parts of
+  a screen are specification and which are sample data; compare the specification. Fixtures for
+  comparisons come from the wire types, values the product can actually emit, and an
+  artifact-versus-product disagreement is a finding for the record, never smoothed over locally.
+- **A rule the storage engine happens to enforce proves nothing.** Where a product rule is also
+  enforced by the engine as a side effect (a collation, a constraint), the falsifying test must
+  run on a tier the engine does not cover, or the test can never fail.
 - **The acceptance scenarios** on the e2e floor: the flows the locked portion shows, driven through
   the real client services against a running server.
 

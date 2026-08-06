@@ -10,6 +10,11 @@ three gates: nothing is designed, seeded, or built until the stories are approve
 
 ## What you produce
 
+- **The owner's motivation, verbatim, first.** Before any analysis, capture the owner's own
+  statement of why this product should exist, in their words, as a durable artifact. The problem
+  statement derives from that motivation and is evidenced by any reference material, never the
+  reverse: the third project's problem statement missed the centre twice because two sessions
+  worked from reference material alone while the motivation lived only in the owner's head.
 - A handful of epic-level stories, one line each. Thin by design. Roles are human stakeholders
   (developer, operator, end user), never "the system" or "an AI agent".
 - Where the product's core is a novel domain behaviour (a method, a protocol, a way of working that
@@ -19,6 +24,12 @@ three gates: nothing is designed, seeded, or built until the stories are approve
 - A turn note for every human turn ideation costs (number, what, why a human was needed). These are
   carried into the ledger the moment seed creates it.
 
+Everything this skill produces has a named home once seed runs: the story set, the motivation
+statement, the behaviour spec and any prior reference material land under `design/`; turn notes go
+to the ledger under `docs/work/`. Nothing lands at the repo root: the kernel's docs-lint allowlists
+that surface, and the third project had to relocate two governed files it had put there (record:
+the placement finding, P3).
+
 ## How to work the discovery
 
 - Spend time on the problem before any solution talk. Challenge, reframe, think laterally; be a
@@ -26,6 +37,19 @@ three gates: nothing is designed, seeded, or built until the stories are approve
 - Aim for the minimal story set that captures the full problem. Prefer a shape with more than one
   module, so the build exercises real seams.
 - Propose candidate framings and let the human pick. They drive the choice.
+- When the owner rejects the same framing twice, stop iterating in place: the context is anchored.
+  Restart the analysis in a fresh context from the primary sources (the motivation statement
+  first), carried across by a written handover, and apply nothing until the owner cuts. The third
+  project's centre was found exactly this way after two anchored sessions missed it.
+
+## Stress-testing the set
+
+When the set looks settled and before gate 1 is requested, offer an adversarial stress test:
+bounded, grounded in the story set, any reference material, and knowledge of comparable products;
+hunting gaps and overlooked needs inside the current scope, never gold plating or new directions.
+Before it runs, enumerate every role the story set names and confirm each role has its own lens
+walking its journey end to end. The third project's stress test looked complete while omitting the
+product's largest constituency, and only the owner caught it.
 
 ## The story-prototype loop
 
@@ -42,6 +66,8 @@ work, not a defect (record: NS-1).
 - Requests **gate 1: stories approved** (the first MET-07 gate), taken when the story set is tight
   and both sides agree. The gate blocks seed and everything after it. Each later revision requests
   the gate again.
+- The gate request is put in plain language, the owner's own words; method vocabulary rides
+  alongside, never instead (P3).
 - Ideation turns are part of the measured flow and are logged.
 
 ## What this skill must NOT produce

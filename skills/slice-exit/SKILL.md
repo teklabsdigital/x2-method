@@ -29,8 +29,11 @@ not green (MET-06).
 7. **The slice turn count, from the ledger.** The ledger file governs; a count remembered by the
    builder does not (MET-05).
 
-Plus one standing check: any phase that started without its gate on record (stories, prototype
-approval, the lock) is a methodology violation and is surfaced here (MET-07).
+Plus two standing checks: any phase that started without its gate on record (stories, prototype
+approval, the lock) is a methodology violation and is surfaced here (MET-07); and the report names
+every other slice built past its own report, so exit debt is visible, never silent. The third
+project wrote one report two slices late and had four owed by extraction time; each of those
+slices was invisible to the metric until its report existed.
 
 Scripted where mechanical (tier counts, the coverage diff), authored where judgment is needed
 (deviations, pending rulings).
@@ -38,7 +41,9 @@ Scripted where mechanical (tier counts, the coverage diff), authored where judgm
 ## The audit
 
 Intake audits the report before ratification. The builder does not grade its own green; "sound" is
-intake's word to give. The human's turn becomes reading one document, not extracting it.
+intake's word to give. The human's turn becomes reading one document, not extracting it. What the
+human reads is put in plain language, their own words; method vocabulary rides alongside, never
+instead, because a ratification given on a summary the owner cannot parse is no ratification (P3).
 
 ## Open question this skill carries
 

@@ -45,6 +45,10 @@ violations (MET-08). Seed exists so neither happens again.
      Container images pin tag@digest and get a ledger row like any package.
    - The turn-report shape and the rule that intake's classification governs (both decayed under
      compaction in the pilot; see the ledger section).
+   - Anything presented to the owner for a ruling is put in plain language, their own words;
+     method vocabulary rides alongside, never instead. A ruling made on a summary the owner
+     cannot parse on first read is no ruling at all (P3: five turns were spent re-asking before
+     it became a standing rule).
 
    House style, owner's preference: keep, replace or drop these, and record whichever set the
    owner chooses. What the method requires is only that the chosen set lives here and that any
@@ -53,11 +57,17 @@ violations (MET-08). Seed exists so neither happens again.
      bytes, because BSD grep silently misses a BRE class:
      `grep -rn "$(printf '\342\200\224')" .` (em) and `grep -rn "$(printf '\342\200\223')" .` (en).
    - No professional disclaimers. Push back with reasons.
-5. **Create the turn ledger.** An append-only file in the repo (the pilot used `docs/work/`). The
-   builder appends every human turn the moment it happens: number, what happened, why a human was
-   needed, provisional bucket. Every turn is fed to intake as it happens, not only defects; intake
-   classifies, and its bucketing governs (MET-05). Backfill the gate-1 ideation turns from
-   stories now, so nothing lives only in a compactible context.
+5. **Create the turn ledger.** Append-only, per author: `docs/work/<author>/turn-ledger.md`, one
+   file per human whose turns it records, so parallel sessions, branches and collaborators cannot
+   collide. The builder appends every human turn the moment it happens: number, what happened, why
+   a human was needed, provisional bucket. The next turn number is read from the file at append
+   time, never carried in a context's memory: the third project minted duplicate numbers three
+   times the moment two contexts ran at once. The bucket vocabulary is closed: decision,
+   green-but-wrong, edition-defect, invariant-gap, methodology-defect, ideation, admin; a turn
+   that fits none is admin with a note, and intake reclassifies (the third project improvised ten
+   extra labels, which the extraction then had to map). Every turn is fed to intake as it happens,
+   not only defects; intake classifies, and its bucketing governs (MET-05). Backfill the gate-1
+   ideation turns from stories now, so nothing lives only in a compactible context.
    The rule is enforced, not remembered: the edition ships a prompt-submit hook in
    `.claude/settings.json` that injects the ledger reminder on every human prompt, so it re-enters
    with every turn and cannot decay with a long chat (PC-10; the second project proved the

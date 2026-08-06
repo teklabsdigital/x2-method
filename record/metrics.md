@@ -38,9 +38,25 @@ and defect share are the travelling numbers.
   (owner acceptance refinement, launch and exposure work, the story-prototype loop). Naming and
   pre-flighting those phases is what this extraction added; see `negative-space.md`.
 
+## P3 (milestone extraction, seven slices, 2026-08-06)
+
+- Extracted mid-build, not at close: seven slices shipped by exit report; further workstreams
+  open with four exit reports owed (excluded from the denominator until they exist).
+- Mid-build cost per slice: 1 to 18 counted turns (8, ~15, ~18, then 1, 2, 1, then ~6, in slice
+  order).
+- Defect share of counted turns: about a tenth (~13 of ~150 counted across the record so far).
+- Character: two mechanization events are visible in the numbers. Deriving fidelity mechanically
+  from the locked artifact, adopted mid-project after two slices exited with drifted screens,
+  collapsed the middle slices to 1 or 2 turns. The tail re-inflated on the direct-manipulation
+  surface, where owner-found green-but-wrong batches (~19 turns) stood in for tiers that cannot
+  drive a pointer; the candidates that close the class are queued (PC-25, PC-26).
+
 ## Reading
 
 The first slice is where the method charges its fixed cost, and it held roughly flat like for
 like (P1 about 18; P2's first slice about 6 mid-build plus a story loop that is now named
 structure). The marginal slice is where the method pays out: P2's subsequent slices cost 1 to 7
-turns each. The old headline ("the figure is 25") is retired; it mixed counting rules and scopes.
+turns each, and P3's cheapest ran at 1 to 2 once fidelity derivation was mechanical. P3 adds the
+sharper reading: the marginal slice is cheap exactly where the tiers can see the work, and the
+remaining turn mass locates the classes they cannot see yet. The old headline ("the figure is
+25") is retired; it mixed counting rules and scopes.

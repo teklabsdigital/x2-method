@@ -88,11 +88,22 @@ derives tests from that portion only. The spine can be revised when later slices
 revision re-locks the affected portions and spends the approving human turn (open cadence question
 carried on the record, MET-03).
 
+Two disciplines the third project priced:
+
+- **A fault in a locked screen is fixed here and arrives via re-lock, never patched in the build.**
+  The owner ruled it mid-project and it held: the artifact stays the single authority, and the
+  build's comparisons stay honest.
+- **New states prefer a new screen.** Inserting states into a locked screen whose comparison is
+  index-aligned churns every comparison below the insertion point; drawing them on an additive
+  screen costs nothing. Measured both ways in the third project.
+
 ## Human-turn contract
 
 - The direction confirmation in step 1 is a design decision turn.
 - Requests **gate 2a: prototype approved at Claude Design** (MET-07), at the moment the prototype
   is complete. Approval here is not the lock; the lock happens after the copy-down, at lock.
+- Both requests are put in plain language, the owner's own words; method vocabulary rides
+  alongside, never instead (P3).
 
 ## What this skill must NOT produce
 
